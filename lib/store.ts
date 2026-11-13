@@ -1,3 +1,5 @@
+import { toast } from '@/hooks/use-toast';
+import { MOD_KEY } from './utils';
 import { create, useStore } from 'zustand';
 import { addEdge, applyNodeChanges, applyEdgeChanges, getOutgoers, NodeProps, getIncomers } from '@xyflow/react';
 import { createComputed } from "zustand-computed";
@@ -258,6 +260,17 @@ const processOnDisconnect = (
     }
 }
 
+/** Says so when connections had to be removed because they now cross between branches. */
+function reportRemovedConnections(updates: UpdatePayload) {
+    const removed = Object.values(updates.edges).filter(x => x === null).length
+    if (!removed) return
+    toast({
+        title: removed == 1 ? 'A connection was removed' : `${removed} connections were removed`,
+        description: `They joined steps from different branches. Use a Wait for all step to bring branches together. Undo (${MOD_KEY}+Z) brings them back.`,
+        duration: 8000,
+    })
+}
+
 const processNodeThread = (
     node: { node: AppNode, parentNode?: AppNode, thread: string },
     nodes: AppNode[],
@@ -368,6 +381,7 @@ export const useFlowStore = create<AppState>()(temporal(computed((set, get) => (
             const sourceThread = otherParents.length == 0 ? Math.random().toString(16).slice(2) : otherParents[0].data.thread;
             processNodeThread({ node: targetNode, thread:sourceThread }, nodes, newEdges, updates);
         }
+        reportRemovedConnections(updates)
 
         set({
             edges: newEdges.filter(edge => updates.edges[edge.id] !== null).map(edge => edge.id in updates.edges ? { ...merge(edge, updates.edges[edge.id]) } : edge),
@@ -396,6 +410,7 @@ export const useFlowStore = create<AppState>()(temporal(computed((set, get) => (
         const newEdge = newEdges.find(x => x.source == sourceNode.id && x.target == targetNode.id)!
         processOnConnect(nodes, newEdges, targetNode, sourceNode, newEdge, updates)
         processNodeThread({ node: targetNode, parentNode: sourceNode, thread:sourceThread }, nodes, edges, updates);
+        reportRemovedConnections(updates)
 
         set({
             edges: newEdges.filter(edge => updates.edges[edge.id] !== null).map(edge => edge.id in updates.edges ? { ...merge(edge, updates.edges[edge.id]) } : edge),

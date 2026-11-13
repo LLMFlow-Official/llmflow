@@ -21,8 +21,9 @@ type SetStateData = NodeData & {
 export const Metadata: NodeMetaData = {
     type: 'set_state',
     category: 'data',
-    name: 'Set State',
-    description: 'Sets the state of the node based on input values',
+    icon: Cog,
+    name: 'Set variable',
+    description: 'Save a value as a variable that later steps can use as {state.name}',
     tags: ['state', 'set', 'node'],
     valueIdentifier: () => "state"
 }
@@ -119,5 +120,5 @@ export const Properties = ({ node }: { node: AppNode<SetStateData> }) => {
 }
 
 export function Node(props: AppNodeProp) {
-    return <NodeShell {...props} icon={Cog} defaultName={Metadata.name} category={Metadata.category} />
+    return <NodeShell {...props} icon={Metadata.icon} defaultName={Metadata.name} category={Metadata.category} />
 }

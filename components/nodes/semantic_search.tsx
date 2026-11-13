@@ -24,6 +24,7 @@ type SemanticSearchData = NodeData & {
 export const Metadata: NodeMetaData = {
     type: 'semantic_search',
     category: 'ai',
+    icon: ListOrdered,
     name: 'Semantic Search',
     description: 'Find the pieces of text most related in meaning to a question, using OpenAI embeddings',
     tags: ['embeddings', 'search', 'rank', 'similarity', 'rag', 'retrieve', 'vector', 'OpenAI'],
@@ -131,5 +132,5 @@ export const Properties = ({ node }: { node: AppNode<SemanticSearchData> }) => {
 }
 
 export function Node(props: AppNodeProp) {
-    return <NodeShell {...props} icon={ListOrdered} defaultName={Metadata.name} category={Metadata.category} />
+    return <NodeShell {...props} icon={Metadata.icon} defaultName={Metadata.name} category={Metadata.category} />
 }

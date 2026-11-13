@@ -46,6 +46,7 @@ export const OnDisconnect = async (payload: NodeConnectDisconnectPayload, update
 export const Metadata: NodeMetaData = {
     type: 'loop',
     category: 'logic',
+    icon: Repeat,
     name: 'Loop',
     description: 'Run the connected "Each item" steps once per item of a list, or repeat them until a condition is true',
     tags: ['loop', 'for each', 'repeat', 'iterate', 'map', 'batch', 'until', 'while'],
@@ -274,5 +275,5 @@ export const Properties = ({ node }: { node: AppNode<LoopData> }) => {
 }
 
 export function Node(props: AppNodeProp) {
-    return <NodeShell {...props} icon={Repeat} defaultName={Metadata.name} category={Metadata.category} sourceType='multi' />
+    return <NodeShell {...props} icon={Metadata.icon} defaultName={Metadata.name} category={Metadata.category} sourceType='multi' />
 }

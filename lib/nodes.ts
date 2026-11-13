@@ -114,6 +114,8 @@ export type NodeMetaData<T = unknown> = {
     name: string;
     description: string;
     category: NodeCategory;
+    /** Shown on the canvas and in the Add step list. */
+    icon: React.ElementType;
     tags: string[],
     notAddable?: boolean;
     defaultData?: T,

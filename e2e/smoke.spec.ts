@@ -135,6 +135,21 @@ test('on a phone, the panel leaves Run and menus usable', async ({ page }) => {
     await expect(page.getByText('(Test answer from Summarize)').first()).toBeVisible()
 })
 
+test('adds a step with the keyboard, connected after the last one', async ({ page }) => {
+    await openApp(page)
+    await page.getByRole('button', { name: 'Flows menu' }).click()
+    await page.getByRole('button', { name: 'New flow' }).click()
+    await page.getByRole('button', { name: 'Blank flow' }).click()
+
+    await page.getByRole('button', { name: 'Add step' }).click()
+    const search = page.getByRole('combobox', { name: 'Search steps' })
+    await search.fill('web')
+    await search.press('Enter')
+    await expect(page.locator('.react-flow__node', { hasText: 'Web Search' })).toBeVisible()
+    await expect(page.locator('.react-flow__edge')).toHaveCount(1)
+    await expect(page.getByRole('tab', { name: 'Step' })).toHaveAttribute('aria-selected', 'true')
+})
+
 test('has no serious accessibility problems', async ({ page }) => {
     await openApp(page)
     const results = await new AxeBuilder({ page }).analyze()

@@ -9,8 +9,9 @@ import { Input } from '../ui/input';
 export const Metadata: NodeMetaData = {
     type: 'multi_thread',
     category: 'logic',
-    name: 'Multi Thread',
-    description: 'This node allows you to run multiple threads in parallel',
+    icon: Split,
+    name: 'Run in parallel',
+    description: 'Run all connected branches at the same time. Join them again with Wait for all.',
     tags: ['promise', 'async']
 }
 
@@ -44,5 +45,5 @@ export const Properties = ({ node }: { node: AppNode }) => {
 }
 
 export function Node(props: AppNodeProp) {
-    return <NodeShell {...props} icon={Split} defaultName={Metadata.name} category={Metadata.category} sourceType='multi' />
+    return <NodeShell {...props} icon={Metadata.icon} defaultName={Metadata.name} category={Metadata.category} sourceType='multi' />
 }

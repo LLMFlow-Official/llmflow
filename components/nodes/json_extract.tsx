@@ -19,6 +19,7 @@ type JsonExtractData = NodeData & {
 export const Metadata: NodeMetaData = {
     type: 'json_extract',
     category: 'data',
+    icon: Braces,
     name: 'JSON Extract',
     description: 'Read JSON from text (even inside a code block) and pick out fields',
     tags: ['json', 'parse', 'extract', 'field', 'object'],
@@ -109,5 +110,5 @@ export const Properties = ({ node }: { node: AppNode<JsonExtractData> }) => {
 }
 
 export function Node(props: AppNodeProp) {
-    return <NodeShell {...props} icon={Braces} defaultName={Metadata.name} category={Metadata.category} />
+    return <NodeShell {...props} icon={Metadata.icon} defaultName={Metadata.name} category={Metadata.category} />
 }

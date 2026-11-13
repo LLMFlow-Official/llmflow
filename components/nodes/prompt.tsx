@@ -39,6 +39,7 @@ type PromptData = NodeData & ModelNodeData & {
 export const Metadata: NodeMetaData = {
     type: 'prompt',
     category: 'ai',
+    icon: ScrollText,
     name: 'AI Prompt',
     description: 'Ask an AI model (OpenAI, Claude, Gemini or your own server) and use its answer',
     tags: ['OpenAI', 'ChatGPT', 'GPT', 'Claude', 'Anthropic', 'Gemini', 'Google', 'LLM', 'prompt', 'chat']
@@ -427,5 +428,5 @@ export const Properties = ({ node }: { node: AppNode<PromptData> }) => {
 }
 
 export function Node(props: AppNodeProp) {
-    return <NodeShell {...props} icon={ScrollText} defaultName={Metadata.name} category={Metadata.category} summary={modelSummary(props.data as ModelNodeData)} />
+    return <NodeShell {...props} icon={Metadata.icon} defaultName={Metadata.name} category={Metadata.category} summary={modelSummary(props.data as ModelNodeData)} />
 }

@@ -44,7 +44,7 @@ export const templates: FlowTemplate[] = [
     {
         id: 'route_support',
         name: 'Route support emails',
-        description: 'An LLM Router sends each email to the right reply writer.',
+        description: 'An AI Router sends each email to the right reply writer.',
         build: () => build([
             start([['email', 'textarea', 'Hi, I was charged twice for my order. Can I get a refund?']]),
             {

@@ -12,8 +12,9 @@ type FinalOutputData = NodeData & {
 export const Metadata: NodeMetaData = {
     type: 'final_output',
     category: 'io',
+    icon: Flag,
     name: 'Final Output',
-    description: "Mark the flow's result. It is shown at the top of the runtime log",
+    description: "Mark the flow's result. It is shown at the top of the run log",
     tags: ['result', 'output', 'answer', 'end', 'return'],
 }
 
@@ -51,5 +52,5 @@ export const Properties = ({ node }: { node: AppNode<FinalOutputData> }) => (
 )
 
 export function Node(props: AppNodeProp) {
-    return <NodeShell {...props} icon={Flag} defaultName={Metadata.name} category={Metadata.category} />
+    return <NodeShell {...props} icon={Metadata.icon} defaultName={Metadata.name} category={Metadata.category} />
 }

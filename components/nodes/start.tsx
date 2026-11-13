@@ -22,8 +22,9 @@ type PropValues = {
 export const Metadata: NodeMetaData = {
     type: 'start',
     category: 'start',
+    icon: PlayCircle,
     name: 'Start',
-    description: 'The first node in the flow. Please add a your initial values here.',
+    description: 'Where the flow begins. Add the inputs the flow needs here.',
     tags: [],
     notAddable: true
 }
@@ -260,5 +261,5 @@ export const Properties = ({ node }: { node: AppNode }) => {
 };
 
 export function Node(props: AppNodeProp) {
-    return <NodeShell {...props} icon={PlayCircle} defaultName={'Start'} category={Metadata.category} targetType='none' />
+    return <NodeShell {...props} icon={Metadata.icon} defaultName={'Start'} category={Metadata.category} targetType='none' />
 }

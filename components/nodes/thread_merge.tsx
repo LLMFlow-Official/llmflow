@@ -9,8 +9,9 @@ import { Input } from '../ui/input';
 export const Metadata: NodeMetaData = {
     type: 'thread_merge',
     category: 'logic',
-    name: 'Thread Merge',
-    description: 'This node will wait until all connected parallel threads ends',
+    icon: Merge,
+    name: 'Wait for all',
+    description: 'Wait until every branch started by Run in parallel has finished, then continue',
     tags: ['await', 'sync']
 }
 
@@ -46,5 +47,5 @@ export const Properties = ({ node }: { node: AppNode }) => {
 }
 
 export function Node(props: AppNodeProp) {
-    return <NodeShell {...props} icon={Merge} defaultName={Metadata.name} category={Metadata.category} targetType='multi' />
+    return <NodeShell {...props} icon={Metadata.icon} defaultName={Metadata.name} category={Metadata.category} targetType='multi' />
 }

@@ -17,6 +17,7 @@ type AssertData = NodeData & {
 export const Metadata: NodeMetaData = {
     type: 'assert',
     category: 'logic',
+    icon: ShieldCheck,
     name: 'Assert',
     description: 'Check a condition and stop this branch with your message if it is false',
     tags: ['check', 'validate', 'guard', 'test', 'condition'],
@@ -89,5 +90,5 @@ export const Properties = ({ node }: { node: AppNode<AssertData> }) => {
 }
 
 export function Node(props: AppNodeProp) {
-    return <NodeShell {...props} icon={ShieldCheck} defaultName={Metadata.name} category={Metadata.category} />
+    return <NodeShell {...props} icon={Metadata.icon} defaultName={Metadata.name} category={Metadata.category} />
 }

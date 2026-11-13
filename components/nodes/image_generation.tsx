@@ -29,6 +29,7 @@ type ImageGenerationData = NodeData & {
 export const Metadata: NodeMetaData = {
     type: 'image_generation',
     category: 'ai',
+    icon: ImageIcon,
     name: 'Image Generation',
     description: 'Create an image from a text prompt with an OpenAI image model',
     tags: ['image', 'picture', 'draw', 'generate', 'art', 'OpenAI'],
@@ -192,5 +193,5 @@ export const Properties = ({ node }: { node: AppNode<ImageGenerationData> }) => 
 }
 
 export function Node(props: AppNodeProp) {
-    return <NodeShell {...props} icon={ImageIcon} defaultName={Metadata.name} category={Metadata.category} />
+    return <NodeShell {...props} icon={Metadata.icon} defaultName={Metadata.name} category={Metadata.category} />
 }

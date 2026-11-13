@@ -17,8 +17,9 @@ type ConsoleLogData = NodeData & {
 export const Metadata: NodeMetaData = {
     type: 'console_log',
     category: 'io',
-    name: 'Console Log',
-    description: 'Logs messages to the console for debugging purposes',
+    icon: Captions,
+    name: 'Log',
+    description: 'Write a value to the run log (and the browser console) to check what a step produced',
     tags: ['debug', 'log', 'console']
 }
 
@@ -97,5 +98,5 @@ export const Properties = ({ node }: { node: AppNode<ConsoleLogData> }) => {
 }
 
 export function Node(props: AppNodeProp) {
-    return <NodeShell {...props} icon={Captions} defaultName={Metadata.name} category={Metadata.category} />
+    return <NodeShell {...props} icon={Metadata.icon} defaultName={Metadata.name} category={Metadata.category} />
 }

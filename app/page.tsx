@@ -2,7 +2,7 @@
 
 import { nodeMap } from '@/lib/nodes';
 import { useFlowStore, useTemporalFlowStore } from '@/lib/store';
-import { Background, BackgroundVariant, Controls, MarkerType, MiniMap, ReactFlow } from '@xyflow/react';
+import { Background, BackgroundVariant, Controls, FinalConnectionState, MarkerType, MiniMap, ReactFlow } from '@xyflow/react';
 
 import { useShallow } from 'zustand/shallow';
 import { useEffect } from 'react';
@@ -10,6 +10,33 @@ import CustomEdge from '@/components/node_utils/custom_edge';
 import FlowContextMenu from '@/components/node_utils/flow_context_menu';
 import { initLibrary, useLibraryStore } from '@/lib/library';
 import { useIsDark } from '@/components/layout/theme_toggle';
+import { useDropPicker } from '@/components/node_utils/new_node';
+import { connectionProblem } from '@/lib/connections';
+import { toast } from '@/hooks/use-toast';
+
+/**
+ * A connection let go of without reaching a handle: on empty canvas it offers the step list (the
+ * new step is connected); on a step it connects when allowed, and otherwise says why not.
+ */
+function onConnectEnd(event: MouseEvent | TouchEvent, state: FinalConnectionState) {
+  if (state.isValid || !state.fromNode || !state.fromHandle) return
+  const { nodes, edges, onConnect } = useFlowStore.getState()
+  const point = 'changedTouches' in event ? event.changedTouches[0] : event
+  const target = document.elementFromPoint(point.clientX, point.clientY)
+  const fromSource = state.fromHandle.type == 'source'
+  const droppedOn = state.toNode?.id ?? target?.closest('.react-flow__node')?.getAttribute('data-id') ?? undefined
+  if (droppedOn) {
+    const [source, targetId] = fromSource ? [state.fromNode.id, droppedOn] : [droppedOn, state.fromNode.id]
+    if (source == targetId) return
+    const problem = connectionProblem(source, targetId, nodes, edges)
+    if (problem) toast({ title: "These steps can't be connected", description: problem, duration: 8000 })
+    else onConnect({ source, target: targetId, sourceHandle: null, targetHandle: null })
+    return
+  }
+  if (fromSource && target?.closest('.react-flow__pane')) {
+    useDropPicker.setState({ open: true, x: point.clientX, y: point.clientY, from: state.fromNode.id })
+  }
+}
 
 let started = false
 
@@ -61,6 +88,7 @@ export default function Home() {
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
+          onConnectEnd={onConnectEnd}
           nodeTypes={nodeMap}
           edgeTypes={{
             default: CustomEdge

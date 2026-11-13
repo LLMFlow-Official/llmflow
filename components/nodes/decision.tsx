@@ -34,8 +34,9 @@ export const OnDisconnect = async (payload: NodeConnectDisconnectPayload, update
 export const Metadata: NodeMetaData = {
     type: 'decision',
     category: 'logic',
+    icon: CircleHelp,
     name: 'Decision',
-    description: 'A node that signifies a decision point in the flow. Only one condition will be effective even if multiple conditions are true.',
+    description: 'Follow one branch based on conditions you write. The first true condition wins; add an Else branch for everything else.',
     tags: ['if', 'question', 'condition'],
     OnConnect,
     OnDisconnect,
@@ -206,5 +207,5 @@ export const Properties = ({ node }: { node: AppNode }) => {
 }
 
 export function Node(props: AppNodeProp) {
-    return <NodeShell {...props} icon={CircleHelp} defaultName={Metadata.name} category={Metadata.category} sourceType='multi' />
+    return <NodeShell {...props} icon={Metadata.icon} defaultName={Metadata.name} category={Metadata.category} sourceType='multi' />
 }

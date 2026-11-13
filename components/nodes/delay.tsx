@@ -14,6 +14,7 @@ type DelayData = NodeData & {
 export const Metadata: NodeMetaData = {
     type: 'delay',
     category: 'logic',
+    icon: Hourglass,
     name: 'Delay',
     description: 'Wait a number of seconds before continuing, e.g. to stay under rate limits',
     tags: ['wait', 'sleep', 'pause', 'timer', 'rate limit'],
@@ -60,5 +61,5 @@ export const Properties = ({ node }: { node: AppNode<DelayData> }) => {
 }
 
 export function Node(props: AppNodeProp) {
-    return <NodeShell {...props} icon={Hourglass} defaultName={Metadata.name} category={Metadata.category} />
+    return <NodeShell {...props} icon={Metadata.icon} defaultName={Metadata.name} category={Metadata.category} />
 }

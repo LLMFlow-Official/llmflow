@@ -18,6 +18,7 @@ type SubFlowData = NodeData & {
 export const Metadata: NodeMetaData = {
     type: 'sub_flow',
     category: 'logic',
+    icon: Workflow,
     name: 'Sub-flow',
     description: 'Run another saved flow as one step and use its Final Output values',
     tags: ['sub-flow', 'subflow', 'reuse', 'call', 'flow', 'function', 'module'],
@@ -85,5 +86,5 @@ export const Properties = ({ node }: { node: AppNode<SubFlowData> }) => {
 }
 
 export function Node(props: AppNodeProp) {
-    return <NodeShell {...props} icon={Workflow} defaultName={Metadata.name} category={Metadata.category} />
+    return <NodeShell {...props} icon={Metadata.icon} defaultName={Metadata.name} category={Metadata.category} />
 }

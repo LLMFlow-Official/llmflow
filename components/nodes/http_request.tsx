@@ -24,6 +24,7 @@ type HttpRequestData = NodeData & {
 export const Metadata: NodeMetaData = {
     type: 'http_request',
     category: 'io',
+    icon: Network,
     name: 'HTTP Request',
     description: 'Call any web API and use its response in later nodes',
     tags: ['http', 'api', 'fetch', 'request', 'webhook', 'rest', 'url'],
@@ -145,5 +146,5 @@ export const Properties = ({ node }: { node: AppNode<HttpRequestData> }) => {
 }
 
 export function Node(props: AppNodeProp) {
-    return <NodeShell {...props} icon={Network} defaultName={Metadata.name} category={Metadata.category} />
+    return <NodeShell {...props} icon={Metadata.icon} defaultName={Metadata.name} category={Metadata.category} />
 }

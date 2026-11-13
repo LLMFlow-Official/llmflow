@@ -25,6 +25,7 @@ type Citation = { url: string, title?: string }
 export const Metadata: NodeMetaData = {
     type: 'web_search',
     category: 'ai',
+    icon: Globe,
     name: 'Web Search',
     description: 'Ask a model (OpenAI, Claude or Gemini) to search the web and answer with links to its sources',
     tags: ['search', 'web', 'internet', 'browse', 'research', 'citations', 'OpenAI', 'Claude', 'Gemini'],
@@ -124,5 +125,5 @@ export const Properties = ({ node }: { node: AppNode<WebSearchData> }) => {
 }
 
 export function Node(props: AppNodeProp) {
-    return <NodeShell {...props} icon={Globe} defaultName={Metadata.name} category={Metadata.category} summary={modelSummary(props.data as ModelNodeData)} />
+    return <NodeShell {...props} icon={Metadata.icon} defaultName={Metadata.name} category={Metadata.category} summary={modelSummary(props.data as ModelNodeData)} />
 }

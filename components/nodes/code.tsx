@@ -21,6 +21,7 @@ return { count: words.length, upper: start.topic.toUpperCase() }`
 export const Metadata: NodeMetaData = {
     type: 'code',
     category: 'data',
+    icon: Code2,
     name: 'Code',
     description: 'Run a small JavaScript function on earlier values and return a result',
     tags: ['code', 'javascript', 'js', 'script', 'function', 'transform'],
@@ -107,5 +108,5 @@ export const Properties = ({ node }: { node: AppNode<CodeData> }) => {
 }
 
 export function Node(props: AppNodeProp) {
-    return <NodeShell {...props} icon={Code2} defaultName={Metadata.name} category={Metadata.category} />
+    return <NodeShell {...props} icon={Metadata.icon} defaultName={Metadata.name} category={Metadata.category} />
 }

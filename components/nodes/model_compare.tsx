@@ -30,6 +30,7 @@ const labelOf = (c: Contender) => findModel(c.model)?.label || c.model || '(no m
 export const Metadata: NodeMetaData = {
     type: 'model_compare',
     category: 'ai',
+    icon: Columns3,
     name: 'Model Compare',
     description: 'Send the same prompt to several models at once and compare answers, cost and speed',
     tags: ['compare', 'models', 'benchmark', 'evaluate', 'A/B', 'OpenAI', 'Claude', 'Gemini'],
@@ -148,5 +149,5 @@ export const Properties = ({ node }: { node: AppNode<CompareData> }) => {
 }
 
 export function Node(props: AppNodeProp) {
-    return <NodeShell {...props} icon={Columns3} defaultName={Metadata.name} category={Metadata.category} />
+    return <NodeShell {...props} icon={Metadata.icon} defaultName={Metadata.name} category={Metadata.category} />
 }
