@@ -10,7 +10,7 @@ function StreamingCard({ name, text }: { name: string, text: string }) {
         if (ref.current) ref.current.scrollTop = ref.current.scrollHeight
     }, [text])
     return (
-        <Card className="p-3 border-info border-2" aria-live="polite">
+        <Card className="p-3 border-info border-2">
             <div className="flex items-center gap-2 text-sm font-bold">
                 <Loader size={14} className="animate-spin" /> {name} is writing…
             </div>

@@ -6,18 +6,27 @@ import remarkGfm from "remark-gfm";
 import { track } from "@/lib/analytics";
 import { useToast } from "@/hooks/use-toast";
 
+// Links in model output open in a new tab, so the flow stays open.
+const components = { a: (props: React.ComponentProps<'a'>) => <a {...props} target="_blank" rel="noopener noreferrer" /> }
+
 /** Shows model output as formatted Markdown, with a copy button and a larger view. */
-export default function MarkdownViewer({ text }: { text: string }) {
+export default function MarkdownViewer({ text, size = 'small' }: { text: string, size?: 'small' | 'large' }) {
     const { toast } = useToast()
     const copy = async () => {
-        await navigator.clipboard.writeText(text)
-        toast({ title: 'Copied', duration: 1500 })
+        try {
+            await navigator.clipboard.writeText(text)
+            toast({ title: 'Copied', duration: 1500 })
+        } catch {
+            toast({ title: "Couldn't copy", description: 'Your browser blocked the clipboard. Open the larger view and select the text instead.', variant: 'destructive' })
+        }
     }
 
     return (
         <div className='rounded-md relative group'>
-            <div className="bg-accent px-2 py-1 text-xs rounded-md max-h-40 overflow-y-auto border border-border RichEditor-root markdown-inline wrap-break-word">
-                <Markdown remarkPlugins={[remarkGfm]}>{text}</Markdown>
+            <div className={size == 'large'
+                ? "bg-background px-3 py-2 text-sm rounded-md max-h-96 overflow-y-auto border border-border RichEditor-root wrap-break-word"
+                : "bg-accent px-2 py-1 text-xs rounded-md max-h-40 overflow-y-auto border border-border RichEditor-root markdown-inline wrap-break-word"}>
+                <Markdown remarkPlugins={[remarkGfm]} components={components}>{text}</Markdown>
             </div>
             <div className="absolute top-1 right-1 flex gap-0.5 opacity-60 group-hover:opacity-100 focus-within:opacity-100">
                 <Button toolTip="Copy" aria-label="Copy text" variant="ghost" className="h-6 w-6" size="icon" onClick={copy}>
@@ -35,7 +44,7 @@ export default function MarkdownViewer({ text }: { text: string }) {
                             <DialogDescription>Formatted as Markdown.</DialogDescription>
                         </DialogHeader>
                         <div className="border border-border p-3 max-h-[65vh] overflow-y-auto rounded-md RichEditor-root">
-                            <Markdown remarkPlugins={[remarkGfm]}>{text}</Markdown>
+                            <Markdown remarkPlugins={[remarkGfm]} components={components}>{text}</Markdown>
                         </div>
                         <DialogFooter>
                             <Button onClick={copy}>Copy</Button>

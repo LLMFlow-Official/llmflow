@@ -3,11 +3,14 @@ import { Card } from "../ui/card";
 import { LayoutGrid, Play, Scan, Square } from "lucide-react";
 import { useReactFlow } from "@xyflow/react";
 import { useCallback, useEffect } from "react";
+import { create } from "zustand";
 import { useFlowStore, useRuntimeStore } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "../ui/toast";
 import { openSettings } from "./settings";
 import { blockingProblems, ProblemsButton, useFlowProblems } from "../node_utils/flow_problems";
+import { usePanelTab } from "../node_utils/panel_tab";
+import { RunInputs } from "./run_inputs";
 import UndoRedo from "../node_utils/undo_redo";
 import FindNode from "../node_utils/find_node";
 import { Button } from "../ui/button";
@@ -45,6 +48,10 @@ export default function Controllers() {
   );
 }
 
+/** Lets other parts of the app start a run the same way the Run button does (e.g. History). */
+export const useRunRequest = create<{ count: number }>()(() => ({ count: 0 }))
+export const requestRun = () => useRunRequest.setState(s => ({ count: s.count + 1 }))
+
 /** The round Run / Stop button in the corner of the canvas. Ctrl/⌘ + Enter does the same. */
 export function RunButton() {
   const { toast } = useToast()
@@ -59,6 +66,12 @@ export function RunButton() {
     }
     useFlowStore.getState().clearSelection()
     return runInEditor({
+      // Say how it went when the log is not in view.
+      onFinished: (summary) => {
+        if (usePanelTab.getState().tab == 'log' && document.querySelector('#panel-log:not([hidden])')) return
+        if (summary.status == 'completed') toast({ title: 'Run finished', description: summary.finalOutputs.length ? 'The result is in the Run log.' : undefined, duration: 3000 })
+        else if (summary.status == 'stopped') toast({ title: 'Run stopped', duration: 3000 })
+      },
       notify: (title, description, options) => toast({
         title,
         description,
@@ -70,6 +83,9 @@ export function RunButton() {
       }),
     })
   }, [toast])
+
+  // Runs requested elsewhere (History's "Run again").
+  useEffect(() => useRunRequest.subscribe(() => { run() }), [run])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -89,6 +105,7 @@ export function RunButton() {
   return (
     <div className="absolute right-4 bottom-[calc(var(--drawer-h,0px)+1rem)] z-45 flex items-center gap-2">
       <ProblemsButton />
+      <RunInputs onRun={run} disabled={isRunning} />
       <Button
         className={cn(
           "h-12 rounded-full px-5 gap-2 text-base font-semibold shadow-lg",

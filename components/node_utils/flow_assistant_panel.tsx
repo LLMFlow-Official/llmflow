@@ -1,13 +1,20 @@
 import { useEffect, useRef, useState } from "react";
 import { useReactFlow } from "@xyflow/react";
 import { useShallow } from "zustand/shallow";
-import { FilePlus2, Loader2, SendHorizontal, Sparkles, Square, Trash, Undo2 } from "lucide-react";
+import { FilePlus2, Loader2, RotateCcw, SendHorizontal, Sparkles, Square, Trash, Undo2 } from "lucide-react";
 import { useLibraryStore, createFlow } from "@/lib/library";
 import { useSettingStore } from "@/lib/store";
 import { availableProviders, providerLabel } from "@/lib/providers";
 import { findModel, modelsFor, ProviderId } from "@/lib/openai/models";
 import { ChatMessage, useAssistantStore } from "@/lib/assistant/assistant_store";
-import { askAssistant, assistantModel, stopAssistant, undoAssistantChange } from "@/lib/assistant/run_assistant";
+import { askAssistant, assistantModel, editedSince, stopAssistant, undoAssistantChange } from "@/lib/assistant/run_assistant";
+import { chatOf } from "@/lib/assistant/assistant_store";
+import { AppNode, useFlowStore } from "@/lib/store";
+import { getNodeDetails } from "@/lib/nodes";
+import { MOD_KEY } from "@/lib/utils";
+import { askToConfirm } from "../ui/confirm_host";
+import { openSettings } from "../layout/settings";
+import { selectStepKeepingTab } from "./panel_tab";
 import { Button } from "../ui/button";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "../ui/select";
 import MarkdownViewer from "../ui/markdown_viewer";
@@ -22,24 +29,51 @@ function plural(count: number, word: string) {
     return `${count} ${word}${count == 1 ? '' : 's'}`
 }
 
+/** "2 steps added, 1 changed", with the added and changed steps as links to the canvas. */
 function ChangeSummary({ message }: { message: ChatMessage }) {
+    const nodes = useFlowStore(s => s.nodes)
+    const { fitView } = useReactFlow()
     const c = message.changes
     if (!c) return null
     const parts = [
-        c.added.length ? `${plural(c.added.length, 'node')} added` : '',
+        c.added.length ? `${plural(c.added.length, 'step')} added` : '',
         c.changed.length ? `${c.changed.length} changed` : '',
         c.removed.length ? `${c.removed.length} removed` : '',
     ].filter(Boolean)
-    return <span>{parts.length ? parts.join(', ') : 'Connections updated'}</span>
+    const linked = [...c.added, ...c.changed].map(id => nodes.find(n => n.id == id)).filter((n): n is AppNode => !!n).slice(0, 8)
+    const show = (id: string) => { fitView({ nodes: [{ id }], maxZoom: 1.3, duration: 300 }); selectStepKeepingTab(id) }
+    return (
+        <span className="flex flex-col gap-1">
+            <span>{parts.length ? parts.join(', ') : 'Connections updated'}</span>
+            {linked.length && !message.undone ? (
+                <span className="flex flex-wrap gap-1">
+                    {linked.map(n => (
+                        <button key={n.id} className="rounded border border-border px-1.5 py-0.5 hover:bg-muted text-foreground" onClick={() => show(n.id)}>
+                            {(n.data.name as string) || getNodeDetails(n.type).name}
+                        </button>
+                    ))}
+                </span>
+            ) : null}
+        </span>
+    )
 }
 
-function Message({ flowId, message, last }: { flowId: string, message: ChatMessage, last: boolean }) {
+function Message({ flowId, message, last, onRetry }: { flowId: string, message: ChatMessage, last: boolean, onRetry?: (text: string) => void }) {
     const busy = useAssistantStore(s => s.busy)
     if (message.role == 'user') {
         return <div className="self-end max-w-[85%] rounded-lg bg-primary text-primary-foreground px-3 py-2 text-sm whitespace-pre-wrap wrap-break-word">{message.text}</div>
     }
     if (message.role == 'error') {
-        return <div role="alert" className="self-start max-w-[95%] rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-sm">{message.text}</div>
+        return (
+            <div role="alert" className="self-start max-w-[95%] rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-sm flex flex-col gap-2">
+                <span>{message.text}</span>
+                {message.retry && message.text != 'Stopped.' ? (
+                    <Button variant="outline" size="sm" className="self-start h-7 gap-1" disabled={busy} onClick={() => onRetry?.(message.retry!)}>
+                        <RotateCcw size={12} /> Try again
+                    </Button>
+                ) : null}
+            </div>
+        )
     }
     return (
         <div className="self-start max-w-[95%] rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm flex flex-col gap-2 min-w-0">
@@ -61,8 +95,17 @@ function Message({ flowId, message, last }: { flowId: string, message: ChatMessa
                                 variant="ghost" size="sm" className="ml-auto h-6 px-2 gap-1"
                                 disabled={busy || !last}
                                 aria-label="Undo this change"
-                                toolTip={last ? "Put the flow back as it was before this change" : "Only the latest change can be undone here (Ctrl+Z still works)"}
-                                onClick={() => undoAssistantChange(flowId, message)}
+                                toolTip={last ? "Put the flow back as it was before this change" : `Only the latest change can be undone here (${MOD_KEY}+Z still works)`}
+                                onClick={async () => {
+                                    // Undo restores the flow from before the change, so edits made since then would be lost.
+                                    if (editedSince(message) && !(await askToConfirm({
+                                        title: 'Undo the assistant\'s change?',
+                                        description: 'You changed the flow after this. Undo puts it back as it was before the assistant\'s change, so your later edits are removed too.',
+                                        confirmLabel: 'Undo anyway',
+                                        destructive: true,
+                                    }))) return
+                                    undoAssistantChange(flowId, message)
+                                }}
                             >
                                 <Undo2 size={12} /> Undo
                             </Button>
@@ -122,9 +165,21 @@ export default function FlowAssistantPanel() {
     // Only the latest change can be undone from the chat; older ones would drop the changes made after them.
     const lastChangeId = messages.findLast(m => m.before)?.id
 
+    // Load this flow's chat from the browser after a reload.
+    useEffect(() => { if (currentId) chatOf(currentId) }, [currentId])
+
     useEffect(() => {
         listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' })
     }, [messages.length, busy])
+
+    // After an error, the request goes back in the box so it can be changed or sent again.
+    const retry = (request: string) => { setText(''); send(request) }
+    const lastError = messages.at(-1)?.role == 'error' ? messages.at(-1) : undefined
+    const [restoredFor, setRestoredFor] = useState<string>()
+    if (lastError && lastError.id != restoredFor && lastError.retry && lastError.text != 'Stopped.') {
+        setRestoredFor(lastError.id)
+        if (!text) setText(lastError.retry)
+    }
 
     const send = (value = text) => {
         if (!value.trim() || busy) return
@@ -146,7 +201,7 @@ export default function FlowAssistantPanel() {
                 </Button>
             </div>
 
-            <div ref={listRef} className="flex-1 min-h-0 overflow-y-auto p-3 flex flex-col gap-3" aria-live="polite">
+            <div ref={listRef} className="flex-1 min-h-0 overflow-y-auto p-3 flex flex-col gap-3">
                 {!messages.length ? (
                     <div className="flex flex-col gap-3 text-sm text-muted-foreground">
                         <div className="flex items-center gap-2 text-foreground font-semibold"><Sparkles size={16} /> Build with chat</div>
@@ -158,14 +213,21 @@ export default function FlowAssistantPanel() {
                                 ))}
                             </div>
                         ) : (
-                            <p className="rounded-md border border-border p-3">Add an API key in Settings to use the assistant, or turn on the Test API in Developer mode to try it with an example flow.</p>
+                            <div className="rounded-md border border-border p-3 flex flex-col gap-2">
+                                <p>The assistant needs an API key for OpenAI, Claude or Gemini. Or try it now with sample answers: it then builds a small example flow.</p>
+                                <div className="flex flex-wrap gap-2">
+                                    <Button size="sm" onClick={openSettings}>Open Settings</Button>
+                                    <Button size="sm" variant="outline" onClick={turnOnSampleAnswers}>Use sample answers</Button>
+                                </div>
+                            </div>
                         )}
                     </div>
-                ) : messages.map(m => <Message key={m.id} flowId={currentId} message={m} last={m.id == lastChangeId} />)}
+                ) : messages.map(m => <Message key={m.id} flowId={currentId} message={m} last={m.id == lastChangeId} onRetry={retry} />)}
                 {busy ? (
-                    <div className="self-start flex items-center gap-2 text-sm text-muted-foreground" role="status">
-                        <Loader2 size={14} className="animate-spin" />
-                        {status}{received ? ` (${Math.round(received / 1000 * 10) / 10}k characters)` : '…'}
+                    <div className="self-start flex items-center gap-2 text-sm text-muted-foreground">
+                        <Loader2 size={14} className="motion-safe:animate-spin" aria-hidden />
+                        <span role="status">{status}…</span>
+                        {received ? <span aria-hidden>({Math.round(received / 1000 * 10) / 10}k characters)</span> : null}
                     </div>
                 ) : null}
             </div>
@@ -196,3 +258,9 @@ export default function FlowAssistantPanel() {
 }
 
 const EMPTY: ChatMessage[] = []
+
+/** Turns on the Test API (sample answers instead of real requests). */
+function turnOnSampleAnswers() {
+    const { devMode, setDevMode } = useSettingStore.getState()
+    setDevMode({ showTreads: false, showPropData: false, ...devMode, testOpenAPI: true })
+}

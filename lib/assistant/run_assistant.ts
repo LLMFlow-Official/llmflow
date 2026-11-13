@@ -9,7 +9,7 @@ import { StoppedError } from '../errors'
 import { track } from '../analytics'
 import { randomId } from '../utils'
 import { buildSystemPrompt, buildUserMessage, describeFlow, fakeAssistantReply, normalizeFlow, parseReply, priorTurns } from './flow_assistant'
-import { ChatMessage, useAssistantStore } from './assistant_store'
+import { ChatMessage, chatOf, useAssistantStore } from './assistant_store'
 
 /** Preferred order when the user has not picked a model for the assistant. */
 const PREFERRED: ProviderId[] = ['anthropic', 'openai', 'google', 'compatible']
@@ -42,7 +42,7 @@ export async function askAssistant(text: string, onApplied?: () => void) {
     const flowId = useLibraryStore.getState().currentId
     if (!flowId || store.busy || !text.trim()) return
     const choice = assistantModel()
-    const history = priorTurns(store.chats[flowId] || [])
+    const history = priorTurns(chatOf(flowId))
     store.add(flowId, { id: randomId(), role: 'user', text })
 
     const abort = new AbortController()
@@ -125,6 +125,7 @@ export async function askAssistant(text: string, onApplied?: () => void) {
                 role: 'assistant',
                 text: reply.reply || 'Done.',
                 changes: result.changes,
+                after: flowSignature(result.nodes as AppNode[], result.edges as Edge[]),
                 warnings: result.issues.length ? result.issues : undefined,
                 cost: costText,
                 before,
@@ -135,7 +136,7 @@ export async function askAssistant(text: string, onApplied?: () => void) {
         }
     } catch (error) {
         const stopped = error instanceof StoppedError || abort.signal.aborted
-        useAssistantStore.getState().add(flowId, { id: randomId(), role: 'error', text: stopped ? 'Stopped.' : (error as Error).message })
+        useAssistantStore.getState().add(flowId, { id: randomId(), role: 'error', text: stopped ? 'Stopped.' : (error as Error).message, retry: text })
     } finally {
         useAssistantStore.setState({ busy: false, status: '', received: 0, abort: undefined })
     }
@@ -143,6 +144,18 @@ export async function askAssistant(text: string, onApplied?: () => void) {
 
 export function stopAssistant() {
     useAssistantStore.getState().abort?.abort()
+}
+
+/** What the flow contains (not where steps are), to notice edits made after the assistant's change. */
+export function flowSignature(nodes: AppNode[], edges: Edge[]): string {
+    return JSON.stringify([nodes.map(n => [n.id, n.type, n.data]), edges.map(e => [e.source, e.target])])
+}
+
+/** True when the flow was edited by hand after this reply changed it (Undo would throw those edits away). */
+export function editedSince(message: ChatMessage): boolean {
+    if (!message.after) return false
+    const { nodes, edges } = useFlowStore.getState()
+    return flowSignature(nodes, edges) != message.after
 }
 
 /** Puts the flow back as it was before a reply's change. */

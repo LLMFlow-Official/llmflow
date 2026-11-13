@@ -1,7 +1,17 @@
+/** What to do about an HTTP error, in plain words; the provider's own message follows it. */
+export function adviceFor(status: number): string | undefined {
+    if (status == 401 || status == 403) return 'Your API key was rejected. Check it in Settings.'
+    if (status == 404) return "The provider couldn't find this model or address. Check the model name (and the server address for your own server)."
+    if (status == 429) return 'Rate limit or quota reached. Wait a moment, lower "AI requests at the same time" in Settings, or add retries under On failure. If it keeps happening, check your plan and billing with the provider.'
+    if (status >= 500) return 'The provider had a problem on their side. Try again in a moment.'
+    return undefined
+}
+
 /** An HTTP error from a provider, with what the retry logic needs. */
 export class ProviderHttpError extends Error {
     constructor(message: string, public status: number, public retryAfterMs?: number) {
-        super(message)
+        const advice = adviceFor(status)
+        super(advice ? `${advice} (${message})` : message)
     }
 
     get retryable() {

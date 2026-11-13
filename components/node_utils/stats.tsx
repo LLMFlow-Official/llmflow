@@ -1,7 +1,6 @@
 import { useSettingStore } from "@/lib/store";
-import { ArrowUpDown, DollarSign, MoveUp, MoveDown, Timer } from "lucide-react";
+import { DollarSign, MoveUp, MoveDown, Timer } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { NormalizedUsage, totalInput } from "@/lib/openai/models";
 
 export type StatsProps = {
@@ -17,11 +16,20 @@ export type StatsProps = {
     amount: number | null,
     /** The amount is a lower bound because some requests had unknown prices */
     costIncomplete?: boolean
+    /** Say that the Test API is on (once, at the top of the log). */
+    testNotice?: boolean
 }
 
-export function Stats({ startTime, endTime, inToken, outToken, cachedToken, reasoningToken, amount, costIncomplete }: StatsProps) {
+/** "$0.0012", "$1.25"; tiny amounts as "<$0.0001". */
+export function formatCost(amount: number): string {
+    if (amount == 0) return '$0'
+    if (amount < 0.0001) return '<$0.0001'
+    return `$${amount.toFixed(amount < 1 ? 4 : 2)}`
+}
+
+export function Stats({ startTime, endTime, inToken, outToken, cachedToken, reasoningToken, amount, costIncomplete, testNotice }: StatsProps) {
     const isTestAPI = useSettingStore((state) => state.devMode?.testOpenAPI || false)
-    const covetedAmount = amount === null ? 'Unknown' : `${String(amount.toFixed(6)).padStart(7, '0')}${costIncomplete ? '+' : ''}`
+    const cost = amount === null ? 'Unknown' : `${formatCost(amount)}${costIncomplete ? '+' : ''}`
     const costTooltip = amount === null
         ? 'Cost in USD (unknown: this model is not in the price list)'
         : costIncomplete ? 'Cost in USD (lower bound: some requests used models with unknown prices)' : 'Cost in USD'
@@ -47,13 +55,12 @@ export function Stats({ startTime, endTime, inToken, outToken, cachedToken, reas
 
     return (
         <div className="mt-3">
-            {isTestAPI ? <span className="font-semibold text-warning text-xs">Currently you are using Test API</span> : null}
-            <div className="grid sm:grid-cols-3 xl:grid-cols-5 gap-2 text-xs bg-accent p-2 rounded-md flex-wrap border border-border">
-                <Tooltip><TooltipTrigger><div className="flex items-center gap-1"><MoveUp size={16} /> {inToken}</div></TooltipTrigger><TooltipContent>Input Token Count{cachedToken ? ` (${cachedToken} cached)` : ''}</TooltipContent></Tooltip>
-                <Tooltip><TooltipTrigger><div className="flex items-center gap-1"><MoveDown size={16} /> {outToken}</ div></TooltipTrigger><TooltipContent>Output Token Count{reasoningToken ? ` (${reasoningToken} reasoning)` : ''}</TooltipContent></Tooltip>
-                <Tooltip><TooltipTrigger><div className="flex items-center gap-1"><ArrowUpDown size={16} /> {inToken + outToken}</ div></TooltipTrigger><TooltipContent>Total Token Count</TooltipContent></Tooltip>
-                <Tooltip><TooltipTrigger><div className="flex items-center gap-1"><DollarSign size={16} /> {covetedAmount}</div></TooltipTrigger><TooltipContent>{costTooltip}</TooltipContent></Tooltip>
-                <Tooltip><TooltipTrigger><div className="flex items-center gap-1"><Timer size={16} /> {duration}</div></TooltipTrigger><TooltipContent>Duration</TooltipContent></Tooltip>
+            {isTestAPI && testNotice ? <span className="font-semibold text-warning text-xs">Test API: sample answers, no real requests</span> : null}
+            <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs bg-accent px-2 py-1.5 rounded-md border border-border">
+                <span className="flex items-center gap-1" title={`Tokens sent to the model${cachedToken ? ` (${cachedToken} from cache)` : ''}`}><MoveUp size={14} aria-hidden /> {inToken} in</span>
+                <span className="flex items-center gap-1" title={`Tokens the model wrote${reasoningToken ? ` (${reasoningToken} thinking)` : ''}`}><MoveDown size={14} aria-hidden /> {outToken} out</span>
+                <span className="flex items-center gap-1" title={costTooltip}><DollarSign size={14} aria-hidden /> {cost}</span>
+                <span className="flex items-center gap-1" title="Time taken"><Timer size={14} aria-hidden /> {duration}</span>
             </div>
         </div>
     )

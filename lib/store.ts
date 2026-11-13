@@ -96,6 +96,8 @@ export type RuntimeState = {
     amount: number;
     /** True when a node used a model with unknown prices, so `amount` is a lower bound. */
     costIncomplete: boolean;
+    /** How the last run ended (cleared when a run starts). */
+    lastRun?: { status: 'completed' | 'failed' | 'stopped', errors: { nodeId: string, message: string }[] };
     start: () => void;
     stop: () => void;
     log: (payload: NodeLogs) => void;
@@ -203,7 +205,7 @@ export const useRuntimeStore = create<RuntimeState>()(set => ({
         delete streaming[nodeId]
         return { streaming }
     }),
-    start: () => set({ streaming: {},  isRunning: true, startTime: new Date().getTime(), endTime: undefined, inToken: 0, outToken: 0, amount: 0, costIncomplete: false, logs: [], pendingInputs: [], finalOutputs: [] }),
+    start: () => set({ lastRun: undefined, streaming: {},  isRunning: true, startTime: new Date().getTime(), endTime: undefined, inToken: 0, outToken: 0, amount: 0, costIncomplete: false, logs: [], pendingInputs: [], finalOutputs: [] }),
     stop: () => set({ isRunning: false, endTime: new Date().getTime() }),
     requestInput: (request) => set((state) => ({ pendingInputs: [...state.pendingInputs, request] })),
     resolveInput: (nodeId) => set((state) => ({ pendingInputs: state.pendingInputs.filter(x => x.nodeId !== nodeId) })),

@@ -1,5 +1,10 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, GitCompare, Trash } from "lucide-react";
+import { ArrowLeft, ClipboardCopy, GitCompare, History, Play, Trash } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { useFlowStore } from "@/lib/store";
+import { MOD_KEY } from "@/lib/utils";
+import { askToConfirm } from "../ui/confirm_host";
+import { requestRun } from "../layout/controllers";
 import { useShallow } from "zustand/shallow";
 import { deleteRun, RunRecord, runsForFlow, useLibraryStore } from "@/lib/library";
 import { Badge } from "../ui/badge";
@@ -26,6 +31,9 @@ function Compare({ runs, onBack }: { runs: [RunRecord, RunRecord], onBack: () =>
                             <Badge size="small" variant={badge(r.status)} className="w-fit">{r.status}</Badge>
                             <span>{money(r)} · {(r.durationMs / 1000).toFixed(1)}s</span>
                             <span>{r.inTokens} in · {r.outTokens} out tokens</span>
+                            {r.startValues && Object.keys(r.startValues).length ? (
+                                <span className="text-muted-foreground whitespace-pre-wrap wrap-break-word">{Object.entries(r.startValues).map(([k, v]) => `${k}: ${String(v).slice(0, 200)}`).join('\n')}</span>
+                            ) : null}
                         </div>
                     ))}
                 </div>
@@ -47,6 +55,27 @@ function Compare({ runs, onBack }: { runs: [RunRecord, RunRecord], onBack: () =>
 }
 
 /** Past runs of the open flow, kept in this browser (the last 50). */
+/** Puts a past run's inputs into the Start step. */
+function copyInputsToStart(values: Record<string, unknown>) {
+    const { nodes, updateNode } = useFlowStore.getState()
+    const start = nodes.find(n => n.type == 'start')
+    if (!start) return
+    updateNode({ ...start, data: { ...start.data, propertyValues: { ...((start.data.propertyValues as object) || {}), ...values } } })
+}
+
+/** Puts the flow back as it was when this run happened (Undo brings back the current one). */
+async function restore(run: RunRecord) {
+    if (!run.flow) return
+    const yes = await askToConfirm({
+        title: 'Restore this version?',
+        description: `The flow goes back to how it was on ${when(run.startedAt)}. Undo (${MOD_KEY}+Z) brings back the current version.`,
+        confirmLabel: 'Restore',
+    })
+    if (!yes) return
+    useFlowStore.setState({ nodes: run.flow.nodes, edges: run.flow.edges })
+    toast({ title: 'Version restored', duration: 2500 })
+}
+
 export default function RunHistory() {
     const { currentId, historyRevision } = useLibraryStore(useShallow(s => ({ currentId: s.currentId, historyRevision: s.historyRevision })))
     const [runs, setRuns] = useState<RunRecord[]>([])
@@ -67,15 +96,28 @@ export default function RunHistory() {
     }
 
     if (open) {
+        const inputs = open.startValues && Object.keys(open.startValues).length ? open.startValues : undefined
         return (
             <div className="flex flex-col h-full min-h-0">
                 <div className="px-3 border-b border-border flex items-center">
                     <Button variant="ghost" size="sm" className="gap-1 -ml-2" onClick={() => setOpen(undefined)}><ArrowLeft size={14} /> All runs</Button>
                     <span className="ml-auto text-xs text-muted-foreground">{when(open.startedAt)}</span>
                 </div>
-                {open.startValues && Object.keys(open.startValues).length ? (
-                    <div className="px-3 py-2 text-xs border-b border-border">{Object.entries(open.startValues).map(([k, v]) => <div key={k} className="truncate"><b>{k}:</b> {String(v)}</div>)}</div>
-                ) : null}
+                <div className="px-3 py-2 border-b border-border flex flex-col gap-2">
+                    {inputs ? (
+                        <details className="text-xs">
+                            <summary className="cursor-pointer font-semibold">Inputs</summary>
+                            <div className="mt-1 flex flex-col gap-1">{Object.entries(inputs).map(([k, v]) => <div key={k} className="whitespace-pre-wrap wrap-break-word"><b>{k}:</b> {String(v)}</div>)}</div>
+                        </details>
+                    ) : null}
+                    <div className="flex flex-wrap gap-1">
+                        {inputs ? <>
+                            <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={() => { copyInputsToStart(inputs); requestRun() }}><Play size={12} /> Run again with these inputs</Button>
+                            <Button size="sm" variant="ghost" className="h-7 gap-1 text-xs" onClick={() => { copyInputsToStart(inputs); toast({ title: 'Inputs copied to Start', duration: 2000 }) }}><ClipboardCopy size={12} /> Copy inputs to Start</Button>
+                        </> : null}
+                        {open.flow ? <Button size="sm" variant="ghost" className="h-7 gap-1 text-xs" onClick={() => restore(open)}><History size={12} /> Restore this version</Button> : null}
+                    </div>
+                </div>
                 <div className="flex-1 min-h-0">
                     <RunView
                         logs={open.logs}
@@ -89,6 +131,8 @@ export default function RunHistory() {
 
     const toggle = (id: string) => setSelected(s => s.includes(id) ? s.filter(x => x != id) : [...s.slice(-1), id])
     const remove = async (id: string) => {
+        const run = runs.find(r => r.id == id)
+        if (!(await askToConfirm({ title: 'Delete this run?', description: `The run from ${run ? when(run.startedAt) : 'this time'} is removed from the history. This cannot be undone.`, confirmLabel: 'Delete run', destructive: true }))) return
         await deleteRun(id)
         setRuns(x => x.filter(y => y.id != id))
         setSelected(s => s.filter(x => x != id))

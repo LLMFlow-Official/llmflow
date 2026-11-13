@@ -69,6 +69,8 @@ export default function TestCasesDialog({ open, onOpenChange }: { open: boolean,
         return simpleCheck(saved.check, output, expected)
     }
 
+    const hasHumanInput = useFlowStore(st => st.nodes.some(n => n.type == 'human_input'))
+
     const runAll = async () => {
         if (!records.length) return
         cancelled.current = false
@@ -78,13 +80,15 @@ export default function TestCasesDialog({ open, onOpenChange }: { open: boolean,
             if (cancelled.current) break
             setProgress({ done: i, total: records.length })
             const row = records[i]
+            let reason = ''
             const summary = await runInEditor({
                 startValues: Object.fromEntries(used.map(c => [c, row[c]])),
-                notify: () => { },
+                // Remember why the flow could not start; errors of single rows are shown in the table.
+                notify: (title, description) => { if (!reason) reason = description || title },
                 saveHistory: false,
             })
             if (!summary) {
-                toast({ title: 'The flow could not start', description: 'Fix the flow and try again.' })
+                toast({ title: 'The flow could not start', description: reason || 'Fix the flow and try again.', variant: 'destructive' })
                 break
             }
             const output = summary.finalOutputs.find(f => f.name == outputName)?.value ?? summary.finalOutputs[0]?.value ?? ''
@@ -139,6 +143,7 @@ export default function TestCasesDialog({ open, onOpenChange }: { open: boolean,
                     <DialogDescription>
                         Run this flow once per row. Columns named like the Start inputs ({inputs.length ? inputs.join(', ') : 'none yet'}) fill them; an &quot;expected&quot; column is used by the check.
                     </DialogDescription>
+                    {hasHumanInput ? <p className="text-xs text-warning">This flow has a Human Input step, which waits for an answer. Test runs can&apos;t answer it, so remove it (or test a copy without it).</p> : null}
                 </DialogHeader>
                 <div className="flex flex-col gap-1">
                     <div className="flex items-center">

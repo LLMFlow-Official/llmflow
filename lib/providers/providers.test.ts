@@ -183,3 +183,16 @@ describe('costs across providers', () => {
         expect(costOf({ input: 150_000, cachedInput: 0, cacheWrite: 0, output: 0 }, 'claude-haiku-5-5')?.toNumber()).toBeCloseTo(150_000 * 0.5 / 1e6, 12)
     })
 })
+
+describe('provider errors', () => {
+    it('start with what to do, followed by what the provider said', async () => {
+        const { errorFromResponse } = await import('./http')
+        const rejected = await errorFromResponse(new Response(JSON.stringify({ error: { message: 'Incorrect API key provided' } }), { status: 401 }), 'OpenAI')
+        expect(rejected.message).toBe('Your API key was rejected. Check it in Settings. (OpenAI returned 401: Incorrect API key provided)')
+        const limited = await errorFromResponse(new Response('slow down', { status: 429, headers: { 'retry-after': '2' } }), 'Anthropic')
+        expect(limited.message).toMatch(/^Rate limit or quota reached/)
+        expect(limited.retryAfterMs).toBe(2000)
+        const bad = await errorFromResponse(new Response('{"error":{"message":"max_tokens too large"}}', { status: 400 }), 'Google')
+        expect(bad.message).toBe('Google returned 400: max_tokens too large')
+    })
+})

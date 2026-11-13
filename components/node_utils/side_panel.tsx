@@ -39,6 +39,7 @@ const TABS: { id: PanelTab, label: string }[] = [
  */
 export default function SidePanel() {
     const tab = usePanelTab(s => s.tab)
+    const logUnread = usePanelTab(s => s.logUnread)
     const selectedNode = useFlowStore((state) => state.selectedNode)
     const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({})
     useEscapeToDeselect()
@@ -72,6 +73,7 @@ export default function SidePanel() {
                         onClick={() => showPanelTab(id)}
                     >
                         {label}
+                        {id == 'log' && logUnread && active != 'log' ? <span className="ml-1.5 inline-block w-2 h-2 rounded-full bg-info align-middle" aria-label="(new)" /> : null}
                     </button>
                 ))}
                 {selectedNode && active == 'step' ? (

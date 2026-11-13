@@ -32,6 +32,8 @@ export type RunRecord = {
     finalOutputs: FinalOutput[]
     logs: NodeLogs[]
     startValues?: Record<string, unknown>
+    /** The flow as it was when it ran (runs saved since this was added), for "Restore this version". */
+    flow?: { nodes: AppNode[], edges: Edge[] }
 }
 
 const DB_NAME = 'llmflow'

@@ -52,7 +52,12 @@ export const Process = async (context: AppContext, node: AppNode<HumanInputData>
     })
 
     if (answer === undefined) return []
-    if (mode == 'approve' && answer === null) throw Error("Rejected")
+    if (mode == 'approve' && answer === null) {
+        // A choice, not a failure: the steps after this one are skipped.
+        controller.log({ id: node.id, type: 'warning', title: 'Rejected: the steps after this were skipped', nodeType: node.type })
+        context[node.id] = { value: '', approved: 'false' }
+        return []
+    }
 
     context[node.id] = {
         name: node.data.name,

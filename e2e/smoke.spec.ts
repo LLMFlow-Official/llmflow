@@ -40,7 +40,7 @@ test('runs a template flow with the Test API and keeps it in history', async ({ 
     await expect(page.getByLabel('Done').first()).toBeVisible()
 
     await page.getByRole('tab', { name: 'History' }).click()
-    await expect(page.getByText('completed').first()).toBeVisible()
+    await expect(page.locator('#panel-history').getByText('completed').first()).toBeVisible()
     expect(errors).toEqual([])
 })
 
@@ -69,7 +69,7 @@ test('builds a flow by chatting and undoes the change', async ({ page }) => {
     await box.fill('Translate emails into French')
     await box.press('Enter')
     await expect(page.getByText(/here is a simple example flow/)).toBeVisible()
-    await expect(page.getByText('2 nodes added')).toBeVisible()
+    await expect(page.getByText('2 steps added')).toBeVisible()
     await expect(page.getByRole('button', { name: 'Flows menu' })).toContainText('Translate emails into French')
 
     await page.getByRole('button', { name: 'Run the flow' }).click()
@@ -102,7 +102,7 @@ test('answering a question with Cmd/Ctrl+Enter keeps the run going', async ({ pa
     await expect(page.getByText('Hello Ada').first()).toBeVisible()
     await expect(page.getByRole('button', { name: 'Run the flow' })).toBeVisible()
     await page.getByRole('tab', { name: 'History' }).click()
-    await expect(page.getByText('completed').first()).toBeVisible()
+    await expect(page.locator('#panel-history').getByText('completed').first()).toBeVisible()
 })
 
 test('selecting a step opens its settings without hiding the other tabs', async ({ page }) => {
@@ -173,6 +173,24 @@ test('every template is ready to run', async ({ page }) => {
         await newFlowFromTemplate(page, template)
         await expect(page.getByRole('button', { name: /problems? in this flow/ }), template).toHaveCount(0)
     }
+})
+
+test('runs with inputs typed next to the Run button, then again from History', async ({ page }) => {
+    await openApp(page)
+    await newFlowFromTemplate(page, 'Summarize a text')
+    await page.getByRole('button', { name: 'Inputs for this run' }).click()
+    const box = page.getByRole('dialog').getByRole('textbox').first()
+    await box.fill('A short story about a cat.')
+    await page.getByRole('button', { name: 'Run with these inputs' }).click()
+    await expect(page.getByRole('status').filter({ hasText: 'Completed' })).toBeVisible()
+
+    await page.getByRole('tab', { name: 'History' }).click()
+    await page.locator('#panel-history').getByText('completed').first().click()
+    await expect(page.getByText('A short story about a cat.')).toBeAttached()
+    await page.getByRole('button', { name: 'Run again with these inputs' }).click()
+    await page.getByRole('tab', { name: 'History' }).click()
+    await page.getByRole('button', { name: 'All runs' }).click()
+    await expect(page.locator('#panel-history').getByText('completed')).toHaveCount(2)
 })
 
 test('has no serious accessibility problems', async ({ page }) => {

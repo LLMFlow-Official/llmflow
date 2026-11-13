@@ -49,6 +49,8 @@ export async function runInEditor(options: {
     edges?: Edge[]
     startValues?: Record<string, unknown>
     notify: (title: string, description?: string, options?: { error?: boolean }) => void
+    /** Called once the run has ended (not when it could not start). */
+    onFinished?: (summary: RunSummary) => void
     saveHistory?: boolean
 }): Promise<RunSummary | null> {
     if (running || useRuntimeStore.getState().isRunning) return null
@@ -122,6 +124,9 @@ export async function runInEditor(options: {
         errors,
     }
 
+    useRuntimeStore.setState({ lastRun: { status: summary.status, errors } })
+    options.onFinished?.(summary)
+
     const flowId = useLibraryStore.getState().currentId
     if (options.saveHistory !== false && flowId) {
         const start = nodes.find(x => x.type == 'start')
@@ -137,6 +142,10 @@ export async function runInEditor(options: {
             finalOutputs: summary.finalOutputs,
             logs: summary.logs,
             startValues: (start?.data as { propertyValues?: Record<string, unknown> } | undefined)?.propertyValues,
+            flow: {
+                nodes: useFlowStore.getState().nodes.map(({ selected, dragging, measured, ...rest }) => { void selected; void dragging; void measured; return rest as AppNode }),
+                edges: useFlowStore.getState().edges,
+            },
         }).then(() => useLibraryStore.setState(s => ({ historyRevision: (s.historyRevision || 0) + 1 }))).catch(console.error)
     }
     return summary
