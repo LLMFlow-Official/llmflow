@@ -16,7 +16,8 @@ export default function FindNode() {
 
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
-            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() == 'k') {
+            // Not inside dialogs, where Ctrl/⌘+K would open this behind them.
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() == 'k' && !(e.target instanceof Element && e.target.closest('[role="dialog"], [role="alertdialog"]'))) {
                 e.preventDefault()
                 setOpen(true)
             }

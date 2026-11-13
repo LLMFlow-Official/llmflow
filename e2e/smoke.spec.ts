@@ -11,7 +11,7 @@ async function openApp(page: Page) {
     await page.addInitScript(() => {
         if (localStorage.getItem('e2e-ready')) return
         localStorage.setItem('e2e-ready', '1')
-        localStorage.setItem('introVersion', '2')
+        localStorage.setItem('introVersion', '3')
         localStorage.setItem('flow-setting-store', JSON.stringify({
             state: { apiKeys: { openai: '', anthropic: '', google: '', compatible: '' }, compatibleBaseUrl: '', rememberKeys: true, analyticsEnabled: false, theme: 'light', maxParallelRequests: 4, requestTimeoutSeconds: 600, devMode: { testOpenAPI: true, showTreads: false, showPropData: false }, accountModels: {} },
             version: 1,
@@ -191,6 +191,21 @@ test('runs with inputs typed next to the Run button, then again from History', a
     await page.getByRole('tab', { name: 'History' }).click()
     await page.getByRole('button', { name: 'All runs' }).click()
     await expect(page.locator('#panel-history').getByText('completed')).toHaveCount(2)
+})
+
+test('a first visit: welcome, an example and a run with sample answers, without a key', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.getByRole('dialog').getByText('1 of 4')).toBeVisible()
+    await page.getByRole('button', { name: 'Skip' }).click()
+    await expect(page.getByText('Ready to start?')).toBeVisible()
+    await page.getByRole('button', { name: 'Try an example' }).click()
+    await expect(page.getByRole('button', { name: 'Flows menu' })).toContainText('Summarize a text')
+    await expect(page.getByRole('button', { name: /Sample answers/ })).toBeVisible()
+
+    await page.getByRole('button', { name: 'Run the flow' }).click()
+    await expect(page.getByText('(Test answer from Summarize)').first()).toBeVisible()
+    const settings = await page.evaluate(() => JSON.parse(localStorage.getItem('flow-setting-store') || '{}').state)
+    expect(settings).toMatchObject({ analyticsAsked: true, analyticsEnabled: false, sampleAnswers: true })
 })
 
 test('has no serious accessibility problems', async ({ page }) => {

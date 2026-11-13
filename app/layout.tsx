@@ -1,9 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
+import { Poppins } from "next/font/google";
 import '@xyflow/react/dist/base.css';
 import "./globals.css";
 import { ReactNode } from "react";
-import AppShell from "@/components/layout/app_shell";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -15,6 +15,17 @@ const geistMono = localFont({
   variable: "--font-geist-mono",
   weight: "100 900",
 });
+
+// Downloaded at build time and served with the app, so visitors' browsers never contact Google.
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-poppins",
+  display: "swap",
+})
+
+// Applies the dark theme before the first paint (the app itself renders after loading).
+const themeScript = `try{var s=(JSON.parse(localStorage.getItem('flow-setting-store')||'{}').state)||{};var t=s.theme||'system';if(t==='dark'||(t==='system'&&matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark');document.documentElement.style.colorScheme='dark'}}catch(e){}`
 
 const description = "Build, test and compare AI workflows without code. Chain prompts across OpenAI, Claude and Gemini, add branches, loops and tools, and see the cost of every step."
 
@@ -41,8 +52,11 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <AppShell>{children}</AppShell>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
+      <body className={`${poppins.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}>
+        {children}
       </body>
     </html>
   );

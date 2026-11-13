@@ -22,7 +22,7 @@ export type FlowProblem = {
 }
 
 export type CheckContext = {
-    /** Whether the user can call this provider (has a key, a server address, or the Test API is on). */
+    /** Whether the user can call this provider (has a key, a server address, or sample answers are on). */
     canUse: (provider: ProviderId) => boolean
     /** Ids of the saved flows (for Sub-flow). */
     savedFlowIds?: string[]
@@ -179,7 +179,7 @@ export function checkFlow(nodes: AppNode[], edges: Edge[], ctx: CheckContext): F
         }
         for (const message of stepProblems(node, edges, ctx)) problems.push({ nodeId: node.id, severity: 'error', message })
         for (const provider of providersOf(node)) {
-            if (!ctx.canUse(provider)) problems.push({ nodeId: node.id, severity: 'error', message: provider == 'compatible' ? 'Add your server address in Settings.' : `Add your ${providerName(provider)} API key in Settings (or try it with the Test API).` })
+            if (!ctx.canUse(provider)) problems.push({ nodeId: node.id, severity: 'error', message: provider == 'compatible' ? 'Add your server address in Settings.' : `Add your ${providerName(provider)} API key in Settings (or turn on Sample answers there to try the flow).` })
         }
         const checks = textsOf(node.data).flatMap(t => checkReferences(t, node.id, nodes, edges))
         for (const check of checks) {

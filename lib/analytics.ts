@@ -13,6 +13,8 @@ let enabled = false
 export function setupAnalytics(allowed: boolean) {
     enabled = allowed
     if (!token || typeof window == 'undefined') return
+    // Nothing is loaded or sent until the visitor has said yes.
+    if (!allowed && !initialized) return
 
     if (!initialized) {
         mixpanel.init(token, {

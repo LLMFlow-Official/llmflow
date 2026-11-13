@@ -48,7 +48,7 @@ export const Process = async (context: AppContext, node: AppNode<TranscriptionDa
     let languages: string[] = []
 
     if (isTestApi()) {
-        if (!node.data.test_output) throw Error("Test Output is required")
+        if (!node.data.test_output) throw Error("Add a sample answer in this step's settings (needed while sample answers are on)")
         text = node.data.test_output
     } else {
         const apiKey = getProviderKey('openai')
@@ -126,7 +126,7 @@ export const Properties = ({ node }: { node: AppNode<TranscriptionData> }) => {
                 <Input id='languages' value={node.data.languages || ''} placeholder='e.g. en, si' onChange={(e) => setValue('languages', e.target.value || undefined)} />
             </div>
             <TemplateField node={node} field='hint' label='Hint (optional)' placeholder='Names or terms that appear in the audio' />
-            <TestOutputField node={node as AppNode} label='Test Transcript' />
+            <TestOutputField node={node as AppNode} label='Sample transcript' />
         </div>
     )
 }

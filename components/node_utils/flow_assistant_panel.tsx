@@ -117,8 +117,8 @@ function Message({ flowId, message, last, onRetry }: { flowId: string, message: 
 }
 
 function ModelPicker() {
-    // Re-render when the choice, the keys or the Test API change (assistantModel() reads them).
-    useSettingStore(useShallow(s => [s.assistantProvider, s.assistantModel, s.apiKeys, s.compatibleBaseUrl, s.devMode?.testOpenAPI]))
+    // Re-render when the choice, the keys or sample answers change (assistantModel() reads them).
+    useSettingStore(useShallow(s => [s.assistantProvider, s.assistantModel, s.apiKeys, s.compatibleBaseUrl, s.sampleAnswers, s.devMode]))
     const usable = availableProviders().filter(p => p != 'compatible')
     const current = assistantModel()
     if (!current) return null
@@ -157,7 +157,7 @@ function ModelPicker() {
 export default function FlowAssistantPanel() {
     const { currentId, currentName } = useLibraryStore(useShallow(s => ({ currentId: s.currentId, currentName: s.currentName })))
     const { messages, busy, status, received } = useAssistantStore(useShallow(s => ({ messages: (currentId && s.chats[currentId]) || EMPTY, busy: s.busy, status: s.status, received: s.received })))
-    useSettingStore(useShallow(s => [s.apiKeys, s.compatibleBaseUrl, s.devMode?.testOpenAPI]))
+    useSettingStore(useShallow(s => [s.apiKeys, s.compatibleBaseUrl, s.sampleAnswers, s.devMode]))
     const [text, setText] = useState('')
     const listRef = useRef<HTMLDivElement>(null)
     const { fitView } = useReactFlow()
@@ -259,8 +259,7 @@ export default function FlowAssistantPanel() {
 
 const EMPTY: ChatMessage[] = []
 
-/** Turns on the Test API (sample answers instead of real requests). */
+/** Turns on sample answers (no real AI requests). */
 function turnOnSampleAnswers() {
-    const { devMode, setDevMode } = useSettingStore.getState()
-    setDevMode({ showTreads: false, showPropData: false, ...devMode, testOpenAPI: true })
+    useSettingStore.getState().setSettings({ sampleAnswers: true })
 }

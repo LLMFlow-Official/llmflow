@@ -14,6 +14,7 @@ import { RunButton } from "./controllers";
 import { ThemeController } from "./theme_toggle";
 import { Button } from "../ui/button";
 import { ConfirmHost } from "../ui/confirm_host";
+import { ShortcutsDialog } from "./shortcuts";
 
 
 export default function BaseLayout({ children }: { children: React.ReactNode }) {
@@ -45,6 +46,7 @@ export default function BaseLayout({ children }: { children: React.ReactNode }) 
             <ReactFlowProvider>
                 <ThemeController />
                 <ConfirmHost />
+                <ShortcutsDialog />
                 {narrow ? (
                     // Phones and narrow windows: the canvas fills the screen and the panel opens from the bottom.
                     // --drawer-h lifts the Run button above the open panel.

@@ -148,7 +148,7 @@ export const Properties = ({ node }: { node: AppNode<CompareData> }) => {
             </div>
             <TemplateField node={node} field='system_prompt' label='System Prompt' placeholder='Optional' />
             <TemplateField node={node} field='prompt' label='Prompt' rich className='h-28' placeholder='{start.question}' />
-            <TestOutputField node={node as AppNode} help='In Test API mode every model returns this text with its name added.' />
+            <TestOutputField node={node as AppNode} help='With sample answers on, every model returns this text with its name added.' />
         </div>
     )
 }

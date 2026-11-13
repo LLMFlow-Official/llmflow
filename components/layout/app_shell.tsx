@@ -17,7 +17,8 @@ import { useSettingStore } from "@/lib/store";
  */
 export default function AppShell({ children }: { children: ReactNode }) {
   const mounted = useIsClient()
-  const analyticsEnabled = useSettingStore((s) => s.analyticsEnabled)
+  // Only after the visitor has answered the question in the welcome screen (or in Settings).
+  const analyticsEnabled = useSettingStore((s) => s.analyticsEnabled && s.analyticsAsked)
 
   useEffect(() => {
     if (mounted) setupAnalytics(analyticsEnabled)

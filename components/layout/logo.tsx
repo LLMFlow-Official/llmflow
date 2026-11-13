@@ -3,7 +3,7 @@ import { Card } from "../ui/card";
 
 export const versionData = {
   version: "2.0.0",
-  introVersion: "2",
+  introVersion: "3",
 }
 
 export default function Logo() {

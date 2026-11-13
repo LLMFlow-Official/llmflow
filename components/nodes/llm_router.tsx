@@ -91,7 +91,7 @@ export const Process = async (context: AppContext, node: AppNode<RouterData>, ne
         ...routes.map(x => `- ${x.name}${x.description ? `: ${x.description}` : ''}`),
     ].filter(Boolean).join('\n')
 
-    const testOutput = node.data.test_output ? JSON.stringify({ route: node.data.test_output.trim(), reason: 'Picked by Test API' }) : undefined
+    const testOutput = node.data.test_output ? JSON.stringify({ route: node.data.test_output.trim(), reason: 'Sample answer' }) : undefined
     const run = await runChat({
         provider: nodeProvider(node.data),
         model: nodeModel(node.data),
@@ -200,7 +200,7 @@ export const Properties = ({ node }: { node: AppNode<RouterData> }) => {
                     </Card>
                 ))}
             </div>
-            <TestOutputField node={node as AppNode} label='Test Route' help='In Test API mode, the router picks the route with this name.' />
+            <TestOutputField node={node as AppNode} label='Sample route' help='With sample answers on, the router picks the route with this name.' />
         </div>
     )
 }

@@ -10,6 +10,8 @@ import CustomEdge from '@/components/node_utils/custom_edge';
 import FlowContextMenu from '@/components/node_utils/flow_context_menu';
 import { initLibrary, useLibraryStore } from '@/lib/library';
 import { useIsDark } from '@/components/layout/theme_toggle';
+import EmptyCanvasHint from '@/components/layout/empty_canvas';
+import AppShell from '@/components/layout/app_shell';
 import { useDropPicker } from '@/components/node_utils/new_node';
 import { connectionProblem } from '@/lib/connections';
 import { toast } from '@/hooks/use-toast';
@@ -61,7 +63,7 @@ function useFlowLibrary() {
   }, [])
 }
 
-export default function Home() {
+function Canvas() {
   useFlowLibrary()
   const { ready, revision } = useLibraryStore(useShallow((s) => ({ ready: s.ready, revision: s.revision })))
   const clearHistory = useTemporalFlowStore((state) => state.clear);
@@ -116,10 +118,16 @@ export default function Home() {
           deleteKeyCode={["Delete", "Backspace"]}
         >
           <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
+          <EmptyCanvasHint />
           <Controls position="bottom-left" showInteractive={false} className="hidden sm:flex" />
           <MiniMap position="bottom-right" pannable zoomable className="bottom-24! hidden md:block" ariaLabel="Overview of the flow" />
         </ReactFlow>
       </FlowContextMenu> : null}
     </div>
   );
+}
+
+/** The app: the editor frame (top bar, panel, Run) around the canvas. Other pages (404) don't get it. */
+export default function Home() {
+  return <AppShell><Canvas /></AppShell>
 }

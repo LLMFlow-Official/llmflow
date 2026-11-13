@@ -1,7 +1,7 @@
 import { cva } from 'class-variance-authority';
 import { cloneDeep, get, set, unset } from 'lodash';
 import { Ban, Check, Clock, Loader2, X } from 'lucide-react';
-import { AppNode, AppNodeProp, useFlowStore, useRuntimeStore, useSettingStore } from '@/lib/store';
+import { AppNode, AppNodeProp, sampleAnswersOn, useFlowStore, useRuntimeStore, useSettingStore } from '@/lib/store';
 import type { NodeCategory, NodeState } from '@/lib/nodes';
 import { findModel } from '@/lib/openai/models';
 import { cn } from '@/lib/utils';
@@ -163,9 +163,9 @@ export function TemplateField({ node, field, label, placeholder, help, rich = fa
     )
 }
 
-/** Shown only in Test API mode: the value the node returns instead of calling the API. */
-export function TestOutputField({ node, label = 'Test Output', type = 'text', help }: { node: AppNode, label?: string, type?: 'text' | 'json', help?: string }) {
-    const isTestAPI = useSettingStore((s) => s.devMode?.testOpenAPI || false)
+/** Shown only when sample answers are on: what the step returns instead of calling the model. */
+export function TestOutputField({ node, label = 'Sample answer', type = 'text', help }: { node: AppNode, label?: string, type?: 'text' | 'json', help?: string }) {
+    const isTestAPI = useSettingStore(sampleAnswersOn)
     const setValue = useNodeSetter(node)
     if (!isTestAPI) return null
     return (

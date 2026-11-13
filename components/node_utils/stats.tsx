@@ -1,4 +1,4 @@
-import { useSettingStore } from "@/lib/store";
+import { sampleAnswersOn, useSettingStore } from "@/lib/store";
 import { DollarSign, MoveUp, MoveDown, Timer } from "lucide-react";
 import { useEffect, useState } from "react";
 import { NormalizedUsage, totalInput } from "@/lib/openai/models";
@@ -16,7 +16,7 @@ export type StatsProps = {
     amount: number | null,
     /** The amount is a lower bound because some requests had unknown prices */
     costIncomplete?: boolean
-    /** Say that the Test API is on (once, at the top of the log). */
+    /** Say that sample answers are on (once, at the top of the log). */
     testNotice?: boolean
 }
 
@@ -28,7 +28,7 @@ export function formatCost(amount: number): string {
 }
 
 export function Stats({ startTime, endTime, inToken, outToken, cachedToken, reasoningToken, amount, costIncomplete, testNotice }: StatsProps) {
-    const isTestAPI = useSettingStore((state) => state.devMode?.testOpenAPI || false)
+    const isTestAPI = useSettingStore(sampleAnswersOn)
     const cost = amount === null ? 'Unknown' : `${formatCost(amount)}${costIncomplete ? '+' : ''}`
     const costTooltip = amount === null
         ? 'Cost in USD (unknown: this model is not in the price list)'
@@ -55,7 +55,7 @@ export function Stats({ startTime, endTime, inToken, outToken, cachedToken, reas
 
     return (
         <div className="mt-3">
-            {isTestAPI && testNotice ? <span className="font-semibold text-warning text-xs">Test API: sample answers, no real requests</span> : null}
+            {isTestAPI && testNotice ? <span className="font-semibold text-warning text-xs">Sample answers: no real AI requests (turn off in Settings)</span> : null}
             <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs bg-accent px-2 py-1.5 rounded-md border border-border">
                 <span className="flex items-center gap-1" title={`Tokens sent to the model${cachedToken ? ` (${cachedToken} from cache)` : ''}`}><MoveUp size={14} aria-hidden /> {inToken} in</span>
                 <span className="flex items-center gap-1" title={`Tokens the model wrote${reasoningToken ? ` (${reasoningToken} thinking)` : ''}`}><MoveDown size={14} aria-hidden /> {outToken} out</span>

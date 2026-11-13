@@ -1,6 +1,6 @@
 import Decimal from "decimal.js-light";
 import type { Controller } from "../nodes";
-import { createStopSignal, useRuntimeStore, useSettingStore } from "../store";
+import { createStopSignal, sampleAnswersOn, useRuntimeStore, useSettingStore } from "../store";
 import { StoppedError } from "../errors";
 import { costOf, getModelStatus, PROVIDERS, ProviderId, totalInput } from "../openai/models";
 import { ProviderHttpError } from "./http";
@@ -40,13 +40,13 @@ export function fakeProvider(output: string): Provider {
 export function getProviderKey(provider: ProviderId): string {
     const key = useSettingStore.getState().apiKeys[provider]
     if (!key && provider != 'compatible') {
-        throw Error(`Add your ${providerLabel(provider)} API key in Settings, or turn on the Test API in Developer mode`)
+        throw Error(`Add your ${providerLabel(provider)} API key in Settings, or turn on Sample answers there to try the flow without one`)
     }
     return key || ''
 }
 
 export function isTestApi(): boolean {
-    return useSettingStore.getState().devMode?.testOpenAPI || false
+    return sampleAnswersOn(useSettingStore.getState())
 }
 
 /** Fails early with a clear message when a node uses a model that has been shut down. */
@@ -133,7 +133,7 @@ function streamingWriter(nodeId: string) {
  */
 export async function runChat(request: ChatRequest, controller: Controller, options: { nodeId: string, testOutput?: string }): Promise<ChatRun> {
     const testMode = isTestApi()
-    if (testMode && !options.testOutput) throw Error("Test Output is required")
+    if (testMode && !options.testOutput) throw Error("Add a sample answer in this step's settings (needed while sample answers are on)")
     const apiKey = testMode ? '' : getProviderKey(request.provider)
     if (!testMode) assertModelAvailable(request.model)
     const provider = testMode ? fakeProvider(options.testOutput!) : providers[request.provider]
@@ -227,6 +227,6 @@ export async function chatDirect(request: ChatRequest, options: { signal: AbortS
 /** Providers the user can use right now: those with a key (or a server address), or all in Test API mode. */
 export function availableProviders(): ProviderId[] {
     const settings = useSettingStore.getState()
-    if (settings.devMode?.testOpenAPI) return PROVIDERS.map(p => p.id)
+    if (sampleAnswersOn(settings)) return PROVIDERS.map(p => p.id)
     return PROVIDERS.map(p => p.id).filter(id => id == 'compatible' ? !!settings.compatibleBaseUrl : !!settings.apiKeys[id])
 }

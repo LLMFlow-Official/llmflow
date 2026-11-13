@@ -181,6 +181,7 @@ export const Properties = ({ node }: { node: AppNode }) => {
                                         <Button
                                             variant="ghost"
                                             size="sm"
+                                            aria-label={`Remove "${val}"`}
                                             onClick={() => handleRemoveFromArray(prop.name, val)}
                                             className="text-danger hover:text-danger/80 p-0.5 h-6 w-6 ml-2"
                                         >
@@ -207,6 +208,7 @@ export const Properties = ({ node }: { node: AppNode }) => {
                         <Button
                             variant="ghost"
                             size="sm"
+                            aria-label={`Delete the input "${prop.name}"`}
                             onClick={() => handleDelete(prop)}
                             className="text-danger hover:text-danger/80 p-0.5 h-6 w-6 ml-auto"
                         >
@@ -243,7 +245,7 @@ export const Properties = ({ node }: { node: AppNode }) => {
                             <SelectItem value="array">Array</SelectItem>
                         </SelectContent>
                     </Select>
-                    <Button className='w-24' size={'icon'} type="submit">
+                    <Button className='w-24' size={'icon'} type="submit" aria-label="Add input">
                         <Plus className='w-4 h-4' />
                     </Button>
                 </div>

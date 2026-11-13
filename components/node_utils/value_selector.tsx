@@ -132,7 +132,7 @@ export default function ValueSelector({ baseNode, onSelect }: { baseNode: AppNod
                                             {selectedNode.outputs[x].description ? <p className="text-xs text-muted-foreground">{selectedNode.outputs[x].description}</p> : null}
                                             {selectedNode.outputs[x].value ? <p className="text-xs text-muted-foreground">Current : {trimStrings(selectedNode.outputs[x].value.toString())}</p> : null}
                                         </div>
-                                        <Button size="icon" variant="ghost" onClick={() => addDynamicValue(selectedNode.node, selectedNode.nodeDetails, x)} ><Plus /></Button>
+                                        <Button size="icon" variant="ghost" aria-label="Insert this value" onClick={() => addDynamicValue(selectedNode.node, selectedNode.nodeDetails, x)} ><Plus /></Button>
                                     </div>
                                 ))}
                             </div>

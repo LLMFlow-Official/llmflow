@@ -126,7 +126,7 @@ export const Properties = ({ node }: { node: AppNode<SemanticSearchData> }) => {
                     setValue('top_k', Number.isFinite(value) && value > 0 ? Math.min(value, 50) : undefined)
                 }} />
             </div>
-            <p className='text-xs text-muted-foreground'>In Test API mode, texts are compared by shared words instead of calling OpenAI.</p>
+            <p className='text-xs text-muted-foreground'>With sample answers on, texts are compared by shared words instead of calling OpenAI.</p>
         </div>
     )
 }

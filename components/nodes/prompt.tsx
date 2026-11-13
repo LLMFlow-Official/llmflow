@@ -188,7 +188,7 @@ function ImageInputs({ node }: { node: AppNode<PromptData> }) {
         <div className='flex flex-col gap-1'>
             <div className='flex items-center'>
                 <Label className='text-sm font-semibold'>Images</Label>
-                <Button variant='ghost' size='icon' className='h-6 w-6 p-1 ml-auto' toolTip='Add image' onClick={() => setImages([...images, ''])}>
+                <Button variant='ghost' size='icon' className='h-6 w-6 p-1 ml-auto' toolTip='Add image' aria-label='Add image' onClick={() => setImages([...images, ''])}>
                     <ImageIcon className='w-4 h-4' />
                 </Button>
             </div>
@@ -205,7 +205,7 @@ function ImageInputs({ node }: { node: AppNode<PromptData> }) {
                         node={node}
                         withoutRichText
                     />
-                    <Button variant="ghost" size="sm" className="text-danger hover:text-danger/80 p-0.5 h-6 w-6" onClick={() => setImages(images.filter((_, i) => i != index))}>
+                    <Button variant="ghost" size="sm" aria-label={`Remove image ${index + 1}`} className="text-danger hover:text-danger/80 p-0.5 h-6 w-6" onClick={() => setImages(images.filter((_, i) => i != index))}>
                         <Trash className='w-4 h-4' />
                     </Button>
                 </div>

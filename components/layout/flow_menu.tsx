@@ -18,6 +18,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../ui/dialog";
 import ConfirmAlert from "../ui/confirm_alert";
 import TestCasesDialog from "./test_cases";
+import { createFromTemplate, templateNeeds } from "./new_flow";
 
 const timeAgo = (ms: number) => {
     const s = Math.round((Date.now() - ms) / 1000)
@@ -67,10 +68,7 @@ function useFlowOpener() {
 function NewFlowDialog({ open, onOpenChange }: { open: boolean, onOpenChange: (open: boolean) => void }) {
     const [name, setName] = useState('')
     const create = async (templateId?: string) => {
-        const template = templates.find(t => t.id == templateId)
-        const built = template?.build()
-        await createFlow(name || template?.name || 'Untitled flow', built?.nodes, built?.edges)
-        track('flow_created', { template: templateId || 'blank' })
+        await createFromTemplate(templateId, name)
         setName('')
         onOpenChange(false)
     }
@@ -79,7 +77,7 @@ function NewFlowDialog({ open, onOpenChange }: { open: boolean, onOpenChange: (o
             <DialogContent className="max-w-(--breakpoint-md) max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>New flow</DialogTitle>
-                    <DialogDescription>Start from scratch or from an example. Examples run with the Test API too.</DialogDescription>
+                    <DialogDescription>Start from scratch or from an example. Examples also run with sample answers, without an API key.</DialogDescription>
                 </DialogHeader>
                 <div className="flex flex-col gap-1">
                     <Label htmlFor="new-flow-name">Name</Label>
@@ -88,12 +86,13 @@ function NewFlowDialog({ open, onOpenChange }: { open: boolean, onOpenChange: (o
                 <div className="grid sm:grid-cols-2 gap-2">
                     <button className="text-left border-2 border-dashed border-border rounded-md p-3 hover:bg-muted" onClick={() => create()}>
                         <span className="font-semibold text-sm">Blank flow</span>
-                        <p className="text-xs text-muted-foreground">Just a Start node.</p>
+                        <p className="text-xs text-muted-foreground">Just a Start step.</p>
                     </button>
                     {templates.map(t => (
                         <button key={t.id} className="text-left border border-border rounded-md p-3 hover:bg-muted" onClick={() => create(t.id)}>
                             <span className="font-semibold text-sm">{t.name}</span>
                             <p className="text-xs text-muted-foreground">{t.description}</p>
+                            {templateNeeds(t) ? <p className="text-xs text-warning mt-1">{templateNeeds(t)}</p> : null}
                         </button>
                     ))}
                 </div>

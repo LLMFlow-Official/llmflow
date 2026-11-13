@@ -82,7 +82,7 @@ export const Properties = ({ node }: { node: AppNode<JsonExtractData> }) => {
             <div className='flex flex-col gap-1'>
                 <div className='flex items-center'>
                     <Label className='text-sm font-semibold'>Fields</Label>
-                    <Button variant='ghost' size='icon' className='h-6 w-6 p-1 ml-auto' toolTip='Add field' onClick={() => setFields([...fields, { name: '' }])}>
+                    <Button variant='ghost' size='icon' className='h-6 w-6 p-1 ml-auto' toolTip='Add field' aria-label='Add field' onClick={() => setFields([...fields, { name: '' }])}>
                         <Plus className='w-4 h-4' />
                     </Button>
                 </div>
@@ -99,7 +99,7 @@ export const Properties = ({ node }: { node: AppNode<JsonExtractData> }) => {
                             placeholder='Path, e.g. items[0].title'
                             onChange={(e) => setFields(fields.map((x, i) => i == index ? { ...x, path: e.target.value } : x))}
                         />
-                        <Button variant="ghost" size="sm" className="text-danger hover:text-danger/80 p-0.5 h-6 w-6 shrink-0" onClick={() => setFields(fields.filter((_, i) => i != index))}>
+                        <Button variant="ghost" size="sm" aria-label={`Remove field ${index + 1}`} className="text-danger hover:text-danger/80 p-0.5 h-6 w-6 shrink-0" onClick={() => setFields(fields.filter((_, i) => i != index))}>
                             <Trash className='w-4 h-4' />
                         </Button>
                     </div>

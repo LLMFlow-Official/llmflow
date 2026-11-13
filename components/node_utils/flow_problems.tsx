@@ -34,7 +34,7 @@ if (typeof window != 'undefined') {
         queueMicrotask(() => { scheduled = false; recheck() })
     }
     useFlowStore.subscribe((s, p) => { if (s.nodes !== p.nodes || s.edges !== p.edges) schedule() })
-    useSettingStore.subscribe((s, p) => { if (s.apiKeys !== p.apiKeys || s.compatibleBaseUrl !== p.compatibleBaseUrl || s.devMode !== p.devMode) schedule() })
+    useSettingStore.subscribe((s, p) => { if (s.apiKeys !== p.apiKeys || s.compatibleBaseUrl !== p.compatibleBaseUrl || s.devMode !== p.devMode || s.sampleAnswers !== p.sampleAnswers) schedule() })
     useLibraryStore.subscribe((s, p) => { if (s.flows !== p.flows) schedule() })
 }
 

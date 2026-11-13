@@ -187,7 +187,7 @@ export const Properties = ({ node }: { node: AppNode<ImageGenerationData> }) => 
             {node.data.background == 'transparent' && node.data.output_format == 'jpeg' ? (
                 <p className='text-xs text-danger'>Transparent backgrounds need PNG or WebP.</p>
             ) : null}
-            <TestOutputField node={node as AppNode} label='Test Image URL' help='In Test API mode, this URL is used as the image.' />
+            <TestOutputField node={node as AppNode} label='Sample image URL' help='With sample answers on, this URL is used as the image.' />
         </div>
     )
 }

@@ -50,7 +50,7 @@ export async function askAssistant(text: string, onApplied?: () => void) {
     track('assistant_request', { provider: choice?.provider, model: choice?.model })
 
     try {
-        if (!choice) throw new Error('Add an API key in Settings (or turn on the Test API in Developer mode) to use the assistant')
+        if (!choice) throw new Error('Add an API key in Settings (or turn on Sample answers there) to use the assistant')
         const { nodes, edges } = useFlowStore.getState()
         const flowName = useLibraryStore.getState().currentName
         const savedFlows = useLibraryStore.getState().flows.filter(f => f.id != flowId)

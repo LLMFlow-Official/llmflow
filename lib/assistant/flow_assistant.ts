@@ -289,7 +289,7 @@ export function assignThreads(nodes: { id: string, type: string, data: Record<st
 export function fakeAssistantReply(request: string, provider: string, model: string): string {
     const topic = request.trim().slice(0, 120)
     return JSON.stringify({
-        reply: 'Test API: here is a simple example flow (an input, one AI step and a result). With an API key, the assistant designs the flow you describe.',
+        reply: 'Sample answers are on, so here is a simple example flow (an input, one AI step and a result). With an API key, the assistant designs the flow you describe.',
         flow: {
             name: topic.slice(0, 40) || 'Example flow',
             nodes: [

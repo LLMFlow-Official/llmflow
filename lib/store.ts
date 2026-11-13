@@ -112,7 +112,8 @@ export type RuntimeState = {
 };
 
 export type DevMode = {
-    testOpenAPI: boolean;
+    /** Older versions kept "sample answers" here; see SettingsState.sampleAnswers. */
+    testOpenAPI?: boolean;
     showTreads: boolean;
     showPropData: boolean;
 }
@@ -126,6 +127,10 @@ export type SettingsState = {
     /** Keep API keys in this browser between visits. When false they are kept in memory only. */
     rememberKeys: boolean;
     analyticsEnabled: boolean;
+    /** The visitor has answered the analytics question (nothing is sent before that). */
+    analyticsAsked: boolean;
+    /** Sample answers instead of real AI requests: try flows without an API key (the "Test API"). */
+    sampleAnswers: boolean;
     theme: 'system' | 'light' | 'dark';
     /** Model the flow-building assistant uses (empty: pick from the providers with a key). */
     assistantProvider?: ProviderId;
@@ -138,7 +143,7 @@ export type SettingsState = {
     /** Model IDs loaded from the user's provider accounts. */
     accountModels: Partial<Record<ProviderId, string[]>>;
     setApiKey: (provider: ProviderId, key: string) => void;
-    setSettings: (patch: Partial<Pick<SettingsState, 'compatibleBaseUrl' | 'rememberKeys' | 'analyticsEnabled' | 'maxParallelRequests' | 'requestTimeoutSeconds' | 'theme' | 'assistantProvider' | 'assistantModel'>>) => void;
+    setSettings: (patch: Partial<Pick<SettingsState, 'compatibleBaseUrl' | 'rememberKeys' | 'analyticsEnabled' | 'analyticsAsked' | 'sampleAnswers' | 'maxParallelRequests' | 'requestTimeoutSeconds' | 'theme' | 'assistantProvider' | 'assistantModel'>>) => void;
     setRememberKeys: (value: boolean) => void;
     setAnalyticsEnabled: (value: boolean) => void;
     setAccountModels: (provider: ProviderId, models: string[]) => void;
@@ -151,7 +156,9 @@ export const useSettingStore = create<SettingsState>()(persist(set => ({
     apiKeys: EMPTY_KEYS,
     compatibleBaseUrl: '',
     rememberKeys: true,
-    analyticsEnabled: true,
+    analyticsEnabled: false,
+    analyticsAsked: false,
+    sampleAnswers: false,
     theme: 'system',
     maxParallelRequests: 4,
     requestTimeoutSeconds: 600,
@@ -165,7 +172,7 @@ export const useSettingStore = create<SettingsState>()(persist(set => ({
     setDevMode: value => set({ devMode: value }),
 }), {
     name: 'flow-setting-store',
-    version: 1,
+    version: 2,
     storage: createJSONStorage(() => localStorage),
     // Keys are only written to storage when the user chose to remember them.
     partialize: (state) => state.rememberKeys ? state : { ...state, apiKeys: EMPTY_KEYS },
@@ -176,6 +183,17 @@ export const useSettingStore = create<SettingsState>()(persist(set => ({
             state.apiKeys = { ...EMPTY_KEYS, openai: (state.openAIKey as string) || '' }
             state.accountModels = Array.isArray(state.accountModels) ? { openai: state.accountModels } : {}
             delete state.openAIKey
+        }
+        // Version 2 moved the Test API out of Developer mode ("Sample answers") and asks before
+        // turning analytics on (people who had it on keep it; they are not asked again).
+        if (version < 2) {
+            const devMode = state.devMode as DevMode | undefined
+            state.sampleAnswers = !!devMode?.testOpenAPI
+            if (devMode) {
+                delete devMode.testOpenAPI
+                if (!devMode.showTreads && !devMode.showPropData) delete state.devMode
+            }
+            state.analyticsAsked = state.analyticsEnabled !== undefined
         }
         return state as unknown as SettingsState
     },
@@ -480,3 +498,6 @@ useFlowStore.subscribe((state, previous) => {
         || edgeKey(state.edges) != edgeKey(previous.edges)
     if (changed) runtime.setNodeState({})
 })
+
+/** Whether steps return sample answers instead of calling a model (also set by older versions' Test API switch). */
+export const sampleAnswersOn = (settings: Pick<SettingsState, 'sampleAnswers' | 'devMode'>) => !!(settings.sampleAnswers || settings.devMode?.testOpenAPI)
