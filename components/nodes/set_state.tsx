@@ -28,12 +28,8 @@ export const Metadata: NodeMetaData = {
 }
 
 export const Outputs = (node: AppNode<SetStateData>) => {
+    // Values are read as {state.<variable>}, so only the variable itself is an output.
     return {
-        name: {
-            title: 'Node name',
-            description: 'Name used in the node',
-            value: node.data.name
-        },
         ...(node.data.variable && node.data.value ? {
             [node.data.variable]: {
                 title: 'Final Value',
@@ -133,6 +129,7 @@ const noteStateVariants = cva(
                 running: 'opacity-40',
                 completed: 'opacity-100',
                 failed: 'opacity-80 outline outline-offset-1 outline-red-500', //tw
+                skipped: 'opacity-30 border-dashed', //tw
             }
         },
         defaultVariants: {

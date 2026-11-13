@@ -2,6 +2,7 @@ import { getNodeDetails } from "@/lib/nodes";
 import { useFlowStore, useSettingStore } from "@/lib/store"
 import { useMemo } from "react";
 import { Card, CardTitle } from "../ui/card";
+import OnErrorSettingsSection from "./on_error_settings";
 
 export default function Properties() {
     const selectedNode = useFlowStore((state) => state.selectedNode)
@@ -41,6 +42,7 @@ export default function Properties() {
                     <p className="text-gray-500 whitespace-pre-wrap text-xs mt-2">{JSON.stringify(selectedNode.data, null, 4)}</p>
                 </Card></div> : null}
                 {PropertiesComponent && <PropertiesComponent key={selectedNode.id} node={selectedNode} />}
+                {selectedNode.type != 'start' ? <OnErrorSettingsSection key={`on-error-${selectedNode.id}`} node={selectedNode} /> : null}
             </div>
         </div>
     )

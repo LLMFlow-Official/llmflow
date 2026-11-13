@@ -81,3 +81,39 @@ export const runStatement = async (statement: string, context: AppContext, signa
         throw new Error(`The expression "${statement}" failed: ${(error as Error).message}`)
     }
 }
+
+/**
+ * Resolves a template to a value. A template that is exactly one reference, like
+ * `{split_x.chunks}`, returns the referenced value itself (arrays and objects stay intact);
+ * anything else returns the filled-in text.
+ */
+export const resolveTemplateValue = (template: string, context: AppContext): unknown => {
+    const trimmed = (template || '').trim()
+    const single = /^\{([^{}]+)\}$/.exec(trimmed)
+    if (single && !/["':\s]/.test(single[1].trim())) {
+        const value = get(context, single[1].trim())
+        if (value !== undefined) return value
+    }
+    return renderTextTemplate(template, context)
+}
+
+/**
+ * Turns a template into a list: an array reference is used as is, JSON array text is parsed, and
+ * other text is split into non-empty lines.
+ */
+export const resolveList = (template: string, context: AppContext): unknown[] => {
+    const value = resolveTemplateValue(template, context)
+    if (Array.isArray(value)) return value
+    if (value === undefined || value === null || value === '') return []
+    if (typeof value == 'object') return [value]
+    const text = String(value).trim()
+    if (text.startsWith('[')) {
+        try {
+            const parsed = JSON.parse(text)
+            if (Array.isArray(parsed)) return parsed
+        } catch {
+            // fall through to lines
+        }
+    }
+    return text.split('\n').map(x => x.trim()).filter(Boolean)
+}

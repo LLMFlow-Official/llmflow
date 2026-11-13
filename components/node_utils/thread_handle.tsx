@@ -2,7 +2,7 @@ import { useFlowStore,  AppNode, findParentMultiThreadNodeThread } from "@/lib/s
 import { Handle, Position, Edge, Connection, getIncomers, getOutgoers, useHandleConnections } from "@xyflow/react";
 
 /** Node types whose source handle may connect to several nodes. */
-const multiSourceTypes = ["multi_thread", "decision", "llm_router"]
+export const multiSourceTypes = ["multi_thread", "decision", "llm_router", "loop"]
 
 type ThreadHandleProp = {
     active?: boolean

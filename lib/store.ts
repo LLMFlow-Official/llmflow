@@ -294,7 +294,7 @@ export const useFlowStore = create<AppState>()(temporal(persist(computed((set, g
     nodes: initialNodes,
     edges: initialEdges,
     onNodesChange: changes => {
-        const filteredChanges = changes.filter(change => !(change.type === 'remove' && change.id === 'startNode'));
+        const filteredChanges = changes.filter(change => !(change.type === 'remove' && change.id === 'start'));
         set({ nodes: applyNodeChanges(filteredChanges, get().nodes) });
     },
     onEdgesChange: changes => {

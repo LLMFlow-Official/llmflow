@@ -2,9 +2,10 @@ import NewNode from "../node_utils/new_node";
 import { Card } from "../ui/card";
 import { Play, Scan, Square } from "lucide-react";
 import { useShallow } from "zustand/shallow";
-import { AppContext, Controller, getNodeDetails, NodeState } from "@/lib/nodes";
-import { getOutgoers, useReactFlow } from "@xyflow/react";
-import { set } from "lodash";
+import { AppContext, Controller, getNodeDetails, NodeType } from "@/lib/nodes";
+import { useReactFlow } from "@xyflow/react";
+import { allReachable, EngineNode, ProcessFn, runFlow, validateGraph } from "@/lib/engine";
+import { waitWhileRunning } from "../node_utils/node_shell";
 import { AppNode, useFlowStore, useRuntimeStore } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
 import UndoRedo from "../node_utils/undo_redo";
@@ -14,11 +15,7 @@ import { track } from "@/lib/analytics";
 
 export default function Controllers() {
   const { toast } = useToast()
-  const { nodes, edges, clearSelection } = useFlowStore(useShallow(s => ({
-    nodes: s.nodes,
-    edges: s.edges,
-    clearSelection: s.clearSelection
-  })))
+  const clearSelection = useFlowStore(s => s.clearSelection)
 
   const { isRunning, start, stop, log, increaseInToken, increaseOutToken, increaseAmount, setNodeState, setNodeStateFromNodeId} = useRuntimeStore(useShallow(s => ({
     isRunning: s.isRunning,
@@ -34,84 +31,53 @@ export default function Controllers() {
 
   const reactFlow = useReactFlow();
 
-  const updateNodeState = (node: AppNode, state: NodeState, context?: AppContext) => {
-    setNodeStateFromNodeId(node.id, state);
-    if (context) set(context,`${node.id}.state`, state)
-  }
-
-  const makeAllNodesState = (node: AppNode, state: NodeState, context?: AppContext, path: string[] = []) => {
-    if (path.includes(node.id)) return;
-    updateNodeState(node, state, context);
-    const outgoers = getOutgoers(node, nodes, edges);
-    path.push(node.id);
-    outgoers.forEach((outgoer) => makeAllNodesState(outgoer, state,context, path));
-  }
-
   const startWrapper = async () => {
-    if (isRunning) return;
-    track('started')
+    if (useRuntimeStore.getState().isRunning) return;
     clearSelection()
-    const context = {};
+    const { nodes, edges } = useFlowStore.getState()
     const startNode = nodes.find((node: AppNode) => node.type === 'start');
     if (!startNode) return;
+
+    const getBodyTargets = (node: EngineNode) => getNodeDetails(node.type as NodeType).bodyTargets?.(node as AppNode) || []
+    const problem = validateGraph(startNode.id, nodes, edges, getBodyTargets)
+    if (problem) {
+      toast({ title: "This flow can't run", description: problem, duration: 5000 })
+      return
+    }
+
+    track('started')
     start();
-    const controller = {
-      log,
-      increaseInToken,
-      increaseOutToken,
-      increaseAmount
-    } as Controller
+    const waiting = new Set(allReachable(startNode.id, nodes, edges))
+    setNodeState(Object.fromEntries(nodes.map(x => [x.id, waiting.has(x.id) ? 'waiting' : 'idle'])))
 
-    const processNode = async (node: AppNode): Promise<void> => {
-      const isRunning = useRuntimeStore.getState().isRunning;
-      if (!isRunning) return;
-      const details = getNodeDetails(node.type);
-      const currentState = useFlowStore.getState().nodes.find(x => x.id == node.id)
-      if (currentState && currentState.data.state == 'running') return;
+    const controller: Controller = { log, increaseInToken, increaseOutToken, increaseAmount }
+    const context: AppContext = {};
 
-      const outgoers = getOutgoers(node, nodes, edges);
-
-      let next = []
-
-      try {
-        const nodeStates = useRuntimeStore.getState().nodeStates;
-        if (nodeStates[node.id] == 'running') return;
-        updateNodeState(node, 'running', context);
-        next = await details.process(context, node, outgoers, controller);
-        updateNodeState(node, 'completed', context);
-      } catch (error) {
-        console.log(error);
+    await runFlow(startNode.id, context, nodes, edges, {
+      getProcess: (type) => getNodeDetails(type as NodeType).process as unknown as ProcessFn,
+      getBodyTargets,
+      setNodeState: setNodeStateFromNodeId,
+      isRunning: () => useRuntimeStore.getState().isRunning,
+      controller,
+      wait: waitWhileRunning,
+      onNodeError: (node, error) => {
+        console.error(error);
         // Only the node type: error messages can contain prompt text or model output.
         track('flow_error', { nodeType: node.type })
-
-        controller.log({
-          id: node.id,
-          nodeType: node.type,
-          type: 'error',
-          title: (error as Error).message,
-        })
-        
+        controller.log({ id: node.id, nodeType: node.type as NodeType, type: 'error', title: error.message })
         toast({
-          title: `Something went wrong on ${node.data.name || details.name}`,
-          description: (error as Error).message,
+          title: `Something went wrong on ${(node.data.name as string) || getNodeDetails(node.type as NodeType).name}`,
+          description: error.message,
           duration: 3000
         })
-
-        updateNodeState(node, 'failed', context);
-        outgoers.forEach(x => makeAllNodesState(x,'failed', context))
-        return;
-      }
-      
-      await Promise.all(next.map(processNode));
-    };
-
-    makeAllNodesState(startNode, 'waiting', context);
-    await processNode(startNode);
+      },
+    })
 
     stop();
     track('ended')
     setTimeout(() => {
-      setNodeState(Object.fromEntries(nodes.map(x => [x.id, 'idle'])))
+      if (useRuntimeStore.getState().isRunning) return
+      setNodeState(Object.fromEntries(useFlowStore.getState().nodes.map(x => [x.id, 'idle'])))
     }, 3000);
   }
 

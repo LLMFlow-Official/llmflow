@@ -1,4 +1,3 @@
-import { getIncomers } from '@xyflow/react';
 import { Merge } from 'lucide-react';
 import { AppContext, NodeMetaData } from '@/lib/nodes';
 import { useFlowStore, AppNode, AppNodeProp, useRuntimeStore } from '@/lib/store';
@@ -19,22 +18,10 @@ export const Metadata: NodeMetaData = {
     tags: ['await', 'sync']
 }
 
+// The engine runs a node with several inputs only after all of them have finished or been
+// skipped (see lib/engine.ts), so no waiting is needed here.
 export const Process = async (context: AppContext, node: AppNode, nextNodes: AppNode[]) => {
-    await new Promise((resolve) => {
-        const WaitTillAllEnd = () => {
-            const { nodes, edges } = useFlowStore.getState()
-            const { nodeStates } = useRuntimeStore.getState()
-            const incomers = getIncomers(node, nodes, edges)
-            const havePending = incomers.map(x => nodeStates[x.id]).some(x => ['idle', 'waiting', 'running'].includes(x))
-            if (havePending) {
-                setTimeout(WaitTillAllEnd, 200)
-            } else {
-                resolve(true);
-            }
-        }
-        WaitTillAllEnd()
-    })
-    context[node.id]['name'] = node.data.name || 'hi'
+    context[node.id] = { name: node.data.name as string }
     return nextNodes
 }
 
@@ -73,6 +60,7 @@ const noteStateVariants = cva(
                 running: 'opacity-40',
                 completed: 'opacity-100',
                 failed: 'opacity-20 outline outline-red-500', //tw
+                skipped: 'opacity-30 border-dashed', //tw
             }
         },
         defaultVariants: {

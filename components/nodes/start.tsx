@@ -152,7 +152,8 @@ export const Properties = ({ node }: { node: AppNode }) => {
             case 'textarea':
                 return <Textarea id={prop.name} className='' placeholder={prop.name} value={value} onChange={handleChange} />;
             case 'checkbox':
-                return <input id={prop.name} type='checkbox' checked={value === 'yes'} onChange={handleChange} />;
+                // Stored as "yes" when checked (the checkbox's own value would always be "on").
+                return <input id={prop.name} type='checkbox' checked={value === 'yes'} onChange={(e) => handleChange({ target: { value: e.target.checked ? 'yes' : '' } } as React.ChangeEvent<HTMLInputElement>)} />;
             case 'array':
                 return (
                     <div>
@@ -266,6 +267,7 @@ const noteStateVariants = cva(
                 running: 'opacity-40',
                 completed: 'opacity-100',
                 failed: 'opacity-20 outline outline-red-500', //tw
+                skipped: 'opacity-30 border-dashed', //tw
             }
         },
         defaultVariants: {

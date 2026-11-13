@@ -48,6 +48,7 @@ export function LogView({ payload }: NodeLogViewProps<string>) {
 
 export const Process = async (context: AppContext, node: AppNode<ConsoleLogData>, nextNodes: AppNode[], controller: Controller) => {
     const output = renderTextTemplate(node.data.log, context)
+    context[node.id] = { name: node.data.name, log: output }
     if (output) {
         console.log(`Log:${node.id} `, output);
         controller.log({
@@ -109,6 +110,7 @@ const noteStateVariants = cva(
                 running: 'opacity-40',
                 completed: 'opacity-100',
                 failed: 'opacity-80 outline outline-offset-1 outline-red-500', //tw
+                skipped: 'opacity-30 border-dashed', //tw
             }
         },
         defaultVariants: {

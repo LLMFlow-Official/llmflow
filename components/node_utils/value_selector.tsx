@@ -54,6 +54,9 @@ export default function ValueSelector({ baseNode, onSelect }: { baseNode: AppNod
             const nodeDetails = getNodeDetails(node?.type)
             if (nodeDetails.outputs) {
                 const outputs = nodeDetails.outputs(node, {})
+                if ((node.data as { on_error?: { continue?: boolean } }).on_error?.continue) {
+                    outputs.error = { title: 'Error', description: 'The error message when the node failed and the flow continued' }
+                }
                 setSelectedNode(selectedChange.selected ? { node, nodeDetails, outputs } : undefined)
             }
         }

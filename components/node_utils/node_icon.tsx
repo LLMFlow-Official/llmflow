@@ -1,6 +1,6 @@
 import { NodeState } from "@/lib/nodes";
 import { cn } from "@/lib/utils";
-import { Check, CircleAlert, Clock, Loader } from "lucide-react";
+import { Ban, Check, CircleAlert, Clock, Loader } from "lucide-react";
 
 export default function NoteIcon({state, idleIcon, className}: {state?: NodeState, idleIcon: React.ElementType, className?: string}) {
     const Icon = idleIcon;
@@ -11,6 +11,7 @@ export default function NoteIcon({state, idleIcon, className}: {state?: NodeStat
             {state === 'running' && <Loader className="animate-spin opacity-100" />}
             {state === 'completed' && <Check className="opacity-100" />}
             {state === 'failed' && <CircleAlert className="opacity-100" />}
+            {state === 'skipped' && <Ban className="opacity-100" aria-label="Skipped" />}
         </div>
     );
 }

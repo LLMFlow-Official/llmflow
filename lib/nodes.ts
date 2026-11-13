@@ -17,6 +17,7 @@ import * as HumanInputNode from "@/components/nodes/human_input";
 import * as AssertNode from "@/components/nodes/assert";
 import * as DelayNode from "@/components/nodes/delay";
 import * as FinalOutputNode from "@/components/nodes/final_output";
+import * as LoopNode from "@/components/nodes/loop";
 
 import { AppNode, NodeLogs, UpdatePayload } from "./store";
 import Decimal from "decimal.js-light";
@@ -24,7 +25,7 @@ import { Edge } from "@xyflow/react";
 
 export type NodeType = "start" | "prompt" | "multi_thread" | "thread_merge" | "decision" | "console_log" | "set_state"
     | "llm_router" | "web_search" | "image_generation" | "text_template" | "json_extract" | "split_text"
-    | "code" | "http_request" | "human_input" | "assert" | "delay" | "final_output"
+    | "code" | "http_request" | "human_input" | "assert" | "delay" | "final_output" | "loop"
 
 const nodes = [
     StartNode,
@@ -46,9 +47,10 @@ const nodes = [
     AssertNode,
     DelayNode,
     FinalOutputNode,
+    LoopNode,
 ];
 
-export type NodeState = 'idle' | 'faded' | 'waiting' | 'running' | 'completed' | 'failed';
+export type NodeState = 'idle' | 'faded' | 'waiting' | 'running' | 'completed' | 'failed' | 'skipped';
 
 export type OutputExtra =  {
     [key: string] : string | number | object | unknown | undefined
@@ -103,6 +105,8 @@ export type NodeMetaData<T = unknown> = {
     valueIdentifier?: (node: AppNode) => string;
     OnConnect?: NodeOnConnectDisconnect;
     OnDisconnect?: NodeOnConnectDisconnect;
+    /** For loop nodes: the targets the node runs itself, once per item (see lib/engine.ts). */
+    bodyTargets?: (node: AppNode) => string[];
 }
 
 export type NodeDetails = NodeMetaData & {
