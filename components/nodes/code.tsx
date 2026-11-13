@@ -38,7 +38,7 @@ export function LogView({ payload }: NodeLogViewProps<LogViewPayload>) {
             {payload.logs.length ? (
                 <div className='bg-gray-900 text-gray-100 p-2 rounded-md whitespace-pre-wrap max-h-28 overflow-y-auto font-mono'>{payload.logs.join('\n')}</div>
             ) : null}
-            <div className='bg-accent p-2 rounded-md whitespace-pre-wrap max-h-28 overflow-y-auto border border-gray-300 font-mono'>
+            <div className='bg-accent p-2 rounded-md whitespace-pre-wrap max-h-28 overflow-y-auto border border-border font-mono'>
                 {typeof payload.result == 'string' ? payload.result : JSON.stringify(payload.result, null, 2)}
             </div>
         </div>
@@ -90,7 +90,7 @@ export const Properties = ({ node }: { node: AppNode<CodeData> }) => {
                     }}
                     className='min-h-[220px] rounded-md border border-input bg-gray-900 text-gray-100 p-2 text-xs font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
                 />
-                <p className='text-xs text-gray-500'>
+                <p className='text-xs text-muted-foreground'>
                     The function body can use await and console.log. It runs in a separate worker that cannot see this page or your API key, and it can only return values that can be turned into JSON.
                 </p>
             </div>

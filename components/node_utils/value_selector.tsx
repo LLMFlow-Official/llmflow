@@ -114,23 +114,23 @@ export default function ValueSelector({ baseNode, onSelect }: { baseNode: AppNod
                 <div className="flex justify-center items-center h-full max-h-[40vh]">
                     {selectedNode ? (
                         <div className="h-full">
-                            <div className="border-b border-gray-200 p-2">
+                            <div className="border-b border-border p-2">
                                 <h2 className="text-lg font-bold">{selectedNode.nodeDetails.name}</h2>
-                                <p className="text-sm text-gray-500">{selectedNode.nodeDetails.description}</p>
+                                <p className="text-sm text-muted-foreground">{selectedNode.nodeDetails.description}</p>
                                 <div className="mt-2 flex flex-col gap-1">
                                     <div className="flex items-center gap-2 text-xs">
                                         <span className="font-semibold">Node ID : </span>
-                                        <p className="text-gray-500">{selectedNode.node.id}</p>
+                                        <p className="text-muted-foreground">{selectedNode.node.id}</p>
                                     </div>
                                 </div>
                             </div>
                             <div className="flex flex-col pb-2.5 h-full overflow-y-auto">
                                 {Object.keys(selectedNode.outputs).map(x => (
-                                    <div key={x} className="flex items-center justify-between p-2 border-b border-gray-200">
+                                    <div key={x} className="flex items-center justify-between p-2 border-b border-border">
                                         <div>
                                             <h3 className="text-sm font-semibold">{selectedNode.outputs[x].title}</h3>
-                                            {selectedNode.outputs[x].description ? <p className="text-xs text-gray-500">{selectedNode.outputs[x].description}</p> : null}
-                                            {selectedNode.outputs[x].value ? <p className="text-xs text-gray-500">Current : {trimStrings(selectedNode.outputs[x].value.toString())}</p> : null}
+                                            {selectedNode.outputs[x].description ? <p className="text-xs text-muted-foreground">{selectedNode.outputs[x].description}</p> : null}
+                                            {selectedNode.outputs[x].value ? <p className="text-xs text-muted-foreground">Current : {trimStrings(selectedNode.outputs[x].value.toString())}</p> : null}
                                         </div>
                                         <Button size="icon" variant="ghost" onClick={() => addDynamicValue(selectedNode.node, selectedNode.nodeDetails, x)} ><Plus /></Button>
                                     </div>
@@ -138,7 +138,7 @@ export default function ValueSelector({ baseNode, onSelect }: { baseNode: AppNod
                             </div>
                         </div>
                     ) : (
-                        <div className="text-sm text-gray-500">No node selected.</div>
+                        <div className="text-sm text-muted-foreground">No node selected.</div>
                     )}
                 </div>
             </ResizablePanel>

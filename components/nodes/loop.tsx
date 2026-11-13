@@ -68,7 +68,7 @@ type LogPayload = { results: unknown[] }
 
 export function LogView({ payload }: NodeLogViewProps<LogPayload>) {
     return (
-        <div className='bg-accent p-2 text-xs rounded-md whitespace-pre-wrap max-h-40 overflow-y-auto border border-gray-300 font-mono'>
+        <div className='bg-accent p-2 text-xs rounded-md whitespace-pre-wrap max-h-40 overflow-y-auto border border-border font-mono'>
             {JSON.stringify(payload.results, null, 2)}
         </div>
     )
@@ -221,7 +221,7 @@ export const Properties = ({ node }: { node: AppNode<LoopData> }) => {
                 <div className='flex flex-col gap-1'>
                     <Label className='text-sm font-semibold' htmlFor='concurrency'>Items at the same time</Label>
                     <Input id='concurrency' type='number' min={1} max={10} value={node.data.concurrency ?? ''} placeholder='1' onChange={(e) => setNumber('concurrency', e.target.value, 10)} />
-                    <p className='text-xs text-gray-500'>1 runs items one after another. Up to 10.</p>
+                    <p className='text-xs text-muted-foreground'>1 runs items one after another. Up to 10.</p>
                 </div>
             </> : <>
                 <div className='flex flex-col gap-1'>
@@ -236,7 +236,7 @@ export const Properties = ({ node }: { node: AppNode<LoopData> }) => {
                         withoutRichText
                     />
                     {untilValid
-                        ? <p className='text-xs text-gray-500'>Checked after each round. Leave empty to always run the maximum. Each round sees the previous round&apos;s outputs; {`{${node.id}.index}`} is the round number from 0.</p>
+                        ? <p className='text-xs text-muted-foreground'>Checked after each round. Leave empty to always run the maximum. Each round sees the previous round&apos;s outputs; {`{${node.id}.index}`} is the round number from 0.</p>
                         : <p className='text-xs text-red-600'>This is not a valid expression.</p>}
                 </div>
                 <div className='flex flex-col gap-1'>
@@ -254,7 +254,7 @@ export const Properties = ({ node }: { node: AppNode<LoopData> }) => {
             <div className='flex flex-col gap-1'>
                 <Label className='text-sm font-semibold'>Connections</Label>
                 {outgoers.length == 0 ? (
-                    <p className='text-xs text-gray-500'>Connect the first step of the loop and set it to &quot;Each item&quot;. Connect what comes next and set it to &quot;After loop&quot;. Steps inside the loop must not connect to steps after it.</p>
+                    <p className='text-xs text-muted-foreground'>Connect the first step of the loop and set it to &quot;Each item&quot;. Connect what comes next and set it to &quot;After loop&quot;. Steps inside the loop must not connect to steps after it.</p>
                 ) : outgoers.map(({ target, details }) => (
                     <Card key={target.id} className='flex items-center gap-2 p-2'>
                         <span className='text-sm flex-1 truncate'>{target.data.name || details.name}</span>

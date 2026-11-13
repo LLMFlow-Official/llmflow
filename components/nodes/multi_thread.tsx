@@ -13,7 +13,7 @@ import DevMode from '../node_utils/dev_mode';
 
 export const Metadata: NodeMetaData = {
     type: 'multi_thread',
-    name: 'Multi Tread',
+    name: 'Multi Thread',
     description: 'This node allows you to run multiple threads in parallel',
     tags: ['promise', 'async']
 }
@@ -48,7 +48,7 @@ export const Properties = ({ node }: { node: AppNode }) => {
 }
 
 const noteStateVariants = cva(
-    "bg-white border-2 text-blue-600 border-blue-600 bg-opacity-80 p-2 flex flex-col gap-2 items-center", //tw
+    "bg-card border-2 text-blue-600 border-blue-600 bg-opacity-80 p-2 flex flex-col gap-2 items-center", //tw
     {
         variants: {
             state: {

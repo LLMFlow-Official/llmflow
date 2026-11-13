@@ -12,6 +12,7 @@ import {
   Dialog,
   DialogContent,
   DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog"
 import { useCallback, useEffect, useState } from "react"
 import { versionData } from "./logo"
@@ -26,7 +27,9 @@ export default function IntroSlider() {
 
 
   useEffect(() => {
-    setOpen(versionData.introVersion != localStorage.getItem('introVersion'))
+    let seen: string | null = null
+    try { seen = localStorage.getItem('introVersion') } catch { /* ignore */ }
+    setOpen(versionData.introVersion != seen)
   }, [])
 
   useEffect(() => {
@@ -46,19 +49,14 @@ export default function IntroSlider() {
     })
   }, [api, count])
 
+  // Closing at any point (button, Escape, clicking outside) counts as seen.
   const handleClose = useCallback(() => {
-    if (isFinished) {
-      setOpen(false)
-      localStorage.setItem('introVersion', versionData.introVersion)
-      track('intro_finished', { skipped: false })
-    }
+    setOpen(false)
+    try { localStorage.setItem('introVersion', versionData.introVersion) } catch { /* ignore */ }
+    track('intro_finished', { skipped: !isFinished })
   }, [isFinished])
 
-  const handleSkip = useCallback(() => {
-    setOpen(false)
-    localStorage.setItem('introVersion', versionData.introVersion)
-    track('intro_finished', { skipped: true })
-  }, [])
+  const handleSkip = handleClose
 
   const slides = [
     {
@@ -87,41 +85,36 @@ export default function IntroSlider() {
       image: "/add_second.gif",
     },
     {
-      title: "Configure Your OpenAI Key",
-      content: "Currently, we support only OpenAI. We are actively working on expanding our support to include other AI providers in the near future. Stay tuned for updates!",
+      title: "Add Your API Key",
+      content: "Open Settings and add a key for OpenAI, Anthropic (Claude), Google (Gemini) or your own OpenAI-compatible server. Keys stay in your browser. No key yet? Turn on the Test API in Developer mode to try everything for free.",
       image: "/set_key.gif",
     },
     {
       title: "Execute Your Concept",
-      content: "Press the Play button to get an insight of your concept in action!",
+      content: "Press Play (or Ctrl/⌘ + Enter) to watch your flow run: answers stream in live, with tokens, cost and time for every step. Past runs are kept in History.",
       image: "/run.gif",
     },
   ]
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent withoutCloseButton className="max-w-xl">
+      <DialogContent className="max-w-xl" aria-describedby={undefined}>
         <DialogHeader>
-          {!isFinished && current != 1 && <div className="absolute right-4 top-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleSkip}
-            >
-              Skip
-            </Button>
-          </div>}
+          <DialogTitle className="sr-only">Welcome to LLM Flow</DialogTitle>
         </DialogHeader>
         <div className="mx-auto max-w-xl">
           <Carousel setApi={setApi} className="w-full max-w-lg">
             <CarouselContent>
               {slides.map((slide, index) => (
                 <CarouselItem key={index}>
-                  <img
-                    src={slide.image}
-                    alt={slide.title}
-                    className="w-full h-72 object-contain mb-4 rounded-md"
-                  />
+                  {Math.abs(index + 1 - current) <= 1 ? (
+                    <img
+                      src={slide.image}
+                      alt=""
+                      loading="lazy"
+                      className="w-full h-72 object-contain mb-4 rounded-md"
+                    />
+                  ) : <div className="w-full h-72 mb-4" aria-hidden />}
                   <h3 className="text-lg font-semibold mb-1">{slide.title}</h3>
                   <p className="text-sm text-muted-foreground">{slide.content}</p>
                 </CarouselItem>
@@ -133,20 +126,18 @@ export default function IntroSlider() {
                   className="w-full h-32 object-contain mb-4 rounded-md"
                 />
                 <h3 className="text-lg font-semibold mb-1">We Offer!</h3>
-                <p className="text-sm text-muted-foreground px-5">
+                <div className="text-sm text-muted-foreground px-5">
                   <ul className="list-disc">
-                    <li>Comprehensive Flow Chart Capabilities</li>
-                    <li>LLM Cost Visualization</li>
-                    <li>Developer Mode with Test API Functionality</li>
-                    <li>Multithreading Support</li>
-                    <li>Process Duration Tracking</li>
-                    <li>LLM Flow Export & Import Functionality</li>
-                    <li>Enhanced Text Editor for Prompt Customization</li>
-                    <li>Intuitive Value Selection Tool</li>
-                    <li>JavaScript Integration in Statements</li>
-                    <li>Advanced JSON Schema Editor</li>
+                    <li>OpenAI, Claude, Gemini and your own servers</li>
+                    <li>Live answers, cost and time for every step</li>
+                    <li>Branches, loops, LLM routing and sub-flows</li>
+                    <li>Web search, images, transcription and semantic search</li>
+                    <li>Structured JSON output with a visual editor</li>
+                    <li>Test cases, run history and model comparison</li>
+                    <li>Many flows, templates and share links</li>
+                    <li>A free Test API for trying things out</li>
                   </ul>
-                </p>
+                </div>
               </CarouselItem>
             </CarouselContent>
           </Carousel>

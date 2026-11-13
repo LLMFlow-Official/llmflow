@@ -116,7 +116,7 @@ export const Properties = ({ node }: { node: AppNode<WebSearchData> }) => {
                 placeholder='openai.com, docs.python.org'
                 help='Optional. Up to 100 domains, separated by commas or new lines.'
             />
-            <p className='text-xs text-gray-500'>OpenAI charges a fee per search on top of tokens. That fee is not included in the cost shown.</p>
+            <p className='text-xs text-muted-foreground'>OpenAI charges a fee per search on top of tokens. That fee is not included in the cost shown.</p>
             <TestOutputField node={node as AppNode} />
         </div>
     )

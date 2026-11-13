@@ -25,6 +25,7 @@ import { Slider } from '../ui/slider';
 import SchemaEditor, { SchemaType } from '../ui/schema_editor';
 import { ModelNodeData, ModelSelect, nodeModel, nodeProvider, ReasoningEffortSelect, TierSelect, ToolsSection } from '../node_utils/model_select';
 import { TestOutputField } from '../node_utils/node_shell';
+import ViewAsCode from '../node_utils/view_as_code';
 
 type PromptData = NodeData & ModelNodeData & {
     system_prompt?: string
@@ -121,19 +122,18 @@ export const Outputs = (node: AppNode<PromptData>, extra: OutputExtra) => {
 }
 
 
-export const Process = async (context: AppContext, node: AppNode<PromptData>, nextNodes: AppNode[], controller: Controller) => {
-    const response_format = node.data.response_format || 'text'
-
-    const request: ChatRequest = {
+/** The request this node sends. `fill` replaces {node.value} references (identity for "view as code"). */
+function buildRequest(node: AppNode<PromptData>, fill: (text: string) => string): ChatRequest {
+    return {
         provider: nodeProvider(node.data),
         model: nodeModel(node.data),
-        systemPrompt: renderTextTemplate(node.data.system_prompt || '', context),
+        systemPrompt: fill(node.data.system_prompt || ''),
         messages: (node.data.prompts || []).map(x => ({
             ...x,
-            content: renderTextTemplate(x.content || '', context)
+            content: fill(x.content || '')
         })),
-        images: (node.data.images || []).map(x => renderTextTemplate(x, context)),
-        responseFormat: response_format,
+        images: (node.data.images || []).map(fill),
+        responseFormat: node.data.response_format || 'text',
         responseSchema: node.data.response_schema,
         reasoningEffort: node.data.reasoning_effort,
         maxOutputTokens: node.data.max_output_tokens,
@@ -142,6 +142,11 @@ export const Process = async (context: AppContext, node: AppNode<PromptData>, ne
         tools: node.data.tools,
         tier: node.data.tier,
     }
+}
+
+export const Process = async (context: AppContext, node: AppNode<PromptData>, nextNodes: AppNode[], controller: Controller) => {
+    const response_format = node.data.response_format || 'text'
+    const request = buildRequest(node, (text) => renderTextTemplate(text, context))
 
     const run = await runChat(request, controller, { nodeId: node.id, testOutput: node.data.test_output })
     // Web searches have a per-search fee that usage does not report, so the run total becomes a lower bound.
@@ -192,7 +197,7 @@ function ImageInputs({ node }: { node: AppNode<PromptData> }) {
                     <ImageIcon className='w-4 h-4' />
                 </Button>
             </div>
-            {images.length == 0 ? <p className='text-xs text-gray-500'>Optional. Add an image URL or pick an image from an Image Generation node.</p> : null}
+            {images.length == 0 ? <p className='text-xs text-muted-foreground'>Optional. Add an image URL or pick an image from an Image Generation node.</p> : null}
             {images.map((image, index) => (
                 <div key={index} className='flex gap-1 items-start'>
                     <Textarea
@@ -281,6 +286,7 @@ export const Properties = ({ node }: { node: AppNode<PromptData> }) => {
                 />
             </div>
             <ModelSelect node={node} />
+            <ViewAsCode request={() => buildRequest(node, (text) => text)} />
             <div className='flex flex-col gap-1'>
                 <Label className='text-sm font-semibold flex'>Response Format</Label>
                 <Select
@@ -320,14 +326,14 @@ export const Properties = ({ node }: { node: AppNode<PromptData> }) => {
                         setValue('max_output_tokens', Number.isFinite(value) && value > 0 ? value : undefined)
                     }}
                 />
-                {reasons ? <p className='text-xs text-gray-500'>Includes reasoning tokens.</p> : null}
+                {reasons ? <p className='text-xs text-muted-foreground'>Includes reasoning tokens.</p> : null}
             </div>
             {showSampling ? <>
                 <div className='flex flex-col gap-1'>
                     <Label className='text-sm font-semibold flex items-center'>
                         Temperature
                         <div className='ml-auto flex items-center gap-2'>
-                            {node.data.temperature !== undefined ? <button className='text-xs font-normal text-gray-500 underline' onClick={() => setValue('temperature', undefined)}>Reset</button> : null}
+                            {node.data.temperature !== undefined ? <button className='text-xs font-normal text-muted-foreground underline' onClick={() => setValue('temperature', undefined)}>Reset</button> : null}
                             {node.data.temperature ?? 'Default'}
                         </div>
                     </Label>
@@ -337,14 +343,14 @@ export const Properties = ({ node }: { node: AppNode<PromptData> }) => {
                     <Label className='text-sm font-semibold flex items-center'>
                         Top P
                         <div className='ml-auto flex items-center gap-2'>
-                            {node.data.top_p !== undefined ? <button className='text-xs font-normal text-gray-500 underline' onClick={() => setValue('top_p', undefined)}>Reset</button> : null}
+                            {node.data.top_p !== undefined ? <button className='text-xs font-normal text-muted-foreground underline' onClick={() => setValue('top_p', undefined)}>Reset</button> : null}
                             {node.data.top_p ?? 'Default'}
                         </div>
                     </Label>
                     <Slider value={[node.data.top_p ?? 1]} max={1} min={0} step={0.01} onValueChange={(e) => setValue('top_p', e[0])} />
                 </div>
             </> : modelInfo?.reasoningEfforts?.includes('none') ? (
-                <p className='text-xs text-gray-500'>Set reasoning effort to None to use temperature and top P with this model.</p>
+                <p className='text-xs text-muted-foreground'>Set reasoning effort to None to use temperature and top P with this model.</p>
             ) : null}
             <div className='flex flex-col gap-1'>
                 <Label className='text-sm font-semibold' htmlFor="system_prompt">System Prompt</Label>
@@ -422,7 +428,7 @@ export const Properties = ({ node }: { node: AppNode<PromptData> }) => {
 }
 
 const noteStateVariants = cva(
-    "bg-white border-2 text-red-600 border-red-600 p-2 flex flex-col gap-2 rounded-md items-center  transition-all duration-300", //tw
+    "bg-card border-2 text-red-600 border-red-600 p-2 flex flex-col gap-2 rounded-md items-center  transition-all duration-300", //tw
     {
         variants: {
             state: {

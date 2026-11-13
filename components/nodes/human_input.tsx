@@ -82,7 +82,7 @@ export const Properties = ({ node }: { node: AppNode<HumanInputData> }) => {
                         <SelectItem value='approve'>Approve or reject</SelectItem>
                     </SelectContent>
                 </Select>
-                {mode == 'approve' ? <p className='text-xs text-gray-500'>Rejecting stops this branch.</p> : null}
+                {mode == 'approve' ? <p className='text-xs text-muted-foreground'>Rejecting stops this branch.</p> : null}
             </div>
             <TemplateField
                 node={node}

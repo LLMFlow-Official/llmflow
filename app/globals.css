@@ -127,11 +127,11 @@
 }
 
 .RichEditor-editor {
-  @apply border-t border-gray-300 cursor-text text-base h-[60vh] overflow-y-auto;
+  @apply border-t border-border cursor-text text-base h-[60vh] overflow-y-auto;
 }
 
 .RichEditor-root {
-  @apply bg-white border border-gray-300 text-sm h-full;
+  @apply bg-card border border-border text-sm h-full;
 }
 
 .RichEditor-editor .DraftEditor-root {
@@ -156,11 +156,11 @@
 }
 
 .RichEditor-editor .RichEditor-blockquote {
-  @apply border-l-4 border-gray-200 text-gray-600 italic my-4 py-2.5 px-5;
+  @apply border-l-4 border-border text-muted-foreground italic my-4 py-2.5 px-5;
 }
 
 .RichEditor-editor .public-DraftStyleDefault-pre {
-  @apply bg-gray-100 font-mono text-base p-5;
+  @apply bg-muted font-mono text-base p-5;
 }
 
 .RichEditor-controls {
@@ -168,7 +168,7 @@
 }
 
 .RichEditor-styleButton {
-  @apply text-gray-500 cursor-pointer mr-4 py-0.5 px-0 inline-block;
+  @apply text-muted-foreground cursor-pointer mr-4 py-0.5 px-0 inline-block;
 }
 
 .RichEditor-activeButton {
@@ -181,4 +181,50 @@
 
 .react-flow__edge-text {
   @apply fill-black m-2 p-2 text-xs
+}
+/* Formatted model output in the log (MarkdownViewer). */
+.markdown-inline {
+  @apply bg-accent text-xs h-auto;
+}
+
+.markdown-inline p,
+.RichEditor-root p {
+  @apply my-1;
+}
+
+.markdown-inline h1,
+.markdown-inline h2,
+.markdown-inline h3,
+.markdown-inline h4 {
+  @apply font-semibold text-sm my-1;
+}
+
+.RichEditor-root pre {
+  @apply bg-muted p-2 rounded text-[11px] overflow-x-auto my-1;
+}
+
+.RichEditor-root code {
+  @apply font-mono;
+}
+
+.RichEditor-root table {
+  @apply border-collapse my-2;
+}
+
+.RichEditor-root th,
+.RichEditor-root td {
+  @apply border border-border px-2 py-1 text-left align-top;
+}
+
+.RichEditor-root a {
+  @apply text-blue-600 underline dark:text-blue-400;
+}
+
+.dark .react-flow__edge-textbg {
+  fill: hsl(var(--card));
+  stroke: hsl(var(--border));
+}
+
+.dark .react-flow__edge-text {
+  fill: hsl(var(--foreground));
 }

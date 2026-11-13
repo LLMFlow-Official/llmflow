@@ -2,6 +2,7 @@ import { useTemporalFlowStore } from "@/lib/store";
 import { useEffect } from "react";
 import { Toggle } from "../ui/toggle";
 import { Redo, Undo } from "lucide-react";
+import { MOD_KEY } from "@/lib/utils";
 
 export default function UndoRedo() {
     const { undo, redo, futureStates, pastStates } = useTemporalFlowStore((state) => state);
@@ -11,12 +12,15 @@ export default function UndoRedo() {
       if (!reactFlowDiv) return
 
       const keyPressHandler = (e: KeyboardEvent) => {
-          if ((e.ctrlKey || e.metaKey) && e.key == 'z') {
-            undo()
-          }
-
-          if ((e.ctrlKey || e.metaKey) && e.key == 'y') {
+          if (!(e.ctrlKey || e.metaKey)) return
+          const key = e.key.toLowerCase()
+          // Ctrl/⌘+Shift+Z and Ctrl/⌘+Y redo; Ctrl/⌘+Z undoes.
+          if ((key == 'z' && e.shiftKey) || key == 'y') {
+            e.preventDefault()
             redo()
+          } else if (key == 'z') {
+            e.preventDefault()
+            undo()
           }
       }
 
@@ -26,10 +30,10 @@ export default function UndoRedo() {
   }, [redo, undo])
 
     return <>
-     <Toggle toolTip="Undo" onClick={() => undo()} disabled={pastStates.length == 0} >
+     <Toggle toolTip={`Undo (${MOD_KEY}+Z)`} aria-label="Undo" onClick={() => undo()} disabled={pastStates.length == 0} >
         <Undo/>
       </Toggle>
-      <Toggle toolTip="Redo" onClick={() => redo()} disabled={futureStates.length == 0} >
+      <Toggle toolTip={`Redo (${MOD_KEY}+Shift+Z)`} aria-label="Redo" onClick={() => redo()} disabled={futureStates.length == 0} >
         <Redo/>
       </Toggle>
     </>

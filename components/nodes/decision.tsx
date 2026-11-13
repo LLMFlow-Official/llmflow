@@ -156,10 +156,10 @@ export const Properties = ({ node }: { node: AppNode }) => {
             <div>
                 <Label>Decisions</Label>
                 {outgoers.length === 0 ? (
-                    <div className="text-sm text-gray-500">No connections to Decisions block.</div>
+                    <div className="text-sm text-muted-foreground">No connections to Decisions block.</div>
                 ) : (
                     outgoers.map(({ oNode, oNodeDetails }, index) => (
-                        <Card key={index} className="flex flex-col mb-2 p-3 border-b border-gray-200">
+                        <Card key={index} className="flex flex-col mb-2 p-3 border-b border-border">
                             <span className='text-sm font-semibold'>{oNode.data.name ? `${oNode.data.name} (${oNodeDetails.name})` : `${oNodeDetails.name} (${oNode.id})`}</span>
 
                             {get(node, `data.decisions.${oNode.id}.type`) == 'else' ?
@@ -208,7 +208,7 @@ export const Properties = ({ node }: { node: AppNode }) => {
 }
 
 const noteStateVariants = cva(
-    "bg-white border-2 text-blue-600 border-blue-600 bg-opacity-80 p-2 flex flex-col gap-2 items-center", //tw
+    "bg-card border-2 text-blue-600 border-blue-600 bg-opacity-80 p-2 flex flex-col gap-2 items-center", //tw
     {
         variants: {
             state: {

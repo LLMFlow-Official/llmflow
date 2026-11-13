@@ -49,7 +49,7 @@ export function Stats({ startTime, endTime, inToken, outToken, cachedToken, reas
     return (
         <div className="mt-3">
             {isTestAPI ? <span className="font-bold text-red-600 text-xs">Currently you are using Test API</span> : null}
-            <div className="grid sm:grid-cols-3 xl:grid-cols-5 gap-2 text-xs bg-accent p-2 rounded-md flex-wrap border border-gray-300">
+            <div className="grid sm:grid-cols-3 xl:grid-cols-5 gap-2 text-xs bg-accent p-2 rounded-md flex-wrap border border-border">
                 <Tooltip><TooltipTrigger><div className="flex items-center gap-1"><MoveUp size={16} /> {inToken}</div></TooltipTrigger><TooltipContent>Input Token Count{cachedToken ? ` (${cachedToken} cached)` : ''}</TooltipContent></Tooltip>
                 <Tooltip><TooltipTrigger><div className="flex items-center gap-1"><MoveDown size={16} /> {outToken}</ div></TooltipTrigger><TooltipContent>Output Token Count{reasoningToken ? ` (${reasoningToken} reasoning)` : ''}</TooltipContent></Tooltip>
                 <Tooltip><TooltipTrigger><div className="flex items-center gap-1"><ArrowUpDown size={16} /> {inToken + outToken}</ div></TooltipTrigger><TooltipContent>Total Token Count</TooltipContent></Tooltip>

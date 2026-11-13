@@ -122,6 +122,7 @@ export type SettingsState = {
     /** Keep API keys in this browser between visits. When false they are kept in memory only. */
     rememberKeys: boolean;
     analyticsEnabled: boolean;
+    theme: 'system' | 'light' | 'dark';
     /** At most this many AI requests run at the same time; others wait their turn. */
     maxParallelRequests: number;
     /** An AI request that takes longer than this is cancelled. */
@@ -130,7 +131,7 @@ export type SettingsState = {
     /** Model IDs loaded from the user's provider accounts. */
     accountModels: Partial<Record<ProviderId, string[]>>;
     setApiKey: (provider: ProviderId, key: string) => void;
-    setSettings: (patch: Partial<Pick<SettingsState, 'compatibleBaseUrl' | 'rememberKeys' | 'analyticsEnabled' | 'maxParallelRequests' | 'requestTimeoutSeconds'>>) => void;
+    setSettings: (patch: Partial<Pick<SettingsState, 'compatibleBaseUrl' | 'rememberKeys' | 'analyticsEnabled' | 'maxParallelRequests' | 'requestTimeoutSeconds' | 'theme'>>) => void;
     setRememberKeys: (value: boolean) => void;
     setAnalyticsEnabled: (value: boolean) => void;
     setAccountModels: (provider: ProviderId, models: string[]) => void;
@@ -144,6 +145,7 @@ export const useSettingStore = create<SettingsState>()(persist(set => ({
     compatibleBaseUrl: '',
     rememberKeys: true,
     analyticsEnabled: true,
+    theme: 'system',
     maxParallelRequests: 4,
     requestTimeoutSeconds: 600,
     devMode: undefined,
@@ -334,7 +336,7 @@ export const useTemporalFlowStore = <T,>(
     selector: (state: TemporalState<Partial<AppState>>) => T,
 ) => useStore(useFlowStore.temporal, selector);
 
-export const useFlowStore = create<AppState>()(temporal(persist(computed((set, get) => ({
+export const useFlowStore = create<AppState>()(temporal(computed((set, get) => ({
     nodes: initialNodes,
     edges: initialEdges,
     onNodesChange: changes => {
@@ -407,11 +409,8 @@ export const useFlowStore = create<AppState>()(temporal(persist(computed((set, g
         edges: get().edges.map(edge => edge.id === updatedEdge.id ? updatedEdge : edge)
     }),
     clearSelection: () => set((s) => ({ nodes:s.nodes.map(x => ({...x, selected: false})), edges:s.edges.map(x => ({...x, selected: false})) }))
+// Flows are saved in the flow library (lib/library.ts), not by this store.
 })), {
-    name: 'flow-store',
-    storage: createJSONStorage(() => localStorage),
-    partialize: (state) => Object.fromEntries(Object.entries(state).filter(([key]) => !['isOnlyOneSelected', 'selectedNode'].includes(key)))
-}), {
     limit: 20,
     equality: deepEqual,
     handleSet: (handleSet) => debounce(handleSet, 1000, {
@@ -431,4 +430,17 @@ export function createStopSignal(): { signal: AbortSignal, dispose: () => void }
         if (previous.isRunning && !state.isRunning) controller.abort()
     })
     return { signal: controller.signal, dispose: unsubscribe }
+}
+
+/** Waits for the given time, returning false early if the flow is stopped. */
+export function waitWhileRunning(ms: number): Promise<boolean> {
+    return new Promise(resolve => {
+        const end = Date.now() + ms
+        const tick = () => {
+            if (!useRuntimeStore.getState().isRunning) return resolve(false)
+            if (Date.now() >= end) return resolve(true)
+            setTimeout(tick, Math.min(100, end - Date.now()))
+        }
+        tick()
+    })
 }

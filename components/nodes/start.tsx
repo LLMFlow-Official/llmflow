@@ -28,7 +28,7 @@ export const Metadata: NodeMetaData = {
 }
 
 export function LogView({payload}: NodeLogViewProps<PropValues>) {
-    return <div className='bg-accent p-2 text-xs rounded-md border border-gray-300'>
+    return <div className='bg-accent p-2 text-xs rounded-md border border-border'>
         {Object.entries(payload).filter(x=> x[0] != 'state').map(([key,value],index) => (
             <div key={index}>
                 {key} : {trimStrings(value?.toString())}
@@ -170,10 +170,10 @@ export const Properties = ({ node }: { node: AppNode }) => {
                         />
                         <div className='bg-accent p-2 rounded-md mt-2 flex flex-col gap-2'>
                             {arrayValue.length === 0 ? (
-                                <span className="text-gray-500 text-sm text-center">No items in the array.</span>
+                                <span className="text-muted-foreground text-sm text-center">No items in the array.</span>
                             ) : (
                                 arrayValue.map((val, index) => (
-                                    <div key={index} className="flex items-center justify-between bg-white rounded-md p-2 text-sm ">
+                                    <div key={index} className="flex items-center justify-between bg-card rounded-md p-2 text-sm ">
                                         <span>{val}</span>
                                         <Button
                                             variant="ghost"
@@ -197,7 +197,7 @@ export const Properties = ({ node }: { node: AppNode }) => {
     return (
         <div className='flex flex-col gap-3 px-3'>
             {properties.map((prop, index) => (
-                <div key={index} className="flex flex-col pb-2 border-b border-gray-200">
+                <div key={index} className="flex flex-col pb-2 border-b border-border">
                     <div className="flex items-center mb-1 gap-2">
                         <Label className='text-sm font-semibold' htmlFor={prop.name}>{prop.name}</Label>
                         {prop.type === 'checkbox' ? renderInput(prop) : null}
@@ -257,7 +257,7 @@ export const Properties = ({ node }: { node: AppNode }) => {
 };
 
 const noteStateVariants = cva(
-    "bg-white border-2 border-green-600 text-green-600 px-3 py-2 flex flex-col gap-2 items-center rounded-3xl", //tw
+    "bg-card border-2 border-green-600 text-green-600 px-3 py-2 flex flex-col gap-2 items-center rounded-3xl", //tw
     {
         variants: {
             state: {

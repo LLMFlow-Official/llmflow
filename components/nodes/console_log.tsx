@@ -100,7 +100,7 @@ export const Properties = ({ node }: { node: AppNode<ConsoleLogData> }) => {
 }
 
 const noteStateVariants = cva(
-    "bg-white border-2 text-red-600 border-red-600 p-2 flex flex-col gap-2 rounded-md items-center  transition-all duration-300", //tw
+    "bg-card border-2 text-red-600 border-red-600 p-2 flex flex-col gap-2 rounded-md items-center  transition-all duration-300", //tw
     {
         variants: {
             state: {

@@ -74,7 +74,7 @@ export const Properties = ({ node }: { node: AppNode<SplitTextData> }) => {
                 <div className='flex flex-col gap-1'>
                     <Label className='text-sm font-semibold' htmlFor='separator'>Separator</Label>
                     <Input id='separator' value={node.data.separator ?? '\\n'} onChange={(e) => setValue('separator', e.target.value)} />
-                    <p className='text-xs text-gray-500'>Write \n for a new line and \t for a tab. Empty pieces are dropped.</p>
+                    <p className='text-xs text-muted-foreground'>Write \n for a new line and \t for a tab. Empty pieces are dropped.</p>
                 </div>
             ) : (
                 <div className='flex gap-2'>

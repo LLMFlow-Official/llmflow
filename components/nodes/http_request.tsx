@@ -138,7 +138,7 @@ export const Properties = ({ node }: { node: AppNode<HttpRequestData> }) => {
                 <Label className='text-sm font-semibold' htmlFor='fail_on_error'>Stop on error status (4xx/5xx)</Label>
                 <Switch id='fail_on_error' checked={node.data.fail_on_error !== false} onCheckedChange={(e) => setValue('fail_on_error', e ? undefined : false)} />
             </div>
-            <p className='text-xs text-gray-500'>Requests are sent from your browser, so the API must allow cross-origin (CORS) requests.</p>
+            <p className='text-xs text-muted-foreground'>Requests are sent from your browser, so the API must allow cross-origin (CORS) requests.</p>
         </div>
     )
 }

@@ -84,7 +84,7 @@ export const Properties = ({ node }: { node: AppNode<JsonExtractData> }) => {
                         <Plus className='w-4 h-4' />
                     </Button>
                 </div>
-                {fields.length == 0 ? <p className='text-xs text-gray-500'>Optional. Each field becomes its own output. The whole JSON is always available as &quot;json&quot;.</p> : null}
+                {fields.length == 0 ? <p className='text-xs text-muted-foreground'>Optional. Each field becomes its own output. The whole JSON is always available as &quot;json&quot;.</p> : null}
                 {fields.map((field, index) => (
                     <div key={index} className='flex gap-1 items-center'>
                         <Input

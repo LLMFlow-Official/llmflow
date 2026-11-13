@@ -49,7 +49,7 @@ export function Textarea({ className, classNameFrame, withoutRichText, type = 't
       )}>
         <HighlightWithinTextarea highlight={!withoutHighlights && headlights} value={value?.toString() || ''} onChange={(value) => onChange && onChange({ target: { value } } as ChangeEvent<HTMLTextAreaElement>)} />
       </div>
-      {node || !withoutRichText ? <div className="absolute -top-12 right-2 flex gap-1 p-1 bg-gray-200 rounded-md transition-all duration-100 group-hover:top-1 z-10">
+      {node || !withoutRichText ? <div className="absolute -top-12 right-2 flex gap-1 p-1 bg-muted rounded-md transition-all duration-100 group-hover:top-1 z-10">
         {node ? <Button toolTip="Value Selector" size="icon" variant="ghost" className="h-6 w-6" onClick={() => setOpenValueSelector(true)}>
           <Route size={16} />
         </Button> : null}
@@ -66,14 +66,14 @@ export function Textarea({ className, classNameFrame, withoutRichText, type = 't
                 <h2 className="text-lg font-medium">Rich Text Editor</h2>
               </DialogTitle>
               <DialogDescription>
-                <p className="text-sm text-gray-500">Edit the content of the textarea using the rich text editor. also you can copy the content from docx file.</p>
+                <p className="text-sm text-muted-foreground">Edit the content of the textarea using the rich text editor. also you can copy the content from docx file.</p>
               </DialogDescription>
             </DialogHeader> : <DialogHeader>
               <DialogTitle>
                 <h2 className="text-lg font-medium">Json Editor</h2>
               </DialogTitle>
               <DialogDescription>
-                <p className="text-sm text-gray-500">Edit the JSON content directly in the editor. Ensure the JSON structure is valid to avoid errors.</p>
+                <p className="text-sm text-muted-foreground">Edit the JSON content directly in the editor. Ensure the JSON structure is valid to avoid errors.</p>
               </DialogDescription>
             </DialogHeader>}
             {type == 'text' ?

@@ -52,7 +52,7 @@ type LogViewPayload = {
 export function LogView({ payload }: NodeLogViewProps<LogViewPayload>) {
     return <>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={payload.image} alt='Generated image' className='max-h-64 w-auto rounded-md border border-gray-300 mx-auto' />
+        <img src={payload.image} alt='Generated image' className='max-h-64 w-auto rounded-md border border-border mx-auto' />
         <a href={payload.image} download={`image.${payload.format}`} className='mt-1 flex items-center gap-1 text-xs text-blue-600 underline w-fit'>
             <Download className='w-3 h-3' /> Download
         </a>
@@ -162,8 +162,8 @@ export const Properties = ({ node }: { node: AppNode<ImageGenerationData> }) => 
                 </Select>
                 {customMode ? (
                     <Input value={node.data.model || ''} placeholder='e.g. gpt-image-2.6-flare' onChange={(e) => setValue('model', e.target.value.trim())} />
-                ) : known?.description ? <p className='text-xs text-gray-500'>{known.description}</p> : null}
-                {!known?.prices ? <p className='text-xs text-gray-500'>Cost is shown as unknown for this model.</p> : null}
+                ) : known?.description ? <p className='text-xs text-muted-foreground'>{known.description}</p> : null}
+                {!known?.prices ? <p className='text-xs text-muted-foreground'>Cost is shown as unknown for this model.</p> : null}
             </div>
             <TemplateField node={node} field='prompt' label='Prompt' rich className='h-28' placeholder='A watercolor of {start.topic} at sunrise' />
             <div className='flex gap-2'>

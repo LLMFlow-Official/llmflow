@@ -62,17 +62,17 @@ export default function NewNode() {
                     onChange={(e) => setSearch(e.target.value)}
                     className="h-8 text-sm px-2 w-full outline-none bg-transparent"
                 />
-                <div className="flex flex-col bg-white rounded-b-md border-t-2 border-accent h-[60vh] overflow-y-auto select-none">
+                <div className="flex flex-col bg-card rounded-b-md border-t-2 border-accent h-[60vh] overflow-y-auto select-none">
                     {filteredNodes.length > 0 ? (
                         filteredNodes.map((node, index) => {
                             const Node = node.node;
                             return (
                                 <div 
                                     key={index} 
-                                    className="flex flex-col gap-2 p-2 items-stretch rounded-md cursor-pointer hover:bg-gray-100 transition-colors duration-200"
+                                    className="flex flex-col gap-2 p-2 items-stretch rounded-md cursor-pointer hover:bg-muted transition-colors duration-200"
                                     onClick={() => handleNodeClick(node)}
                                 >
-                                    <div className="flex items-center justify-center p-5 w-full bg-accent border border-gray-300 rounded-md">
+                                    <div className="flex items-center justify-center p-5 w-full bg-accent border border-border rounded-md">
                                       <Node id={''} data={{state: 'idle',thread: 'main'}} dragging={false} isConnectable={false} positionAbsoluteX={0} positionAbsoluteY={0} type={''} zIndex={0} />
                                     </div>
                                     <div className="flex flex-col py-2">

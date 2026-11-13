@@ -69,7 +69,7 @@ export const Properties = ({ node }: { node: AppNode<AssertData> }) => {
                     withoutRichText
                 />
                 {isValid ? (
-                    <p className='text-xs text-gray-500'>A JavaScript expression, the same as a Decision condition. It runs in an isolated worker.</p>
+                    <p className='text-xs text-muted-foreground'>A JavaScript expression, the same as a Decision condition. It runs in an isolated worker.</p>
                 ) : (
                     <p className='text-xs text-red-600'>This condition is not a valid expression.</p>
                 )}

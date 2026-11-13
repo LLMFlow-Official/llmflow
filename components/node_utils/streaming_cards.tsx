@@ -21,6 +21,13 @@ function StreamingCard({ name, text }: { name: string, text: string }) {
     )
 }
 
+/** Streams are keyed by node id, or "nodeId::index::label" when one node runs several models. */
+function streamName(id: string, nodes: { id: string, data: Record<string, unknown> }[]) {
+    const [nodeId, , label] = id.split('::')
+    const name = (nodes.find(x => x.id == nodeId)?.data.name as string) || nodeId
+    return label ? `${name} · ${label}` : name
+}
+
 /** Text that AI nodes are writing right now, shown live at the top of the runtime log. */
 export default function StreamingCards() {
     const streaming = useRuntimeStore(useShallow((s) => s.streaming))
@@ -30,7 +37,7 @@ export default function StreamingCards() {
     return (
         <>
             {entries.map(([id, text]) => (
-                <StreamingCard key={id} name={(nodes.find(x => x.id == id)?.data.name as string) || id} text={text} />
+                <StreamingCard key={id} name={streamName(id, nodes)} text={text} />
             ))}
         </>
     )

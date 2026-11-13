@@ -1,5 +1,5 @@
 import { cva } from 'class-variance-authority';
-import { cloneDeep, set, unset } from 'lodash';
+import { cloneDeep, get, set, unset } from 'lodash';
 import { useMemo } from 'react';
 import { AppNode, AppNodeProp, useFlowStore, useRuntimeStore, useSettingStore } from '@/lib/store';
 import { cn } from '@/lib/utils';
@@ -11,7 +11,7 @@ import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
 
 const shellVariants = cva(
-    "bg-white border-2 p-2 flex flex-col gap-2 items-center transition-all duration-300", //tw
+    "bg-card border-2 p-2 flex flex-col gap-2 items-center transition-all duration-300", //tw
     {
         variants: {
             kind: {
@@ -107,14 +107,14 @@ export function TemplateField({ node, field, label, placeholder, help, rich = fa
             <Textarea
                 id={field}
                 name={field}
-                value={(node.data as Record<string, unknown>)[field] as string || ''}
+                value={get(node.data, field) as string || ''}
                 className={className || 'h-20'}
                 placeholder={placeholder}
                 onChange={(e) => setValue(field, e.target.value)}
                 node={node}
                 withoutRichText={!rich}
             />
-            {help ? <p className='text-xs text-gray-500'>{help}</p> : null}
+            {help ? <p className='text-xs text-muted-foreground'>{help}</p> : null}
         </div>
     )
 }
@@ -137,23 +137,12 @@ export function TestOutputField({ node, label = 'Test Output', type = 'text', he
                 withoutHighlights
                 withoutRichText={type == 'text'}
             />
-            {help ? <p className='text-xs text-gray-500'>{help}</p> : null}
+            {help ? <p className='text-xs text-muted-foreground'>{help}</p> : null}
         </div>
     )
 }
 
-/** Waits for the given time, returning false early if the flow is stopped. */
-export function waitWhileRunning(ms: number): Promise<boolean> {
-    return new Promise(resolve => {
-        const end = Date.now() + ms
-        const tick = () => {
-            if (!useRuntimeStore.getState().isRunning) return resolve(false)
-            if (Date.now() >= end) return resolve(true)
-            setTimeout(tick, Math.min(100, end - Date.now()))
-        }
-        tick()
-    })
-}
+export { waitWhileRunning } from '@/lib/store';
 
 /** Calls onStop once if the flow is stopped; returns a function that removes the listener. */
 export function onFlowStop(onStop: () => void): () => void {

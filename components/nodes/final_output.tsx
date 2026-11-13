@@ -28,7 +28,9 @@ export function LogView({ payload }: NodeLogViewProps<string>) {
 export const Process = async (context: AppContext, node: AppNode<FinalOutputData>, nextNodes: AppNode[], controller: Controller) => {
     const value = renderTextTemplate(node.data.value || '', context)
     context[node.id] = { name: node.data.name, value }
-    useRuntimeStore.getState().addFinalOutput({ nodeId: node.id, name: node.data.name || Metadata.name, value })
+    const output = { nodeId: node.id, name: node.data.name || Metadata.name, value }
+    if (controller.addFinalOutput) controller.addFinalOutput(output)
+    else useRuntimeStore.getState().addFinalOutput(output)
     controller.log({ id: node.id, type: 'success', title: 'Final output set', nodeType: node.type, payload: value })
     return nextNodes
 }

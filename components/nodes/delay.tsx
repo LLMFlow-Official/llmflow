@@ -52,7 +52,7 @@ export const Properties = ({ node }: { node: AppNode<DelayData> }) => {
                         setValue('seconds', Number.isFinite(value) ? Math.min(Math.max(value, 0), MAX_SECONDS) : undefined)
                     }}
                 />
-                <p className='text-xs text-gray-500'>Up to {MAX_SECONDS / 60} minutes. Stopping the flow ends the wait.</p>
+                <p className='text-xs text-muted-foreground'>Up to {MAX_SECONDS / 60} minutes. Stopping the flow ends the wait.</p>
             </div>
         </div>
     )

@@ -1,7 +1,7 @@
 import * as StartNode from "@/components/nodes/start";
 import * as PromptNode from "@/components/nodes/prompt";
-import * as MultiTreadNode from "@/components/nodes/multi_thread";
-import * as TreadMergeNode from "@/components/nodes/thread_merge";
+import * as MultiThreadNode from "@/components/nodes/multi_thread";
+import * as ThreadMergeNode from "@/components/nodes/thread_merge";
 import * as DecisionNode from "@/components/nodes/decision";
 import * as ConsoleLogNode from "@/components/nodes/console_log";
 import * as SetStateNode from "@/components/nodes/set_state";
@@ -20,20 +20,22 @@ import * as FinalOutputNode from "@/components/nodes/final_output";
 import * as LoopNode from "@/components/nodes/loop";
 import * as TranscriptionNode from "@/components/nodes/transcription";
 import * as SemanticSearchNode from "@/components/nodes/semantic_search";
+import * as ModelCompareNode from "@/components/nodes/model_compare";
+import * as SubFlowNode from "@/components/nodes/sub_flow";
 
-import { AppNode, NodeLogs, UpdatePayload } from "./store";
+import { AppNode, FinalOutput, NodeLogs, UpdatePayload } from "./store";
 import Decimal from "decimal.js-light";
 import { Edge } from "@xyflow/react";
 
 export type NodeType = "start" | "prompt" | "multi_thread" | "thread_merge" | "decision" | "console_log" | "set_state"
     | "llm_router" | "web_search" | "image_generation" | "text_template" | "json_extract" | "split_text"
-    | "code" | "http_request" | "human_input" | "assert" | "delay" | "final_output" | "loop" | "transcription" | "semantic_search"
+    | "code" | "http_request" | "human_input" | "assert" | "delay" | "final_output" | "loop" | "transcription" | "semantic_search" | "model_compare" | "sub_flow"
 
 const nodes = [
     StartNode,
     PromptNode,
-    MultiTreadNode,
-    TreadMergeNode,
+    MultiThreadNode,
+    ThreadMergeNode,
     DecisionNode,
     ConsoleLogNode,
     SetStateNode,
@@ -52,6 +54,8 @@ const nodes = [
     LoopNode,
     TranscriptionNode,
     SemanticSearchNode,
+    ModelCompareNode,
+    SubFlowNode,
 ];
 
 export type NodeState = 'idle' | 'faded' | 'waiting' | 'running' | 'completed' | 'failed' | 'skipped';
@@ -68,6 +72,8 @@ export type AppContext = {
 
 export type Controller = {
     log: <T=unknown>(payload:NodeLogs<T>) => void;
+    /** Where Final Output nodes send their value (a sub-flow collects them instead of showing them). */
+    addFinalOutput?: (output: FinalOutput) => void;
     increaseInToken: (amount: number) => void;
     increaseOutToken: (amount: number) => void;
     increaseAmount:(amount: Decimal | null) => void;

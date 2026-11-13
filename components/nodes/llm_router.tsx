@@ -58,7 +58,7 @@ type LogViewPayload = { route: string, reason: string, usage: NormalizedUsage, a
 
 export function LogView({ payload }: NodeLogViewProps<LogViewPayload>) {
     return <>
-        <div className='bg-accent p-2 text-xs rounded-md border border-gray-300 flex flex-col gap-1'>
+        <div className='bg-accent p-2 text-xs rounded-md border border-border flex flex-col gap-1'>
             <span><b>Route:</b> {payload.route}</span>
             <span><b>Reason:</b> {payload.reason}</span>
         </div>
@@ -181,7 +181,7 @@ export const Properties = ({ node }: { node: AppNode<RouterData> }) => {
             <div className='flex flex-col gap-1'>
                 <Label className='text-sm font-semibold'>Routes</Label>
                 {outgoers.length == 0 ? (
-                    <p className='text-xs text-gray-500'>Connect this node to the nodes it can route to. Each connection becomes a route.</p>
+                    <p className='text-xs text-muted-foreground'>Connect this node to the nodes it can route to. Each connection becomes a route.</p>
                 ) : outgoers.map(({ target, details }) => (
                     <Card key={target.id} className='flex flex-col gap-2 p-3'>
                         <span className='text-sm font-semibold'>{target.data.name ? `${target.data.name} (${details.name})` : `${details.name} (${target.id})`}</span>

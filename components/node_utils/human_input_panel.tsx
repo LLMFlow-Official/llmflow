@@ -23,10 +23,10 @@ export default function HumanInputPanel() {
             <div className='flex items-center gap-2 text-blue-600'>
                 <UserRound className='w-5 h-5' />
                 <span className='font-semibold text-sm'>{request.title}</span>
-                {pending.length > 1 ? <span className='ml-auto text-xs text-gray-500'>{pending.length} waiting</span> : null}
+                {pending.length > 1 ? <span className='ml-auto text-xs text-muted-foreground'>{pending.length} waiting</span> : null}
             </div>
             {request.message ? (
-                <div className='text-sm whitespace-pre-wrap max-h-48 overflow-y-auto bg-accent rounded-md p-2 border border-gray-300'>{request.message}</div>
+                <div className='text-sm whitespace-pre-wrap max-h-48 overflow-y-auto bg-accent rounded-md p-2 border border-border'>{request.message}</div>
             ) : null}
             {request.mode == 'file' ? (
                 <div className='flex flex-col gap-2'>
@@ -54,7 +54,7 @@ export default function HumanInputPanel() {
                         className='min-h-[80px] rounded-md border border-input p-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
                     />
                     <div className='flex items-center gap-2'>
-                        <span className='text-xs text-gray-500'>⌘/Ctrl + Enter to send</span>
+                        <span className='text-xs text-muted-foreground'>⌘/Ctrl + Enter to send</span>
                         <Button className='ml-auto' onClick={() => request.respond(value)}>Continue</Button>
                     </div>
                 </>
