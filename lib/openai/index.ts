@@ -1,4 +1,4 @@
-import axios, { AxiosResponse } from "axios";
+import axios, { AxiosError, AxiosResponse } from "axios";
 import Decimal from "decimal.js-light";
 import { ReasoningEffort, supportsSampling, Usage } from "./models";
 
@@ -33,7 +33,7 @@ export type ResponsesPayload = {
     model: string
     input: { role: 'developer' | 'user' | 'assistant', content: string | InputContentPart[] }[]
     store: false
-    tools?: WebSearchTool[]
+    tools?: (WebSearchTool | Record<string, unknown>)[]
     include?: string[]
     text?: { format: { type: 'json_object' } | ({ type: 'json_schema' } & JsonSchemaFormat) }
     reasoning?: { effort: ReasoningEffort }
@@ -379,4 +379,12 @@ export async function listAccountModels(token: string): Promise<string[]> {
         .filter(id => /^(gpt-|o\d|chatgpt-|chat-latest)/.test(id))
         .filter(id => !/(audio|realtime|transcribe|tts|image|embedding|search|moderation)/.test(id))
         .sort()
+}
+
+/** Turns an axios error from OpenAI into an Error carrying OpenAI's message. */
+export function toOpenAiError(error: unknown): Error {
+    if (error instanceof AxiosError && error.response?.data?.error?.message) {
+        return new Error(error.response.data.error.message)
+    }
+    return error instanceof Error ? error : new Error(String(error))
 }

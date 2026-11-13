@@ -1,4 +1,5 @@
 import type { AppContext, Controller, NodeState } from './nodes'
+import { isStopped } from './errors'
 
 /**
  * Flow execution engine.
@@ -192,6 +193,12 @@ class Run {
         try {
             chosen = await this.runWithRetries(node, allNext)
         } catch (error) {
+            if (isStopped(error)) {
+                // The user stopped the flow: not a failure, nothing after this node runs.
+                this.status.set(id, 'done')
+                this.hooks.setNodeState(id, 'idle')
+                return
+            }
             const err = error instanceof Error ? error : new Error(String(error))
             const settings = (node.data.on_error || {}) as OnErrorSettings
             if (settings.continue) {
@@ -232,7 +239,7 @@ class Run {
             try {
                 return await process(this.context, node, nextNodes, controller)
             } catch (error) {
-                if (attempt >= attempts || !this.hooks.isRunning()) throw error
+                if (isStopped(error) || attempt >= attempts || !this.hooks.isRunning()) throw error
                 const message = error instanceof Error ? error.message : String(error)
                 this.hooks.controller.log({ id: node.id, type: 'warning', title: `Attempt ${attempt} failed, retrying: ${message}`, nodeType: node.type as never })
                 const keepGoing = await (this.hooks.wait || defaultWait)((settings.retry_delay ?? 2) * 1000)

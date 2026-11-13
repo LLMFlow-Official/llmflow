@@ -31,9 +31,9 @@ export const Process = async (context: AppContext, node: AppNode<HumanInputData>
     const message = renderTextTemplate(node.data.message || '', context)
 
     // undefined means the flow was stopped while waiting.
-    const answer = await new Promise<string | null | undefined>((resolve) => {
+    const answer = await new Promise<string | File | null | undefined>((resolve) => {
         let removeStopListener = () => {}
-        const finish = (value: string | null | undefined) => {
+        const finish = (value: string | File | null | undefined) => {
             removeStopListener()
             useRuntimeStore.getState().resolveInput(node.id)
             resolve(value)
@@ -54,7 +54,7 @@ export const Process = async (context: AppContext, node: AppNode<HumanInputData>
 
     context[node.id] = {
         name: node.data.name,
-        value: mode == 'text' ? answer || '' : undefined,
+        value: mode == 'text' ? (answer as string) || '' : undefined,
         approved: mode == 'approve' ? 'true' : undefined,
     }
     controller.log({
@@ -62,7 +62,7 @@ export const Process = async (context: AppContext, node: AppNode<HumanInputData>
         type: 'success',
         title: mode == 'approve' ? 'Approved' : 'Input received',
         nodeType: node.type,
-        payload: mode == 'text' ? answer || '' : undefined,
+        payload: mode == 'text' ? (answer as string) || '' : undefined,
     })
     return nextNodes
 }

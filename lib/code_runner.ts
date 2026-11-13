@@ -70,15 +70,13 @@ self.onmessage = async (event) => {
 
 export type CodeResult = { result: unknown, logs: string[] }
 
-export class CodeStoppedError extends Error {
-    constructor() {
-        super('Stopped')
-    }
-}
+/** Kept as a name for existing imports; it is the shared StoppedError. */
+export { StoppedError as CodeStoppedError } from './errors'
+import { StoppedError } from './errors'
 
 export function runCodeInWorker(code: string, context: Record<string, unknown>, timeoutMs: number, signal?: AbortSignal): Promise<CodeResult> {
     return new Promise((resolve, reject) => {
-        if (signal?.aborted) return reject(new CodeStoppedError())
+        if (signal?.aborted) return reject(new StoppedError())
 
         const url = URL.createObjectURL(new Blob([workerSource], { type: 'text/javascript' }))
         const worker = new Worker(url)
@@ -91,7 +89,7 @@ export function runCodeInWorker(code: string, context: Record<string, unknown>, 
         }
         const onAbort = () => {
             cleanup()
-            reject(new CodeStoppedError())
+            reject(new StoppedError())
         }
         const timer = setTimeout(() => {
             cleanup()

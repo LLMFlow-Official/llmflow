@@ -6,20 +6,19 @@ import { getOutgoers } from '@xyflow/react';
 import { AppContext, Controller, getNodeDetails, NodeConnectDisconnectPayload, NodeLogViewProps, NodeMetaData, NodeOutput, OutputExtra } from '@/lib/nodes';
 import { AppNode, AppNodeProp, NodeData, UpdatePayload, useFlowStore } from '@/lib/store';
 import { renderTextTemplate } from '@/lib/logics';
-import { buildResponsesPayload, DEFAULT_MODEL_ID, parseJsonOutput, parseResponse, ReasoningEffort, Usage } from '@/lib/openai';
-import { runResponses } from '@/lib/openai/run';
+import { parseJsonOutput } from '@/lib/openai';
+import { NormalizedUsage } from '@/lib/openai/models';
+import { runChat } from '@/lib/providers';
 import { Card } from '../ui/card';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
-import { Stats } from '../node_utils/stats';
-import { ModelSelect, ReasoningEffortSelect } from '../node_utils/model_select';
+import { UsageStats } from '../node_utils/stats';
+import { ModelNodeData, ModelSelect, nodeModel, nodeProvider, ReasoningEffortSelect } from '../node_utils/model_select';
 import { NameField, NodeShell, TemplateField, TestOutputField } from '../node_utils/node_shell';
 
 type Route = { name?: string, description?: string }
 
-type RouterData = NodeData & {
-    model?: string
-    reasoning_effort?: ReasoningEffort
+type RouterData = NodeData & ModelNodeData & {
     instruction?: string
     input?: string
     /** Keyed by the id of the node each route leads to. */
@@ -55,7 +54,7 @@ export const Outputs = (node: AppNode<RouterData>, extra: OutputExtra) => ({
     reason: { title: 'Reason', description: "The model's short explanation", value: extra.reason as string },
 } as NodeOutput)
 
-type LogViewPayload = { route: string, reason: string, usage: Usage, amount: number | null, startTime: number, endTime: number }
+type LogViewPayload = { route: string, reason: string, usage: NormalizedUsage, amount: number | null, startTime: number, endTime: number }
 
 export function LogView({ payload }: NodeLogViewProps<LogViewPayload>) {
     return <>
@@ -63,15 +62,7 @@ export function LogView({ payload }: NodeLogViewProps<LogViewPayload>) {
             <span><b>Route:</b> {payload.route}</span>
             <span><b>Reason:</b> {payload.reason}</span>
         </div>
-        <Stats
-            amount={payload.amount}
-            inToken={payload.usage.input_tokens}
-            outToken={payload.usage.output_tokens}
-            cachedToken={payload.usage.input_tokens_details?.cached_tokens}
-            reasoningToken={payload.usage.output_tokens_details?.reasoning_tokens}
-            startTime={payload.startTime}
-            endTime={payload.endTime}
-        />
+        <UsageStats usage={payload.usage} amount={payload.amount} startTime={payload.startTime} endTime={payload.endTime} />
     </>
 }
 
@@ -98,8 +89,10 @@ export const Process = async (context: AppContext, node: AppNode<RouterData>, ne
         ...routes.map(x => `- ${x.name}${x.description ? `: ${x.description}` : ''}`),
     ].filter(Boolean).join('\n')
 
-    const payload = buildResponsesPayload({
-        model: node.data.model || DEFAULT_MODEL_ID,
+    const testOutput = node.data.test_output ? JSON.stringify({ route: node.data.test_output.trim(), reason: 'Picked by Test API' }) : undefined
+    const run = await runChat({
+        provider: nodeProvider(node.data),
+        model: nodeModel(node.data),
         systemPrompt,
         messages: [{ role: 'user', content: input }],
         responseFormat: 'json_schema',
@@ -117,12 +110,9 @@ export const Process = async (context: AppContext, node: AppNode<RouterData>, ne
             },
         },
         reasoningEffort: node.data.reasoning_effort,
-    })
+    }, controller, { nodeId: node.id, testOutput })
 
-    const testOutput = node.data.test_output ? JSON.stringify({ route: node.data.test_output.trim(), reason: 'Picked by Test API' }) : undefined
-    const { response, cost, startTime, endTime } = await runResponses(payload, controller, testOutput)
-
-    const choice = parseJsonOutput(parseResponse(response, 'json_schema').text) as { route?: string, reason?: string }
+    const choice = parseJsonOutput(run.text) as { route?: string, reason?: string }
     const picked = routes.find(x => x.name.toLowerCase() == String(choice.route || '').trim().toLowerCase())
     if (!picked) throw Error(`The model picked "${choice.route}", which is not one of the routes: ${names.join(', ')}`)
 
@@ -135,10 +125,10 @@ export const Process = async (context: AppContext, node: AppNode<RouterData>, ne
         payload: {
             route: picked.name,
             reason: choice.reason || '',
-            usage: response.usage,
-            amount: cost === null ? null : cost.toNumber(),
-            startTime,
-            endTime,
+            usage: run.usage,
+            amount: run.cost === null ? null : run.cost.toNumber(),
+            startTime: run.startTime,
+            endTime: run.endTime,
         } as LogViewPayload
     })
 

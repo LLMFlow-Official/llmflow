@@ -12,6 +12,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^1.8.0",
     "@krhsiung/react-flow-smart-edge": "^3.0.2",
     "@monaco-editor/react": "^4.6.0",
     "@next/bundle-analyzer": "^14.2.15",

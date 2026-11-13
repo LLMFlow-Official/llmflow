@@ -4,9 +4,9 @@ import { AppContext, Controller, NodeLogViewProps, NodeMetaData, NodeOutput, Out
 import { AppNode, AppNodeProp, NodeData } from '@/lib/store';
 import { renderTextTemplate } from '@/lib/logics';
 import {
-    DEFAULT_IMAGE_MODEL_ID, ImagePayload, imageModels, imageResponseToUrl, imageUsageToCost, OpenAi
+    DEFAULT_IMAGE_MODEL_ID, ImagePayload, imageModels, imageResponseToUrl, imageUsageToCost, OpenAi, toOpenAiError
 } from '@/lib/openai';
-import { getApiKey, toOpenAiError } from '@/lib/openai/run';
+import { getProviderKey, isTestApi } from '@/lib/providers';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
@@ -64,7 +64,7 @@ export const Process = async (context: AppContext, node: AppNode<ImageGeneration
     const prompt = renderTextTemplate(node.data.prompt || '', context)
     if (!prompt.trim()) throw Error("Prompt is required")
 
-    const token = getApiKey()
+    const token = isTestApi() ? null : getProviderKey('openai')
     const model = node.data.model || DEFAULT_IMAGE_MODEL_ID
     const format = node.data.output_format || 'png'
     const startTime = Date.now()

@@ -28,7 +28,20 @@ export default function HumanInputPanel() {
             {request.message ? (
                 <div className='text-sm whitespace-pre-wrap max-h-48 overflow-y-auto bg-accent rounded-md p-2 border border-gray-300'>{request.message}</div>
             ) : null}
-            {request.mode == 'text' ? (
+            {request.mode == 'file' ? (
+                <div className='flex flex-col gap-2'>
+                    <input
+                        type='file'
+                        aria-label='Choose a file'
+                        accept={request.accept}
+                        className='text-sm'
+                        onChange={(e) => { const file = e.target.files?.[0]; if (file) request.respond(file) }}
+                    />
+                    <div className='flex justify-end'>
+                        <Button variant='outline' onClick={() => request.respond(null)}>Skip</Button>
+                    </div>
+                </div>
+            ) : request.mode == 'text' ? (
                 <>
                     <textarea
                         ref={inputRef}

@@ -1,7 +1,8 @@
 import { ImageIcon, Plus, ScrollText, Trash } from 'lucide-react';
 import { AppContext, NodeMetaData, NodeOutput, OutputExtra, Controller, NodeLogViewProps } from '@/lib/nodes';
 import { useFlowStore, AppNode, AppNodeProp, NodeData, useRuntimeStore } from '@/lib/store';
-import { capitalize, cloneDeep, set } from 'lodash';
+import { capitalize, cloneDeep, get, set } from 'lodash';
+import { schemaOutputs } from '@/lib/schema_tools';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
@@ -14,63 +15,53 @@ import { ThreadSourceHandle, ThreadTargetHandle } from '../node_utils/thread_han
 import DevMode from '../node_utils/dev_mode';
 import { Button } from '../ui/button';
 import ConfirmAlert from '../ui/confirm_alert';
-import {
-    buildResponsesPayload, DEFAULT_MODEL_ID, findModel, Message, parseJsonOutput, parseResponse,
-    ReasoningEffort, ResponseFormat, supportsSampling, Usage
-} from '@/lib/openai';
-import { runResponses } from '@/lib/openai/run';
+import { findModel, Message, parseJsonOutput, ResponseFormat, supportsSampling } from '@/lib/openai';
+import { NormalizedUsage } from '@/lib/openai/models';
+import { ChatRequest, runChat } from '@/lib/providers';
 import { renderTextTemplate } from '@/lib/logics';
-import { Stats } from '../node_utils/stats';
+import { CitationList, UsageStats } from '../node_utils/stats';
 import MarkdownViewer from '../ui/markdown_viewer';
 import { Slider } from '../ui/slider';
 import SchemaEditor, { SchemaType } from '../ui/schema_editor';
-import { ModelSelect, ReasoningEffortSelect } from '../node_utils/model_select';
+import { ModelNodeData, ModelSelect, nodeModel, nodeProvider, ReasoningEffortSelect, TierSelect, ToolsSection } from '../node_utils/model_select';
 import { TestOutputField } from '../node_utils/node_shell';
 
-type PromptData = NodeData & {
-    model?: string
+type PromptData = NodeData & ModelNodeData & {
     system_prompt?: string
     prompts?: Message[]
     /** Image URLs or {nodeId.image} references, sent with the last user prompt. */
     images?: string[]
     response_format?: ResponseFormat
     response_schema?: SchemaType
-    reasoning_effort?: ReasoningEffort
-    max_output_tokens?: number
     temperature?: number
     top_p?: number
     test_output?: string
 }
 
-type SchemaProperties = Record<string, { title?: string, description?: string }>
-
 export const Metadata: NodeMetaData = {
     type: 'prompt',
-    name: 'OpenAI Chat Prompt',
-    description: 'Generate a response based on the given prompt',
-    tags: ['OpenAI', 'ChatGPT', 'prompt']
+    name: 'AI Prompt',
+    description: 'Ask an AI model (OpenAI, Claude, Gemini or your own server) and use its answer',
+    tags: ['OpenAI', 'ChatGPT', 'GPT', 'Claude', 'Anthropic', 'Gemini', 'Google', 'LLM', 'prompt', 'chat']
 }
 
 type LogViewPayload = {
     assistant_output: string
-    usage: Usage
+    usage: NormalizedUsage
     amount: number | null
     startTime: number
     endTime: number
+    model: string
+    citations?: { url: string, title?: string }[]
+    searched?: boolean
 }
 
 export function LogView({ payload }: NodeLogViewProps<LogViewPayload>) {
     return <>
         <MarkdownViewer text={payload.assistant_output} />
-        <Stats
-            amount={payload.amount}
-            inToken={payload.usage.input_tokens}
-            outToken={payload.usage.output_tokens}
-            cachedToken={payload.usage.input_tokens_details?.cached_tokens}
-            reasoningToken={payload.usage.output_tokens_details?.reasoning_tokens}
-            startTime={payload.startTime}
-            endTime={payload.endTime}
-        />
+        <CitationList citations={payload.citations} />
+        <p className='text-[11px] text-muted-foreground mt-1'>{payload.model}</p>
+        <UsageStats usage={payload.usage} amount={payload.amount} costIncomplete={payload.searched} startTime={payload.startTime} endTime={payload.endTime} />
     </>;
 }
 
@@ -84,7 +75,7 @@ export const Outputs = (node: AppNode<PromptData>, extra: OutputExtra) => {
         model_name: {
             title: 'Model Name',
             description: 'Model used in the node',
-            value: node.data.model || DEFAULT_MODEL_ID
+            value: nodeModel(node.data)
         },
         system_prompt: {
             title: 'System Prompt',
@@ -98,6 +89,14 @@ export const Outputs = (node: AppNode<PromptData>, extra: OutputExtra) => {
         },
     } as NodeOutput
 
+    if (node.data.tools?.webSearch) {
+        outputs['citations'] = {
+            title: 'Citations',
+            description: 'Pages the answer cited (list of {url, title})',
+            value: extra.citations as string
+        }
+    }
+
     if (node.data.response_format == 'json_object' || node.data.response_format == 'json_schema') {
         outputs['assistant_json_output'] = {
             title: 'Assistant Json Output',
@@ -107,13 +106,13 @@ export const Outputs = (node: AppNode<PromptData>, extra: OutputExtra) => {
     }
 
     if (node.data.response_format == 'json_schema') {
-        const props = (node.data.response_schema?.schema as { properties?: SchemaProperties } | undefined)?.properties || {}
-
-        for (const key in props) {
-            outputs[`assistant_json_output.${key}`] = {
-                title: props[key].title || `${capitalize(key)} Value`,
-                description: props[key].description || 'This value will set from the output structure',
-                value: extra.assistant_json_output ? (extra.assistant_json_output as Record<string, unknown>)[key] as string : undefined
+        const json = extra.assistant_json_output as Record<string, unknown> | undefined
+        for (const field of schemaOutputs(node.data.response_schema?.schema)) {
+            const last = field.path.split('.').at(-1)!
+            outputs[`assistant_json_output.${field.path}`] = {
+                title: field.title || `${capitalize(last)} Value`,
+                description: field.description || 'This value will set from the output structure',
+                value: json ? get(json, field.path) as string : undefined
             }
         }
     }
@@ -123,11 +122,11 @@ export const Outputs = (node: AppNode<PromptData>, extra: OutputExtra) => {
 
 
 export const Process = async (context: AppContext, node: AppNode<PromptData>, nextNodes: AppNode[], controller: Controller) => {
-    const model = node.data.model || DEFAULT_MODEL_ID
     const response_format = node.data.response_format || 'text'
 
-    const payload = buildResponsesPayload({
-        model,
+    const request: ChatRequest = {
+        provider: nodeProvider(node.data),
+        model: nodeModel(node.data),
         systemPrompt: renderTextTemplate(node.data.system_prompt || '', context),
         messages: (node.data.prompts || []).map(x => ({
             ...x,
@@ -140,30 +139,36 @@ export const Process = async (context: AppContext, node: AppNode<PromptData>, ne
         maxOutputTokens: node.data.max_output_tokens,
         temperature: node.data.temperature,
         topP: node.data.top_p,
-    })
+        tools: node.data.tools,
+        tier: node.data.tier,
+    }
 
-    const { response, cost, startTime, endTime } = await runResponses(payload, controller, node.data.test_output)
-
-    const { text, warning } = parseResponse(response, response_format)
-    const jsonOutput = response_format != 'text' ? parseJsonOutput(text) : undefined
+    const run = await runChat(request, controller, { nodeId: node.id, testOutput: node.data.test_output })
+    // Web searches have a per-search fee that usage does not report, so the run total becomes a lower bound.
+    if (node.data.tools?.webSearch) controller.increaseAmount(null)
+    const jsonOutput = response_format != 'text' ? parseJsonOutput(run.text) : undefined
 
     controller.log({
         id: node.id,
-        type: warning ? 'warning' : 'success',
-        title: warning || "Request successfully executed",
+        type: run.warning ? 'warning' : 'success',
+        title: run.warning || "Request successfully executed",
         nodeType: node.type,
         payload: {
-            assistant_output: jsonOutput ? JSON.stringify(jsonOutput, null, 2) : text,
-            usage: response.usage,
-            amount: cost === null ? null : cost.toNumber(),
-            startTime,
-            endTime
+            assistant_output: jsonOutput ? JSON.stringify(jsonOutput, null, 2) : run.text,
+            usage: run.usage,
+            amount: run.cost === null ? null : run.cost.toNumber(),
+            startTime: run.startTime,
+            endTime: run.endTime,
+            model: run.model,
+            citations: run.citations,
+            searched: !!node.data.tools?.webSearch,
         } as LogViewPayload
     });
 
     context[node.id] = Object.fromEntries(Object.entries(Outputs(node, {
-        assistant_raw_output: text,
-        assistant_json_output: jsonOutput
+        assistant_raw_output: run.text,
+        assistant_json_output: jsonOutput,
+        citations: run.citations || [],
     })).map(([key, value]) => [key, value.value]))
 
     return nextNodes
@@ -215,7 +220,7 @@ export const Properties = ({ node }: { node: AppNode<PromptData> }) => {
     const [deletePrompt, setDeletePrompt] = useState<number>();
     const [prompts, setPrompts] = useState(node.data.prompts || []);
 
-    const model = node.data.model || DEFAULT_MODEL_ID
+    const model = nodeModel(node.data)
     const modelInfo = findModel(model)
     const showSampling = supportsSampling(model, node.data.reasoning_effort)
     const reasons = !modelInfo || !!modelInfo.reasoningEfforts
@@ -299,6 +304,7 @@ export const Properties = ({ node }: { node: AppNode<PromptData> }) => {
                 <SchemaEditor defaultValue={node.data.response_schema} onSave={(e) => setValue('response_schema', e)} />
             </div> : null}
             <ReasoningEffortSelect node={node} />
+            <TierSelect node={node} />
             <div className='flex flex-col gap-1'>
                 <Label className='text-sm font-semibold flex' htmlFor='max_output_tokens'>Max Output Tokens</Label>
                 <Input
@@ -399,6 +405,7 @@ export const Properties = ({ node }: { node: AppNode<PromptData> }) => {
                 </div>
             </form>
             <ImageInputs node={node} />
+            <ToolsSection node={node} />
             <TestOutputField
                 node={node as AppNode}
                 type={['json_schema', 'json_object'].includes(node.data.response_format || 'text') ? 'json' : 'text'}

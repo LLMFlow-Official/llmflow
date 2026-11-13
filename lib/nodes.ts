@@ -18,6 +18,8 @@ import * as AssertNode from "@/components/nodes/assert";
 import * as DelayNode from "@/components/nodes/delay";
 import * as FinalOutputNode from "@/components/nodes/final_output";
 import * as LoopNode from "@/components/nodes/loop";
+import * as TranscriptionNode from "@/components/nodes/transcription";
+import * as SemanticSearchNode from "@/components/nodes/semantic_search";
 
 import { AppNode, NodeLogs, UpdatePayload } from "./store";
 import Decimal from "decimal.js-light";
@@ -25,7 +27,7 @@ import { Edge } from "@xyflow/react";
 
 export type NodeType = "start" | "prompt" | "multi_thread" | "thread_merge" | "decision" | "console_log" | "set_state"
     | "llm_router" | "web_search" | "image_generation" | "text_template" | "json_extract" | "split_text"
-    | "code" | "http_request" | "human_input" | "assert" | "delay" | "final_output" | "loop"
+    | "code" | "http_request" | "human_input" | "assert" | "delay" | "final_output" | "loop" | "transcription" | "semantic_search"
 
 const nodes = [
     StartNode,
@@ -48,6 +50,8 @@ const nodes = [
     DelayNode,
     FinalOutputNode,
     LoopNode,
+    TranscriptionNode,
+    SemanticSearchNode,
 ];
 
 export type NodeState = 'idle' | 'faded' | 'waiting' | 'running' | 'completed' | 'failed' | 'skipped';

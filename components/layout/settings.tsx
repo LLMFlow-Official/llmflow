@@ -14,7 +14,6 @@ import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Bolt, Eye, EyeOff, SquareArrowDownIcon, SquareArrowOutUpRight } from "lucide-react";
 import { AppNode, DevMode, useFlowStore, useSettingStore } from "@/lib/store";
-import { useShallow } from "zustand/shallow";
 import { Switch } from "../ui/switch";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -23,6 +22,7 @@ import { nodeMetaDetails } from "@/lib/nodes";
 import { FlowEdge, FlowNode, parseFlow, ParsedFlow, riskyNodes, serializeFlow } from "@/lib/flow_file";
 import { Edge } from "@xyflow/react";
 import ConfirmAlert from "../ui/confirm_alert";
+import { PROVIDERS } from "@/lib/openai/models";
 
 const devModeInputs = {
     testOpenAPI: "Use Test API (no real requests)",
@@ -106,31 +106,25 @@ function SettingSwitch({ id, label, help, checked, onChange }: { id: string, lab
 }
 
 export function SettingsDialog() {
-    const settings = useSettingStore(useShallow(state => state))
-    const [openAIKey, setOpenAIKey] = useState(settings.openAIKey)
-    const [rememberKeys, setRememberKeys] = useState(settings.rememberKeys)
-    const [analyticsEnabled, setAnalyticsEnabled] = useState(settings.analyticsEnabled)
-    const [devMode, setDevMode] = useState<DevMode | undefined>(settings.devMode)
-
-    const reset = () => {
-        const s = useSettingStore.getState()
-        setOpenAIKey(s.openAIKey)
-        setRememberKeys(s.rememberKeys)
-        setAnalyticsEnabled(s.analyticsEnabled)
-        setDevMode(s.devMode)
-    }
+    const [form, setForm] = useState(() => snapshot())
+    const set = <K extends keyof SettingsForm>(key: K, value: SettingsForm[K]) => setForm(f => ({ ...f, [key]: value }))
 
     const save = () => {
         const s = useSettingStore.getState()
-        s.setRememberKeys(rememberKeys)
-        s.setOpenAIKey(openAIKey)
-        s.setAnalyticsEnabled(analyticsEnabled)
-        const anyDevOption = devMode && Object.values(devMode).some(Boolean)
-        s.setDevMode(anyDevOption ? devMode : undefined)
+        s.setRememberKeys(form.rememberKeys)
+        for (const provider of PROVIDERS) s.setApiKey(provider.id, form.apiKeys[provider.id])
+        s.setSettings({
+            compatibleBaseUrl: form.compatibleBaseUrl.trim(),
+            analyticsEnabled: form.analyticsEnabled,
+            maxParallelRequests: Math.min(Math.max(form.maxParallelRequests || 4, 1), 20),
+            requestTimeoutSeconds: Math.min(Math.max(form.requestTimeoutSeconds || 600, 10), 3600),
+        })
+        const anyDevOption = form.devMode && Object.values(form.devMode).some(Boolean)
+        s.setDevMode(anyDevOption ? form.devMode : undefined)
     }
 
     return (
-        <Dialog onOpenChange={(open) => open && reset()}>
+        <Dialog onOpenChange={(open) => open && setForm(snapshot())}>
             <DialogTrigger asChild>
                 <Button toolTip="Settings" size="icon" variant="ghost" aria-label="Settings">
                     <Bolt size={20} />
@@ -146,14 +140,47 @@ export function SettingsDialog() {
                 <div className="flex flex-col gap-5 my-2">
                     <section className="flex flex-col gap-3">
                         <h3 className="text-sm font-semibold">API keys</h3>
-                        <ApiKeyInput id="openai-key" label="OpenAI" value={openAIKey} onChange={setOpenAIKey} placeholder="sk-…" />
+                        {PROVIDERS.filter(x => x.id != 'compatible').map(provider => (
+                            <ApiKeyInput
+                                key={provider.id}
+                                id={`${provider.id}-key`}
+                                label={provider.label}
+                                value={form.apiKeys[provider.id]}
+                                placeholder={provider.keyPlaceholder}
+                                onChange={(value) => set('apiKeys', { ...form.apiKeys, [provider.id]: value })}
+                            />
+                        ))}
+                        <div className="flex flex-col gap-1">
+                            <Label htmlFor="compatible-url">OpenAI-compatible server</Label>
+                            <Input
+                                id="compatible-url"
+                                value={form.compatibleBaseUrl}
+                                placeholder="e.g. http://localhost:11434/v1 (Ollama) or https://openrouter.ai/api/v1"
+                                onChange={(e) => set('compatibleBaseUrl', e.target.value)}
+                            />
+                        </div>
+                        <ApiKeyInput id="compatible-key" label="Server API key (optional)" value={form.apiKeys.compatible} onChange={(value) => set('apiKeys', { ...form.apiKeys, compatible: value })} />
                         <SettingSwitch
                             id="remember-keys"
                             label="Remember keys on this device"
                             help="When off, keys are forgotten when you close or reload the page."
-                            checked={rememberKeys}
-                            onChange={setRememberKeys}
+                            checked={form.rememberKeys}
+                            onChange={(value) => set('rememberKeys', value)}
                         />
+                    </section>
+                    <section className="flex flex-col gap-3">
+                        <h3 className="text-sm font-semibold">Running flows</h3>
+                        <div className="flex gap-3">
+                            <div className="flex flex-col gap-1 flex-1">
+                                <Label htmlFor="parallel">AI requests at the same time</Label>
+                                <Input id="parallel" type="number" min={1} max={20} value={form.maxParallelRequests} onChange={(e) => set('maxParallelRequests', parseInt(e.target.value, 10) || 0)} />
+                            </div>
+                            <div className="flex flex-col gap-1 flex-1">
+                                <Label htmlFor="timeout">Request time limit (s)</Label>
+                                <Input id="timeout" type="number" min={10} max={3600} value={form.requestTimeoutSeconds} onChange={(e) => set('requestTimeoutSeconds', parseInt(e.target.value, 10) || 0)} />
+                            </div>
+                        </div>
+                        <span className="text-xs text-muted-foreground">Extra requests wait their turn. Rate-limit and server errors are retried twice.</span>
                     </section>
                     <section className="flex flex-col gap-3">
                         <h3 className="text-sm font-semibold">Privacy</h3>
@@ -161,28 +188,28 @@ export function SettingsDialog() {
                             id="analytics"
                             label="Share anonymous usage data"
                             help="Which buttons and node types are used. Never prompts, outputs, error messages or keys."
-                            checked={analyticsEnabled}
-                            onChange={setAnalyticsEnabled}
+                            checked={form.analyticsEnabled}
+                            onChange={(value) => set('analyticsEnabled', value)}
                         />
                     </section>
                     <section className="flex flex-col gap-3">
                         <SettingSwitch
                             id="dev-mode"
                             label="Developer mode"
-                            checked={!!devMode}
+                            checked={!!form.devMode}
                             onChange={(on) => {
-                                setDevMode(on ? { testOpenAPI: false, showTreads: false, showPropData: false } : undefined)
+                                set('devMode', on ? { testOpenAPI: false, showTreads: false, showPropData: false } : undefined)
                                 track('toggle_dev_mode')
                             }}
                         />
-                        {devMode ? <div className="flex flex-col gap-3 pl-4 border-l-2 border-border">
+                        {form.devMode ? <div className="flex flex-col gap-3 pl-4 border-l-2 border-border">
                             {Object.entries(devModeInputs).map(([key, label]) => (
                                 <SettingSwitch
                                     key={key}
                                     id={key}
                                     label={label}
-                                    checked={!!devMode[key as keyof DevMode]}
-                                    onChange={(value) => setDevMode({ ...devMode, [key]: value })}
+                                    checked={!!form.devMode![key as keyof DevMode]}
+                                    onChange={(value) => set('devMode', { ...form.devMode!, [key]: value })}
                                 />
                             ))}
                         </div> : null}
@@ -196,6 +223,21 @@ export function SettingsDialog() {
             </DialogContent>
         </Dialog>
     )
+}
+
+type SettingsForm = ReturnType<typeof snapshot>
+
+function snapshot() {
+    const s = useSettingStore.getState()
+    return {
+        apiKeys: { ...s.apiKeys },
+        compatibleBaseUrl: s.compatibleBaseUrl,
+        rememberKeys: s.rememberKeys,
+        analyticsEnabled: s.analyticsEnabled,
+        maxParallelRequests: s.maxParallelRequests,
+        requestTimeoutSeconds: s.requestTimeoutSeconds,
+        devMode: s.devMode,
+    }
 }
 
 export default function Settings() {

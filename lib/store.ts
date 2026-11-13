@@ -4,6 +4,7 @@ import { createComputed } from "zustand-computed";
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { Edge, Node, OnNodesChange, OnEdgesChange, OnConnect } from '@xyflow/react';
 import { getNodeDetails, NodeState, NodeType } from './nodes';
+import type { ProviderId } from './openai/models';
 import Decimal from 'decimal.js-light';
 import { temporal, TemporalState } from 'zundo';
 import { debounce, merge } from 'lodash';
@@ -55,10 +56,12 @@ export type HumanInputRequest = {
     nodeId: string
     title: string
     message: string
-    mode: 'text' | 'approve'
+    mode: 'text' | 'approve' | 'file'
     placeholder?: string
-    /** Text mode: the typed value. Approve mode: "approved" or null when rejected. */
-    respond: (value: string | null) => void
+    /** File mode: allowed file types for the file picker, e.g. "audio/*". */
+    accept?: string
+    /** Text mode: the typed value. Approve mode: "approved" or null when rejected. File mode: the file, or null if skipped. */
+    respond: (value: string | File | null) => void
 }
 
 export type FinalOutput = {
@@ -73,6 +76,10 @@ export type RuntimeState = {
     pendingInputs: HumanInputRequest[];
     /** Values from Final Output nodes in this run, in the order they finished. */
     finalOutputs: FinalOutput[];
+    /** Text that AI nodes are writing right now, by node id. */
+    streaming: Record<string, string>;
+    appendStreaming: (nodeId: string, text: string) => void;
+    clearStreaming: (nodeId: string) => void;
     requestInput: (request: HumanInputRequest) => void;
     resolveInput: (nodeId: string) => void;
     addFinalOutput: (output: FinalOutput) => void;
@@ -106,37 +113,67 @@ export type DevMode = {
     showPropData: boolean;
 }
 
+export type ApiKeys = Record<ProviderId, string>
+
 export type SettingsState = {
-    openAIKey: string;
+    apiKeys: ApiKeys;
+    /** Base URL of an OpenAI-compatible server, e.g. http://localhost:11434/v1 for Ollama. */
+    compatibleBaseUrl: string;
     /** Keep API keys in this browser between visits. When false they are kept in memory only. */
     rememberKeys: boolean;
     analyticsEnabled: boolean;
+    /** At most this many AI requests run at the same time; others wait their turn. */
+    maxParallelRequests: number;
+    /** An AI request that takes longer than this is cancelled. */
+    requestTimeoutSeconds: number;
+    devMode?: DevMode;
+    /** Model IDs loaded from the user's provider accounts. */
+    accountModels: Partial<Record<ProviderId, string[]>>;
+    setApiKey: (provider: ProviderId, key: string) => void;
+    setSettings: (patch: Partial<Pick<SettingsState, 'compatibleBaseUrl' | 'rememberKeys' | 'analyticsEnabled' | 'maxParallelRequests' | 'requestTimeoutSeconds'>>) => void;
     setRememberKeys: (value: boolean) => void;
     setAnalyticsEnabled: (value: boolean) => void;
-    devMode?: DevMode;
-    /** Text model IDs loaded from the user's OpenAI account (GET /v1/models). */
-    accountModels: string[];
-    setOpenAIKey: (key: string) => void;
-    setAccountModels: (models: string[]) => void;
+    setAccountModels: (provider: ProviderId, models: string[]) => void;
     setDevMode: (value?: DevMode) => void;
 };
 
+const EMPTY_KEYS: ApiKeys = { openai: '', anthropic: '', google: '', compatible: '' }
+
 export const useSettingStore = create<SettingsState>()(persist(set => ({
-    openAIKey: '',
+    apiKeys: EMPTY_KEYS,
+    compatibleBaseUrl: '',
     rememberKeys: true,
     analyticsEnabled: true,
+    maxParallelRequests: 4,
+    requestTimeoutSeconds: 600,
+    devMode: undefined,
+    accountModels: {},
+    setApiKey: (provider, key) => set(state => ({ apiKeys: { ...state.apiKeys, [provider]: key } })),
+    setSettings: patch => set(patch),
     setRememberKeys: rememberKeys => set({ rememberKeys }),
     setAnalyticsEnabled: analyticsEnabled => set({ analyticsEnabled }),
-    devMode: undefined,
-    accountModels: [],
-    setOpenAIKey: key => set({ openAIKey: key }),
-    setAccountModels: accountModels => set({ accountModels }),
+    setAccountModels: (provider, models) => set(state => ({ accountModels: { ...state.accountModels, [provider]: models } })),
     setDevMode: value => set({ devMode: value }),
 }), {
     name: 'flow-setting-store',
+    version: 1,
     storage: createJSONStorage(() => localStorage),
     // Keys are only written to storage when the user chose to remember them.
-    partialize: (state) => state.rememberKeys ? state : { ...state, openAIKey: '' },
+    partialize: (state) => state.rememberKeys ? state : { ...state, apiKeys: EMPTY_KEYS },
+    // Version 0 had a single OpenAI key and a flat list of OpenAI account models.
+    migrate: (persisted, version) => {
+        const state = (persisted || {}) as Record<string, unknown>
+        if (version < 1) {
+            state.apiKeys = { ...EMPTY_KEYS, openai: (state.openAIKey as string) || '' }
+            state.accountModels = Array.isArray(state.accountModels) ? { openai: state.accountModels } : {}
+            delete state.openAIKey
+        }
+        return state as unknown as SettingsState
+    },
+    merge: (persisted, current) => {
+        const state = (persisted || {}) as Partial<SettingsState>
+        return { ...current, ...state, apiKeys: { ...EMPTY_KEYS, ...(state.apiKeys || {}) } }
+    },
 }));
 
 export const useRuntimeStore = create<RuntimeState>()(set => ({
@@ -152,7 +189,14 @@ export const useRuntimeStore = create<RuntimeState>()(set => ({
     costIncomplete: false,
     pendingInputs: [],
     finalOutputs: [],
-    start: () => set({ isRunning: true, startTime: new Date().getTime(), endTime: undefined, inToken: 0, outToken: 0, amount: 0, costIncomplete: false, logs: [], pendingInputs: [], finalOutputs: [] }),
+    streaming: {},
+    appendStreaming: (nodeId, text) => set((state) => ({ streaming: { ...state.streaming, [nodeId]: (state.streaming[nodeId] || '') + text } })),
+    clearStreaming: (nodeId) => set((state) => {
+        const streaming = { ...state.streaming }
+        delete streaming[nodeId]
+        return { streaming }
+    }),
+    start: () => set({ streaming: {},  isRunning: true, startTime: new Date().getTime(), endTime: undefined, inToken: 0, outToken: 0, amount: 0, costIncomplete: false, logs: [], pendingInputs: [], finalOutputs: [] }),
     stop: () => set({ isRunning: false, endTime: new Date().getTime() }),
     requestInput: (request) => set((state) => ({ pendingInputs: [...state.pendingInputs, request] })),
     resolveInput: (nodeId) => set((state) => ({ pendingInputs: state.pendingInputs.filter(x => x.nodeId !== nodeId) })),

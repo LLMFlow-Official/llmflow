@@ -161,3 +161,20 @@ export function onFlowStop(onStop: () => void): () => void {
         if (previous.isRunning && !state.isRunning) onStop()
     })
 }
+
+/** Shows the Human Input panel asking for a file and waits for it. Resolves null if skipped, undefined if the flow stopped. */
+export function askForFile(nodeId: string, title: string, message: string, accept?: string): Promise<File | null | undefined> {
+    return new Promise((resolve) => {
+        let removeStopListener = () => {}
+        const finish = (value: File | null | undefined) => {
+            removeStopListener()
+            useRuntimeStore.getState().resolveInput(nodeId)
+            resolve(value)
+        }
+        removeStopListener = onFlowStop(() => finish(undefined))
+        useRuntimeStore.getState().requestInput({
+            nodeId, title, message, mode: 'file', accept,
+            respond: (value) => finish(value instanceof File ? value : null),
+        })
+    })
+}
