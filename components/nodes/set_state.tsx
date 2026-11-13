@@ -107,7 +107,7 @@ export const Properties = ({ node }: { node: AppNode<SetStateData> }) => {
                     id="value"
                     name="value"
                     value={node.data.value}
-                    classNameFrame={cn('h-20', isValidCondition ? 'outline !outline-green-600': 'outline !outline-red-600')}
+                    classNameFrame={cn('h-20', isValidCondition ? 'outline-solid outline-green-600!': 'outline-solid outline-red-600!')}
                     placeholder='Enter your value statement here...'
                     onChange={(e) => setValue('value', e.target.value)}
                     node={node}
@@ -128,7 +128,7 @@ const noteStateVariants = cva(
                 waiting: 'opacity-20',
                 running: 'opacity-40',
                 completed: 'opacity-100',
-                failed: 'opacity-80 outline outline-offset-1 outline-red-500', //tw
+                failed: 'opacity-80 outline-solid outline-offset-1 outline-red-500', //tw
                 skipped: 'opacity-30 border-dashed', //tw
             }
         },

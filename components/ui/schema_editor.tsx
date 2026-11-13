@@ -245,7 +245,7 @@ export default function SchemaEditor({ defaultValue, onSave }: SchemaEditorProps
               <PenBox size={10} />
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-screen-md max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-(--breakpoint-md) max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Output structure</DialogTitle>
               <DialogDescription>The model&apos;s answer will be JSON with exactly these fields.</DialogDescription>
@@ -255,7 +255,7 @@ export default function SchemaEditor({ defaultValue, onSave }: SchemaEditorProps
                 <Label htmlFor="schema-name">Name</Label>
                 <Input id="schema-name" value={schema.name} placeholder="e.g. review_summary" onChange={(e) => setValue('name', e.target.value.replace(/[^\w-]/g, '_'))} />
               </div>
-              <div className='flex flex-col gap-1 flex-[2]'>
+              <div className='flex flex-col gap-1 flex-2'>
                 <Label htmlFor="schema-description">Description (optional)</Label>
                 <Input id="schema-description" value={schema.description || ''} placeholder="What the output is for" onChange={(e) => setValue('description', e.target.value || undefined)} />
               </div>

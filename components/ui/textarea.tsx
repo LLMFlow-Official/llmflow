@@ -1,5 +1,5 @@
 import dynamic from "next/dynamic"
-import { ChangeEvent, useEffect, useState } from "react"
+import { ChangeEvent, useState } from "react"
 import { cn } from "@/lib/utils"
 import { PenBox, Route } from "lucide-react"
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTrigger } from "./dialog"
@@ -26,15 +26,12 @@ export type TextareaProps = React.TextareaHTMLAttributes<HTMLTextAreaElement> & 
 export function Textarea({ className, classNameFrame, withoutRichText, type = 'text', schema, withoutHighlights, node, value, onChange, placeholder, id, readOnly, disabled, 'aria-label': ariaLabel }: TextareaProps) {
   const [openValueSelector, setOpenValueSelector] = useState(false)
 
-  const [key, setKey] = useState(Math.random() * 1000)
-
-  useEffect(() => {
-    if (!openValueSelector)
-      setKey(Math.random() * 1000)
-  }, [openValueSelector])
+  // Remount the rich editor after the value selector closes, so it shows the inserted value.
+  const [key, setKey] = useState(0)
+  const closeValueSelector = () => { setOpenValueSelector(false); setKey(k => k + 1) }
 
   return (
-    <div className={cn('relative group overflow-hidden rounded-md', classNameFrame)}>
+    <div className={cn('relative group rounded-md', classNameFrame)}>
       <TemplateInput
         value={value?.toString() || ''}
         onChange={(text) => onChange && onChange({ target: { value: text } } as ChangeEvent<HTMLTextAreaElement>)}
@@ -47,18 +44,18 @@ export function Textarea({ className, classNameFrame, withoutRichText, type = 't
         readOnly={readOnly}
         disabled={disabled}
       />
-      {node || !withoutRichText ? <div className="absolute -top-12 right-2 flex gap-1 p-1 bg-muted rounded-md transition-all duration-100 group-hover:top-1 z-10">
-        {node ? <Button toolTip="Value Selector" size="icon" variant="ghost" className="h-6 w-6" onClick={() => setOpenValueSelector(true)}>
+      {node || !withoutRichText ? <div className="absolute top-1 right-2 flex gap-1 p-1 bg-muted rounded-md transition-opacity duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto z-10">
+        {node ? <Button toolTip="Value Selector" aria-label="Insert a value from an earlier node" size="icon" variant="ghost" className="h-6 w-6" onClick={() => setOpenValueSelector(true)}>
           <Route size={16} />
         </Button> : null}
         {!withoutRichText ? <Dialog>
           <DialogTrigger asChild>
-            <Button toolTip={type == 'text' ? "Rich Editor" : "JSON Editor"} variant="ghost" className="h-6 w-6" size="icon">
+            <Button toolTip={type == 'text' ? "Rich Editor" : "JSON Editor"} aria-label={type == 'text' ? "Open the rich text editor" : "Open the JSON editor"} variant="ghost" className="h-6 w-6" size="icon">
               <PenBox size={16} />
             </Button>
           </DialogTrigger>
 
-          <DialogContent className={cn('overflow-y-auto', type =='json' ? "max-w-screen-md": "max-w-screen-xl")}>
+          <DialogContent className={cn('overflow-y-auto', type =='json' ? "max-w-(--breakpoint-md)": "max-w-(--breakpoint-xl)")}>
             {type == 'text' ? <DialogHeader>
               <DialogTitle>
                 <h2 className="text-lg font-medium">Rich Text Editor</h2>
@@ -117,9 +114,9 @@ export function Textarea({ className, classNameFrame, withoutRichText, type = 't
             if (onChange) {
               onChange({ target: { value: (value || '') + s } } as ChangeEvent<HTMLTextAreaElement>);
             }
-            setOpenValueSelector(false);
+            closeValueSelector();
           }}
-          onClose={() => setOpenValueSelector(false)}
+          onClose={closeValueSelector}
         />
       ) : null}
     </div>

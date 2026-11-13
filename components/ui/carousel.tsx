@@ -111,7 +111,8 @@ const Carousel = React.forwardRef<
         return
       }
 
-      onSelect(api)
+      // Read the starting position once the carousel is ready, then follow changes.
+      queueMicrotask(() => onSelect(api))
       api.on("reInit", onSelect)
       api.on("select", onSelect)
 

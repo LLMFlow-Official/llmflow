@@ -58,7 +58,7 @@ export default function RichTextEditor({ initialContent, onChange, withoutHighli
         extensions: [StarterKit, Markdown, ...(withoutHighlights ? [] : [ReferenceHighlight])],
         content: initialContent,
         contentType: 'markdown',
-        editorProps: { attributes: { class: 'RichEditor-editor prose-sm outline-none', 'aria-label': 'Rich text editor', role: 'textbox', 'aria-multiline': 'true' } },
+        editorProps: { attributes: { class: 'RichEditor-editor prose-sm outline-hidden', 'aria-label': 'Rich text editor', role: 'textbox', 'aria-multiline': 'true' } },
         onUpdate: ({ editor }) => onChange(editor.getMarkdown()),
         onSelectionUpdate: ({ editor }) => {
             if (!nodeId) return

@@ -47,16 +47,18 @@ export const Properties = ({ node }: { node: AppNode<SubFlowData> }) => {
     const setValue = useNodeSetter(node)
     const flows = useLibraryStore((s) => s.flows)
     const currentId = useLibraryStore((s) => s.currentId)
-    const [inputs, setInputs] = useState<string[]>([])
+    const [loaded, setLoaded] = useState<{ flowId: string, inputs: string[] }>()
 
     useEffect(() => {
         let cancelled = false
-        if (!node.data.flow_id) return setInputs([])
-        backend().then(db => db.getFlow(node.data.flow_id!)).then(flow => {
-            if (!cancelled) setInputs(flow ? startInputs(flow.nodes) : [])
+        const flowId = node.data.flow_id
+        if (!flowId) return
+        backend().then(db => db.getFlow(flowId)).then(flow => {
+            if (!cancelled) setLoaded({ flowId, inputs: flow ? startInputs(flow.nodes) : [] })
         })
         return () => { cancelled = true }
     }, [node.data.flow_id])
+    const inputs = loaded && loaded.flowId == node.data.flow_id ? loaded.inputs : []
 
     return (
         <div className='flex flex-col gap-3 px-3'>

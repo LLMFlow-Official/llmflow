@@ -1,6 +1,6 @@
 import { AlertTriangle, Info, Plus, RefreshCw, Trash } from 'lucide-react';
 import { capitalize, cloneDeep, set, unset } from 'lodash';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { AppNode, useFlowStore, useSettingStore } from '@/lib/store';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -109,7 +109,7 @@ export function ModelSelect({ node }: { node: AppNode }) {
     const model = nodeModel(data)
     const modelInfo = findModel(model)
     const builtIn = modelsFor(provider)
-    const extraAccountModels = useMemo(() => (accountModels[provider] || []).filter(x => !findModel(x) && !retiredModels[x]), [accountModels, provider])
+    const extraAccountModels = (accountModels[provider] || []).filter(x => !findModel(x) && !retiredModels[x])
     const isListedModel = !!modelInfo || !!retiredModels[model] || extraAccountModels.includes(model)
     const [customMode, setCustomMode] = useState(!isListedModel || provider == 'compatible')
     const groups = Array.from(new Set(builtIn.filter(x => x.group != 'Deprecated').map(x => x.group)))

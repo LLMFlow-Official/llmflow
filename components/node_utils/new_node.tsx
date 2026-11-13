@@ -1,7 +1,8 @@
 import { Plus } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Toggle } from "../ui/toggle";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { randomId } from "@/lib/utils";
 import { useFlowStore } from "@/lib/store";
 import { nodeDetails } from "@/lib/nodes";
 import { useShallow } from "zustand/shallow";
@@ -17,11 +18,6 @@ export default function NewNode() {
 
     const { screenToFlowPosition } = useReactFlow()
  
-    useEffect(() => {
-        if (open) {
-            setSearch('');
-        }
-    }, [open]);
 
     const filteredNodes = nodeDetails.filter(node => !node.notAddable).filter(node =>
         node.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -36,11 +32,11 @@ export default function NewNode() {
         const center = screenToFlowPosition({x: reactFlowDiv.clientWidth / 2, y: reactFlowDiv.clientHeight / 2})
 
         pushNode({
-            id: `${node.type}_${Math.random().toString(16).slice(2)}`,
+            id: `${node.type}_${randomId()}`,
             type: node.type,
             position: center,
             data: {
-                thread: Math.random().toString(16).slice(2),
+                thread: randomId(),
             }
         });
 
@@ -48,7 +44,7 @@ export default function NewNode() {
     }
 
     return (
-        <Popover open={open} onOpenChange={setOpen}>
+        <Popover open={open} onOpenChange={(o) => { setOpen(o); if (o) setSearch('') }}>
             <PopoverTrigger asChild>
                 <Toggle toolTip="Add a node" aria-label="Add a node" pressed={open}>
                     <Plus size={20} />
@@ -60,7 +56,7 @@ export default function NewNode() {
                     placeholder="Search nodes..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="h-8 text-sm px-2 w-full outline-none bg-transparent"
+                    className="h-8 text-sm px-2 w-full outline-hidden bg-transparent"
                 />
                 <div className="flex flex-col bg-card rounded-b-md border-t-2 border-accent h-[60vh] overflow-y-auto select-none">
                     {filteredNodes.length > 0 ? (
@@ -73,7 +69,7 @@ export default function NewNode() {
                                     onClick={() => handleNodeClick(node)}
                                 >
                                     <div className="flex items-center justify-center p-5 w-full bg-accent border border-border rounded-md">
-                                      <Node id={''} data={{state: 'idle',thread: 'main'}} dragging={false} isConnectable={false} positionAbsoluteX={0} positionAbsoluteY={0} type={''} zIndex={0} />
+                                      <Node id={''} data={{state: 'idle',thread: 'main'}} dragging={false} draggable={false} selectable={false} deletable={false} selected={false} isConnectable={false} positionAbsoluteX={0} positionAbsoluteY={0} type={''} zIndex={0} />
                                     </div>
                                     <div className="flex flex-col py-2">
                                         <span className="text-sm font-medium">{node.name}</span>

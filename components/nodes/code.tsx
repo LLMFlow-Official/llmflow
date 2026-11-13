@@ -88,7 +88,7 @@ export const Properties = ({ node }: { node: AppNode<CodeData> }) => {
                         setValue('code', `${value.slice(0, selectionStart)}    ${value.slice(selectionEnd)}`)
                         requestAnimationFrame(() => el.setSelectionRange(selectionStart + 4, selectionStart + 4))
                     }}
-                    className='min-h-[220px] rounded-md border border-input bg-gray-900 text-gray-100 p-2 text-xs font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+                    className='min-h-[220px] rounded-md border border-input bg-gray-900 text-gray-100 p-2 text-xs font-mono focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring'
                 />
                 <p className='text-xs text-muted-foreground'>
                     The function body can use await and console.log. It runs in a separate worker that cannot see this page or your API key, and it can only return values that can be turned into JSON.

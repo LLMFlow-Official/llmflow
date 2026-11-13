@@ -20,31 +20,30 @@ export type StatsProps = {
 }
 
 export function Stats({ startTime, endTime, inToken, outToken, cachedToken, reasoningToken, amount, costIncomplete }: StatsProps) {
-    const [duration, setDuration] = useState<string>("00:00.000")
     const isTestAPI = useSettingStore((state) => state.devMode?.testOpenAPI || false)
     const covetedAmount = amount === null ? 'Unknown' : `${String(amount.toFixed(6)).padStart(7, '0')}${costIncomplete ? '+' : ''}`
     const costTooltip = amount === null
         ? 'Cost in USD (unknown: this model is not in the price list)'
         : costIncomplete ? 'Cost in USD (lower bound: some requests used models with unknown prices)' : 'Cost in USD'
 
-    const coveterDuration = (start?: number, end?: number) => {
-        if (!start) return `00:00.000`
-        const duration = (end ?? Date.now()) - start;
+    const formatDuration = (start?: number, end?: number) => {
+        if (!start || !end) return `00:00.000`
+        const duration = Math.max(end - start, 0);
         const minutes = Math.floor(duration / 60000);
         const seconds = Math.floor((duration % 60000) / 1000);
         const milliseconds = Math.floor(duration % 1000);
         return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(milliseconds).padStart(3, '0')}`;
     }
 
+    // While running, a timer updates "now" so the clock ticks; afterwards the fixed end time is shown.
+    const running = !!startTime && !endTime
+    const [now, setNow] = useState(0)
     useEffect(() => {
-        if (!startTime || endTime) {
-            setDuration(coveterDuration(startTime, endTime))
-            return
-        }
-
-        const interval = setInterval(() => setDuration(coveterDuration(startTime)), 10);
+        if (!running) return
+        const interval = setInterval(() => setNow(Date.now()), 50);
         return () => clearInterval(interval);
-    }, [startTime, endTime]);
+    }, [running]);
+    const duration = formatDuration(startTime, running ? Math.max(now, startTime!) : endTime)
 
     return (
         <div className="mt-3">

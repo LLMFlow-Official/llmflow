@@ -7,7 +7,7 @@ export default function Error({ error, reset }: { error: Error, reset: () => voi
   return (
     <div role="alert" className="h-dvh flex flex-col items-center justify-center gap-3 p-6 text-center">
       <p className="font-semibold">Something went wrong.</p>
-      <p className="text-xs text-muted-foreground max-w-md break-words">{error.message}</p>
+      <p className="text-xs text-muted-foreground max-w-md wrap-break-word">{error.message}</p>
       <div className="flex gap-2">
         <Button variant="outline" onClick={reset}>Try again</Button>
         <Button onClick={() => location.reload()}>Reload</Button>

@@ -55,7 +55,7 @@ export default function Home() {
           key={revision}
           colorMode={dark ? 'dark' : 'light'}
           tabIndex={0}
-          className='outline-none !bg-muted'
+          className='outline-hidden bg-muted!'
           nodes={nodes}
           edges={edges}
           onNodesChange={onNodesChange}
@@ -87,7 +87,7 @@ export default function Home() {
         >
           <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
           <Controls position="bottom-left" showInteractive={false} className="hidden sm:flex" />
-          <MiniMap position="bottom-right" pannable zoomable className="!bottom-24 hidden md:block" ariaLabel="Overview of the flow" />
+          <MiniMap position="bottom-right" pannable zoomable className="bottom-24! hidden md:block" ariaLabel="Overview of the flow" />
         </ReactFlow>
       </FlowContextMenu> : null}
     </div>

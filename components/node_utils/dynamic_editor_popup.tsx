@@ -20,10 +20,12 @@ type DynamicEditorPopupProps = {
 
 export default function DynamicEditorPopup({ baseNode, open, type, value, onChange, onClose } : DynamicEditorPopupProps) {
     const [condition, setCondition] = useState<string>(value || '')
-
-    useEffect(() => {
+    // Start from the new value whenever the caller passes a different one.
+    const [lastValue, setLastValue] = useState(value)
+    if (value !== lastValue) {
+        setLastValue(value)
         setCondition(value || '')
-    }, [value])
+    }
 
     const isValidCondition = useMemo(() => validateStatement(condition), [condition])
 
@@ -33,7 +35,7 @@ export default function DynamicEditorPopup({ baseNode, open, type, value, onChan
 
     return (
         <Dialog open={open} onOpenChange={(state) => !state && onClose && onClose()}>
-            <DialogContent className="max-w-screen-md">
+            <DialogContent className="max-w-(--breakpoint-md)">
                 {type == 'condition' ? <DialogHeader>
                     <DialogTitle>Condition builder</DialogTitle>
                     <DialogDescription>Build conditions for node transitions</DialogDescription>
@@ -45,7 +47,7 @@ export default function DynamicEditorPopup({ baseNode, open, type, value, onChan
                 {type == 'condition' ? <DialogFooter className="items-end">
                     <div className="w-full">
                         <Label>Condition <span className={isValidCondition ? 'text-green-600' : 'text-red-600'}>{isValidCondition ? '(Valid)' : '(Invalid)'}</span></Label>
-                        <Textarea classNameFrame={cn('mt-2', isValidCondition ? 'outline !outline-green-600' : 'outline !outline-red-600')} value={condition} onChange={(e) => setCondition(e.target.value)} withoutRichText />
+                        <Textarea classNameFrame={cn('mt-2', isValidCondition ? 'outline-solid outline-green-600!' : 'outline-solid outline-red-600!')} value={condition} onChange={(e) => setCondition(e.target.value)} withoutRichText />
                     </div>
                     <DialogClose asChild>
                         <Button disabled={!isValidCondition} onClick={() => isValidCondition ? onChange(condition) : null}>Set Condition</Button>

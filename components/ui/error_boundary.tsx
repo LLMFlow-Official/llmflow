@@ -35,7 +35,7 @@ export default class ErrorBoundary extends Component<Props, State> {
         return (
             <div role="alert" className={this.props.compact ? "p-3 text-sm flex flex-col gap-2" : "h-dvh flex flex-col items-center justify-center gap-3 p-6 text-center"}>
                 <p className="font-semibold">Something went wrong in {this.props.label}.</p>
-                <p className="text-xs text-muted-foreground max-w-md break-words">{this.state.error.message}</p>
+                <p className="text-xs text-muted-foreground max-w-md wrap-break-word">{this.state.error.message}</p>
                 <div className="flex gap-2">
                     <Button size="sm" variant="outline" onClick={() => this.setState({ error: undefined })}>Try again</Button>
                     {!this.props.compact ? <Button size="sm" onClick={() => location.reload()}>Reload</Button> : null}

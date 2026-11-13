@@ -54,7 +54,7 @@ export default function FindNode() {
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     onKeyDown={(e) => { if (e.key == 'Enter' && matches[0]) focus(matches[0].node.id) }}
-                    className="h-9 text-sm px-3 w-full outline-none bg-transparent border-b border-border"
+                    className="h-9 text-sm px-3 w-full outline-hidden bg-transparent border-b border-border"
                 />
                 <div className="max-h-72 overflow-y-auto py-1">
                     {matches.length ? matches.map(x => (

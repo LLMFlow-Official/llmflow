@@ -1,6 +1,7 @@
 "use client"
 
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useEffect } from "react";
+import { useIsClient } from "@/hooks/use-browser";
 import { Network } from "lucide-react";
 import BaseLayout from "./base_layout";
 import IntroSlider from "./intro_slider";
@@ -15,10 +16,9 @@ import { useSettingStore } from "@/lib/store";
  * avoids React hydration mismatches between the static HTML and the browser.
  */
 export default function AppShell({ children }: { children: ReactNode }) {
-  const [mounted, setMounted] = useState(false)
+  const mounted = useIsClient()
   const analyticsEnabled = useSettingStore((s) => s.analyticsEnabled)
 
-  useEffect(() => setMounted(true), [])
   useEffect(() => {
     if (mounted) setupAnalytics(analyticsEnabled)
   }, [mounted, analyticsEnabled])

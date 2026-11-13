@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Download, Play, Square } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useFlowStore, useRuntimeStore } from "@/lib/store";
@@ -34,7 +34,13 @@ export default function TestCasesDialog({ open, onOpenChange }: { open: boolean,
     const [progress, setProgress] = useState<{ done: number, total: number }>()
     const cancelled = useRef(false)
 
-    useEffect(() => { if (open) { setSaved(load(flowId)); setResults([]) } }, [open, flowId])
+    // Reload the saved cases (and clear old results) each time the dialog opens or the flow changes.
+    const [openedFor, setOpenedFor] = useState<string | undefined>(open ? flowId : undefined)
+    const openKey = open ? flowId : undefined
+    if (openKey !== openedFor) {
+        setOpenedFor(openKey)
+        if (open) { setSaved(load(flowId)); setResults([]) }
+    }
     const update = (patch: Partial<Saved>) => setSaved(s => {
         const next = { ...s, ...patch }
         try { localStorage.setItem(storageKey(flowId), JSON.stringify(next)) } catch { /* ignore */ }
@@ -127,7 +133,7 @@ export default function TestCasesDialog({ open, onOpenChange }: { open: boolean,
 
     return (
         <Dialog open={open} onOpenChange={(o) => { if (!o && progress) stop(); onOpenChange(o) }}>
-            <DialogContent className="max-w-screen-lg max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-(--breakpoint-lg) max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>Test cases</DialogTitle>
                     <DialogDescription>
@@ -204,7 +210,7 @@ export default function TestCasesDialog({ open, onOpenChange }: { open: boolean,
                                     {results.map(r => (
                                         <tr key={r.index} className="border-t border-border align-top">
                                             <td className="p-2">{r.index}</td>
-                                            <td className="p-2 max-w-[12rem]">{used.map(c => <div key={c} className="truncate"><b>{c}:</b> {records[r.index - 1][c]}</div>)}</td>
+                                            <td className="p-2 max-w-48">{used.map(c => <div key={c} className="truncate"><b>{c}:</b> {records[r.index - 1][c]}</div>)}</td>
                                             <td className="p-2 max-w-[24rem] whitespace-pre-wrap">{r.output.length > 400 ? `${r.output.slice(0, 400)}…` : r.output}</td>
                                             <td className="p-2">
                                                 {r.check.passed === null ? <span className="text-muted-foreground">{r.status}</span> : r.check.passed ? <span className="text-green-700 dark:text-green-400 font-semibold">Pass</span> : <span className="text-red-600 font-semibold">Fail</span>}

@@ -30,7 +30,7 @@ export default function ViewAsCode({ request }: { request: () => ChatRequest }) 
             <DialogTrigger asChild>
                 <Button variant="outline" size="sm" className="gap-2 w-fit"><Code2 size={14} /> View as code</Button>
             </DialogTrigger>
-            <DialogContent className="max-w-screen-md max-h-[90vh] flex flex-col">
+            <DialogContent className="max-w-(--breakpoint-md) max-h-[90vh] flex flex-col">
                 <DialogHeader>
                     <DialogTitle>This prompt as code</DialogTitle>
                     <DialogDescription>The same request this node sends. Values like {'{start.topic}'} are filled in by the flow; replace them in your code. Keys are read from environment variables.</DialogDescription>

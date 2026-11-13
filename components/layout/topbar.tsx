@@ -9,7 +9,7 @@ export default function Topbar() {
         <div className="absolute top-2 left-2 right-2 z-50 flex flex-wrap items-start gap-2 pointer-events-none">
             <Logo />
             <FlowMenu />
-            <div className="flex-1 flex justify-center min-w-0 order-last sm:order-none basis-full sm:basis-auto">
+            <div className="flex-1 flex justify-center min-w-0 order-last sm:order-0 basis-full sm:basis-auto">
                 <Controllers />
             </div>
             <Settings />

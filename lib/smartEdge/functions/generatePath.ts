@@ -1,8 +1,5 @@
 // FIXME: The "pathfinding" module doe not have proper typings.
 /* eslint-disable
-	@typescript-eslint/no-unsafe-call,
-	@typescript-eslint/no-unsafe-member-access,
-	@typescript-eslint/no-unsafe-assignment,
 	@typescript-eslint/ban-ts-comment,
 */
 import {

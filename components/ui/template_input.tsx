@@ -74,9 +74,11 @@ export function TemplateInput({ id, value, onChange, placeholder, className, hig
     const open = query !== null && suggestionCount(options, query) > 0
 
     return (
+        // The outer box holds the suggestion list so it is not clipped by the scrolling text box.
+        <div className="relative">
         <div className={cn("relative rounded-md border border-input bg-background text-sm focus-within:ring-2 focus-within:ring-ring", disabled && "opacity-50", className)}>
             {highlight ? (
-                <div ref={backdrop} aria-hidden className="absolute inset-0 px-3 py-2 whitespace-pre-wrap break-words overflow-hidden text-transparent pointer-events-none">
+                <div ref={backdrop} aria-hidden className="absolute inset-0 px-3 py-2 whitespace-pre-wrap wrap-break-word overflow-hidden text-transparent pointer-events-none">
                     {highlighted(value).map((p, i) => p.ref
                         ? <mark key={i} className="bg-blue-100 dark:bg-blue-950 text-transparent rounded-sm">{p.text}</mark>
                         : <Fragment key={i}>{p.text}</Fragment>)}
@@ -93,7 +95,7 @@ export function TemplateInput({ id, value, onChange, placeholder, className, hig
                 readOnly={readOnly}
                 disabled={disabled}
                 spellCheck
-                className="relative block w-full h-full min-h-[inherit] resize-none bg-transparent px-3 py-2 outline-none placeholder:text-muted-foreground"
+                className="relative block w-full h-full min-h-[inherit] resize-none bg-transparent px-3 py-2 outline-hidden placeholder:text-muted-foreground"
                 onChange={(e) => { onChange(e.target.value); updateQuery(e.target) }}
                 onSelect={(e) => updateQuery(e.currentTarget)}
                 onBlur={() => setQuery(null)}
@@ -107,6 +109,7 @@ export function TemplateInput({ id, value, onChange, placeholder, className, hig
                     else if (e.key == 'Escape') { e.preventDefault(); setQuery(null) }
                 }}
             />
+        </div>
             {open ? <ReferenceSuggestions options={options} query={query!} active={active} onPick={pick} /> : null}
         </div>
     )

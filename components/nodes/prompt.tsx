@@ -437,7 +437,7 @@ const noteStateVariants = cva(
                 waiting: 'opacity-20',
                 running: 'opacity-40',
                 completed: 'opacity-100',
-                failed: 'opacity-80 outline outline-offset-1 outline-red-500', //tw
+                failed: 'opacity-80 outline-solid outline-offset-1 outline-red-500', //tw
                 skipped: 'opacity-30 border-dashed', //tw
             }
         },

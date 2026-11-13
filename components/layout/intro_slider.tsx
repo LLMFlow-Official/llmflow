@@ -20,34 +20,27 @@ import { track } from "@/lib/analytics";
 
 export default function IntroSlider() {
   const [api, setApi] = useState<CarouselApi>()
-  const [current, setCurrent] = useState(0)
-  const [count, setCount] = useState(0)
-  const [open, setOpen] = useState(false)
-  const [isFinished, setIsFinished] = useState(false)
-
-
-  useEffect(() => {
+  const [current, setCurrent] = useState(1)
+  const [count, setCount] = useState(8)
+  const [open, setOpen] = useState(() => {
     let seen: string | null = null
     try { seen = localStorage.getItem('introVersion') } catch { /* ignore */ }
-    setOpen(versionData.introVersion != seen)
-  }, [])
+    return versionData.introVersion != seen
+  })
+  const [isFinished, setIsFinished] = useState(false)
 
   useEffect(() => {
-    if (!api) {
-      return
-    }
-
-    setCount(api.scrollSnapList().length)
-    setCurrent(api.selectedScrollSnap() + 1)
-
-    api.on("select", () => {
+    if (!api) return
+    const onSelect = () => {
       const newCurrent = api.selectedScrollSnap() + 1
+      setCount(api.scrollSnapList().length)
       setCurrent(newCurrent)
-      if (newCurrent === count) {
-        setIsFinished(true)
-      }
-    })
-  }, [api, count])
+      if (newCurrent === api.scrollSnapList().length) setIsFinished(true)
+    }
+    api.on("select", onSelect)
+    api.on("reInit", onSelect)
+    return () => { api.off("select", onSelect); api.off("reInit", onSelect) }
+  }, [api])
 
   // Closing at any point (button, Escape, clicking outside) counts as seen.
   const handleClose = useCallback(() => {

@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useMediaQuery } from "@/hooks/use-browser";
 import { ReactFlowProvider } from "@xyflow/react";
 import { PanelBottomOpen, X } from "lucide-react";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "../ui/resizable";
@@ -13,21 +14,10 @@ import { ThemeController } from "./theme_toggle";
 import { Button } from "../ui/button";
 import ErrorBoundary from "../ui/error_boundary";
 
-function useIsNarrow() {
-    const [narrow, setNarrow] = useState(false)
-    useEffect(() => {
-        const query = window.matchMedia('(max-width: 767px)')
-        setNarrow(query.matches)
-        const onChange = (e: MediaQueryListEvent) => setNarrow(e.matches)
-        query.addEventListener('change', onChange)
-        return () => query.removeEventListener('change', onChange)
-    }, [])
-    return narrow
-}
 
 export default function BaseLayout({ children }: { children: React.ReactNode }) {
     const selectedNode = useFlowStore((state) => state.selectedNode)
-    const narrow = useIsNarrow()
+    const narrow = useMediaQuery('(max-width: 767px)')
     const [drawerOpen, setDrawerOpen] = useState(false)
     // A crash in one node's settings shows a message in the panel instead of breaking the app.
     const panel = (
@@ -57,7 +47,7 @@ export default function BaseLayout({ children }: { children: React.ReactNode }) 
                             </Button>
                         ) : null}
                         {drawerOpen || selectedNode ? (
-                            <div className="absolute inset-x-0 bottom-0 h-[65dvh] z-[60] bg-background border-t border-border rounded-t-xl shadow-2xl flex flex-col">
+                            <div className="absolute inset-x-0 bottom-0 h-[65dvh] z-60 bg-background border-t border-border rounded-t-xl shadow-2xl flex flex-col">
                                 <div className="flex justify-end px-2 pt-1">
                                     <Button variant="ghost" size="icon" aria-label="Close panel" onClick={() => { setDrawerOpen(false); useFlowStore.getState().clearSelection() }}>
                                         <X size={18} />
@@ -68,7 +58,7 @@ export default function BaseLayout({ children }: { children: React.ReactNode }) 
                         ) : null}
                     </div>
                 ) : (
-                    <ResizablePanelGroup direction="horizontal" className="!h-dvh">
+                    <ResizablePanelGroup direction="horizontal" className="h-dvh!">
                         <ResizablePanel id="canvas-panel" order={1} defaultSize={72} className="relative h-full">
                             {canvas}
                         </ResizablePanel>

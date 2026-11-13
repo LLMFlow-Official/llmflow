@@ -11,10 +11,15 @@ export default function HumanInputPanel() {
     const [value, setValue] = useState('')
     const inputRef = useRef<HTMLTextAreaElement>(null)
 
-    useEffect(() => {
+    const requestKey = request ? `${request.nodeId}:${request.mode}` : ''
+    const [shownKey, setShownKey] = useState(requestKey)
+    if (shownKey !== requestKey) {
+        setShownKey(requestKey)
         setValue('')
-        if (request?.mode == 'text') inputRef.current?.focus()
-    }, [request?.nodeId, request?.mode])
+    }
+    useEffect(() => {
+        if (requestKey.endsWith(':text')) inputRef.current?.focus()
+    }, [requestKey])
 
     if (!request) return null
 
@@ -51,7 +56,7 @@ export default function HumanInputPanel() {
                         onKeyDown={(e) => {
                             if (e.key == 'Enter' && (e.metaKey || e.ctrlKey)) request.respond(value)
                         }}
-                        className='min-h-[80px] rounded-md border border-input p-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+                        className='min-h-[80px] rounded-md border border-input p-2 text-sm focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring'
                     />
                     <div className='flex items-center gap-2'>
                         <span className='text-xs text-muted-foreground'>⌘/Ctrl + Enter to send</span>

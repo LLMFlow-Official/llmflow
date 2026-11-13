@@ -16,7 +16,7 @@ export default function MarkdownViewer({ text }: { text: string }) {
 
     return (
         <div className='rounded-md relative group'>
-            <div className="bg-accent px-2 py-1 text-xs rounded-md max-h-40 overflow-y-auto border border-border RichEditor-root markdown-inline break-words">
+            <div className="bg-accent px-2 py-1 text-xs rounded-md max-h-40 overflow-y-auto border border-border RichEditor-root markdown-inline wrap-break-word">
                 <Markdown remarkPlugins={[remarkGfm]}>{text}</Markdown>
             </div>
             <div className="absolute top-1 right-1 flex gap-0.5 opacity-60 group-hover:opacity-100 focus-within:opacity-100">
@@ -29,7 +29,7 @@ export default function MarkdownViewer({ text }: { text: string }) {
                             <Maximize2 size={10} />
                         </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-screen-xl overflow-y-auto">
+                    <DialogContent className="max-w-(--breakpoint-xl) overflow-y-auto">
                         <DialogHeader>
                             <DialogTitle>Output</DialogTitle>
                             <DialogDescription>Formatted as Markdown.</DialogDescription>

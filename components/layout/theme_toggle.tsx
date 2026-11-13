@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useMediaQuery } from "@/hooks/use-browser";
 import { Monitor, Moon, Sun } from "lucide-react";
 import { useSettingStore } from "@/lib/store";
 import { Button } from "../ui/button";
@@ -9,14 +10,7 @@ const labels = { system: 'Theme: same as your device', light: 'Theme: light', da
 /** Whether the dark theme is showing, following the setting (and the device when set to "system"). */
 export function useIsDark() {
     const theme = useSettingStore((s) => s.theme)
-    const [systemDark, setSystemDark] = useState(false)
-    useEffect(() => {
-        const query = window.matchMedia('(prefers-color-scheme: dark)')
-        setSystemDark(query.matches)
-        const onChange = (e: MediaQueryListEvent) => setSystemDark(e.matches)
-        query.addEventListener('change', onChange)
-        return () => query.removeEventListener('change', onChange)
-    }, [])
+    const systemDark = useMediaQuery('(prefers-color-scheme: dark)')
     return theme == 'dark' || (theme == 'system' && systemDark)
 }
 

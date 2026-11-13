@@ -39,7 +39,7 @@ export function ThreadTargetHandle({ active = true, type = 'normal' }: ThreadHan
     return active ? (<Handle
         type="target"
         position={Position.Top}
-        className='!rounded-md !w-1/5 !h-2 max-w-auto max-h-auto bg-primary'
+        className='rounded-md! w-1/5! h-2! max-w-auto max-h-auto bg-primary'
         isValidConnection={isValidConnection}
         isConnectableStart={type=="multi" || connections.length == 0}
     />) : null
@@ -75,7 +75,7 @@ export function ThreadSourceHandle({ active = true, type = 'normal' }: ThreadHan
     return active ? (<Handle
         type="source"
         position={Position.Bottom}
-        className='!rounded-md !w-1/5 !h-2 max-w-auto max-h-auto bg-primary'
+        className='rounded-md! w-1/5! h-2! max-w-auto max-h-auto bg-primary'
         isValidConnection={isValidConnection}
         isConnectableStart={type=="multi" || connections.length == 0}
     />) : null

@@ -1,3 +1,4 @@
+import type React from "react";
 import * as StartNode from "@/components/nodes/start";
 import * as PromptNode from "@/components/nodes/prompt";
 import * as MultiThreadNode from "@/components/nodes/multi_thread";
@@ -92,7 +93,7 @@ export type NodeLogViewProps<T = unknown> = {
     payload: T
 }
 
-export type NodeLogView = (props: NodeLogViewProps) => JSX.Element
+export type NodeLogView = (props: NodeLogViewProps) => React.JSX.Element
 export type NodeOutputs = ( node: AppNode, extra: OutputExtra ) => NodeOutput
 export type NodeProcess = (context: AppContext, node: AppNode, nextNodes: AppNode[], Controller: Controller) => Promise<AppNode[]>
 

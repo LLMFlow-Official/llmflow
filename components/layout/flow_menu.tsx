@@ -75,7 +75,7 @@ function NewFlowDialog({ open, onOpenChange }: { open: boolean, onOpenChange: (o
     }
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-screen-md max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-(--breakpoint-md) max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>New flow</DialogTitle>
                     <DialogDescription>Start from scratch or from an example. Examples run with the Test API too.</DialogDescription>
@@ -106,12 +106,12 @@ function ShareDialog({ open, onOpenChange }: { open: boolean, onOpenChange: (ope
     const [link, setLink] = useState('')
     const [removed, setRemoved] = useState<string[]>([])
 
+    // Build the link each time the dialog opens (the effect only starts the async work).
     useEffect(() => {
         if (!open) return
-        setLink('')
         const { nodes, edges } = useFlowStore.getState()
         const clean = sanitizeForSharing(nodes)
-        setRemoved(clean.removed)
+        Promise.resolve().then(() => setRemoved(clean.removed))
         compressToParam(serializeFlow(clean.nodes, edges, useLibraryStore.getState().currentName))
             .then(param => setLink(`${location.origin}${location.pathname}${SHARE_PREFIX}${param}`))
             .catch(error => toast({ title: 'Could not create a link', description: error.message }))
@@ -124,7 +124,7 @@ function ShareDialog({ open, onOpenChange }: { open: boolean, onOpenChange: (ope
     }
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
+        <Dialog open={open} onOpenChange={(o) => { if (!o) setLink(''); onOpenChange(o) }}>
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Share this flow</DialogTitle>
@@ -152,7 +152,12 @@ export default function FlowMenu() {
     const { open: openText } = opener
     const { toast } = useToast()
 
-    useEffect(() => setName(currentName), [currentName])
+    // Show the new name when another flow is opened or the flow is renamed elsewhere.
+    const [shownName, setShownName] = useState(currentName)
+    if (shownName !== currentName) {
+        setShownName(currentName)
+        setName(currentName)
+    }
 
     // Open a flow from a share link once the library is ready.
     useEffect(() => {

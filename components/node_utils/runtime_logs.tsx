@@ -51,7 +51,7 @@ export function LogCards({ logs }: { logs: NodeLogs[] }) {
                     <CardHeader className="p-3">
                         <div className="flex flex-row items-center gap-2">
                             <div className="flex-1 min-w-0">
-                                <div className="text-sm font-bold break-words w-full">{x.id == 'start' ? "Start" : (x.node?.data.name as string) || x.details.name}</div>
+                                <div className="text-sm font-bold wrap-break-word w-full">{x.id == 'start' ? "Start" : (x.node?.data.name as string) || x.details.name}</div>
                                 {x.id != 'start' ? <CardDescription className="text-xs truncate">{x.id}</CardDescription> : null}
                             </div>
                             {x.type != 'info' ? <Badge size="small" variant={x.type} className="ml-auto">{capitalize(x.type)}</Badge> : null}
