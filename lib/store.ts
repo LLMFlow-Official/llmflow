@@ -123,6 +123,9 @@ export type SettingsState = {
     rememberKeys: boolean;
     analyticsEnabled: boolean;
     theme: 'system' | 'light' | 'dark';
+    /** Model the flow-building assistant uses (empty: pick from the providers with a key). */
+    assistantProvider?: ProviderId;
+    assistantModel?: string;
     /** At most this many AI requests run at the same time; others wait their turn. */
     maxParallelRequests: number;
     /** An AI request that takes longer than this is cancelled. */
@@ -131,7 +134,7 @@ export type SettingsState = {
     /** Model IDs loaded from the user's provider accounts. */
     accountModels: Partial<Record<ProviderId, string[]>>;
     setApiKey: (provider: ProviderId, key: string) => void;
-    setSettings: (patch: Partial<Pick<SettingsState, 'compatibleBaseUrl' | 'rememberKeys' | 'analyticsEnabled' | 'maxParallelRequests' | 'requestTimeoutSeconds' | 'theme'>>) => void;
+    setSettings: (patch: Partial<Pick<SettingsState, 'compatibleBaseUrl' | 'rememberKeys' | 'analyticsEnabled' | 'maxParallelRequests' | 'requestTimeoutSeconds' | 'theme' | 'assistantProvider' | 'assistantModel'>>) => void;
     setRememberKeys: (value: boolean) => void;
     setAnalyticsEnabled: (value: boolean) => void;
     setAccountModels: (provider: ProviderId, models: string[]) => void;

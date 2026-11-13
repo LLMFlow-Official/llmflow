@@ -185,3 +185,48 @@ export async function runChat(request: ChatRequest, controller: Controller, opti
         stop.dispose()
     }
 }
+
+/**
+ * One AI request outside a flow run (the flow-building assistant): its own cancel signal, the time
+ * limit from Settings and retries for rate limits and server errors before any text has arrived.
+ */
+export async function chatDirect(request: ChatRequest, options: { signal: AbortSignal, onText?: (delta: string) => void }): Promise<ChatResult & { cost: Decimal | null }> {
+    const apiKey = getProviderKey(request.provider)
+    assertModelAvailable(request.model)
+    const settings = useSettingStore.getState()
+    const provider = providers[request.provider]
+
+    for (let attempt = 0; ; attempt++) {
+        const timeoutMs = Math.max(settings.requestTimeoutSeconds || 600, 10) * 1000
+        const attemptController = new AbortController()
+        const timer = setTimeout(() => attemptController.abort(), timeoutMs)
+        const onAbort = () => attemptController.abort()
+        options.signal.addEventListener('abort', onAbort, { once: true })
+        let streamed = false
+        try {
+            const result = await provider.chat(request, {
+                apiKey,
+                baseUrl: settings.compatibleBaseUrl,
+                signal: attemptController.signal,
+                onText: (delta) => { streamed = true; options.onText?.(delta) },
+            })
+            return { ...result, cost: costOf(result.usage, result.model, { tier: request.tier }) }
+        } catch (error) {
+            if (options.signal.aborted) throw new StoppedError()
+            if (attemptController.signal.aborted) throw new Error(`The request took longer than ${timeoutMs / 1000} seconds. You can raise the limit in Settings.`)
+            const retryable = error instanceof ProviderHttpError && error.retryable && !streamed && attempt < MAX_RETRIES
+            if (!retryable) throw error
+            await wait(Math.min((error as ProviderHttpError).retryAfterMs ?? 1000 * 2 ** attempt, 30_000), options.signal)
+        } finally {
+            clearTimeout(timer)
+            options.signal.removeEventListener('abort', onAbort)
+        }
+    }
+}
+
+/** Providers the user can use right now: those with a key (or a server address), or all in Test API mode. */
+export function availableProviders(): ProviderId[] {
+    const settings = useSettingStore.getState()
+    if (settings.devMode?.testOpenAPI) return PROVIDERS.map(p => p.id)
+    return PROVIDERS.map(p => p.id).filter(id => id == 'compatible' ? !!settings.compatibleBaseUrl : !!settings.apiKeys[id])
+}

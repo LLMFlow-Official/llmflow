@@ -53,6 +53,30 @@ test('a loop processes every item', async ({ page }) => {
     await expect(page.getByText('Ran 3 items')).toBeVisible()
 })
 
+test('builds a flow by chatting and undoes the change', async ({ page }) => {
+    const errors = await openApp(page)
+    await page.getByRole('button', { name: 'Flows menu' }).click()
+    await page.getByRole('button', { name: 'New flow' }).click()
+    await page.getByRole('button', { name: 'Blank flow' }).click()
+
+    await page.getByRole('tab', { name: 'Build' }).click()
+    const box = page.getByRole('textbox', { name: 'Describe the flow or the change' })
+    await box.fill('Translate emails into French')
+    await box.press('Enter')
+    await expect(page.getByText(/here is a simple example flow/)).toBeVisible()
+    await expect(page.getByText('2 nodes added')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Flows menu' })).toContainText('Translate emails into French')
+
+    await page.getByRole('button', { name: 'Run the flow' }).click()
+    await expect(page.getByText('(Test answer)').first()).toBeVisible()
+
+    await page.getByRole('tab', { name: 'Build' }).click()
+    await page.getByRole('button', { name: 'Undo this change' }).click()
+    await expect(page.getByText('Undone')).toBeVisible()
+    await expect(page.getByText('AI step', { exact: true })).toHaveCount(0)
+    expect(errors).toEqual([])
+})
+
 test('has no serious accessibility problems', async ({ page }) => {
     await openApp(page)
     const results = await new AxeBuilder({ page }).disableRules(['color-contrast']).analyze()
