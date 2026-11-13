@@ -170,7 +170,7 @@ export default function FlowAssistantPanel() {
                 ) : null}
             </div>
 
-            <form className="p-3 border-t border-border flex flex-col gap-2" onSubmit={(e) => { e.preventDefault(); send() }}>
+            <form data-own-shortcuts className="p-3 border-t border-border flex flex-col gap-2" onSubmit={(e) => { e.preventDefault(); send() }}>
                 <textarea
                     aria-label="Describe the flow or the change"
                     className="w-full min-h-20 max-h-48 resize-y rounded-md border border-input bg-background px-3 py-2 text-sm outline-hidden focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"

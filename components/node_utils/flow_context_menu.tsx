@@ -4,7 +4,7 @@ import { Edge, useReactFlow } from "@xyflow/react";
 import { PropsWithChildren, useCallback, useEffect } from "react";
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuShortcut, ContextMenuTrigger } from "../ui/context-menu";
 import { Clipboard, Copy, CopyPlus, Redo, Scissors, Trash, Undo } from "lucide-react";
-import { MOD_KEY } from "@/lib/utils";
+import { MOD_KEY, onCanvas } from "@/lib/utils";
 
 type ClipboardData = {
     node: AppNode[],
@@ -135,10 +135,10 @@ export default function FlowContextMenu({ children }: PropsWithChildren) {
     }, [])
 
     useEffect(() => {
-        const reactFlowDiv = document.querySelector('.react-flow') as HTMLInputElement
-        if (!reactFlowDiv) return
-
+        // Listen on the document and act only when the canvas has focus: the canvas element is
+        // created later than this component and replaced when another flow is opened.
         const keyPressHandler = (e: KeyboardEvent) => {
+            if (!onCanvas(e)) return
             if ((e.ctrlKey || e.metaKey) && e.key == 'x') {
                 cut()
             }
@@ -157,9 +157,9 @@ export default function FlowContextMenu({ children }: PropsWithChildren) {
             }
         }
 
-        reactFlowDiv.addEventListener('keydown', keyPressHandler);
+        document.addEventListener('keydown', keyPressHandler);
 
-        return () => reactFlowDiv.removeEventListener('keydown', keyPressHandler)
+        return () => document.removeEventListener('keydown', keyPressHandler)
     }, [copy, cut, past, duplicate])
 
     return (

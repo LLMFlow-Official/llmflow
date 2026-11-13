@@ -16,3 +16,10 @@ export const MOD_KEY = isMac ? '⌘' : 'Ctrl'
 
 /** A short random id, e.g. for new nodes ("prompt_9f3a1c…"). */
 export const randomId = () => Math.random().toString(16).slice(2)
+
+/** True when a key press happened on the canvas itself (not in a text box or dialog). */
+export function onCanvas(e: KeyboardEvent): boolean {
+  const target = e.target instanceof Element ? e.target : null
+  if (!target?.closest('.react-flow')) return false
+  return !target.closest('input, textarea, select, [contenteditable="true"], [role="dialog"]')
+}

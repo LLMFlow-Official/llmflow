@@ -5,7 +5,7 @@ import { PanelBottomOpen, X } from "lucide-react";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "../ui/resizable";
 import Topbar from "./topbar";
 import Properties from "../node_utils/properties";
-import { useFlowStore } from "@/lib/store";
+import { useFlowStore, useRuntimeStore } from "@/lib/store";
 import SidePanel from "../node_utils/side_panel";
 import { TooltipProvider } from "../ui/tooltip";
 import HumanInputPanel from "../node_utils/human_input_panel";
@@ -19,6 +19,9 @@ export default function BaseLayout({ children }: { children: React.ReactNode }) 
     const selectedNode = useFlowStore((state) => state.selectedNode)
     const narrow = useMediaQuery('(max-width: 767px)')
     const [drawerOpen, setDrawerOpen] = useState(false)
+    // A question from a Human Input step needs an answer: keep the panel out of its way.
+    const waitingForInput = useRuntimeStore((state) => state.pendingInputs.length > 0)
+    const showDrawer = (drawerOpen || !!selectedNode) && !waitingForInput
     // A crash in one node's settings shows a message in the panel instead of breaking the app.
     const panel = (
         <ErrorBoundary label="this panel" compact resetKey={selectedNode?.id}>
@@ -39,15 +42,17 @@ export default function BaseLayout({ children }: { children: React.ReactNode }) 
                 <ThemeController />
                 {narrow ? (
                     // Phones and narrow windows: the canvas fills the screen and the panel opens from the bottom.
-                    <div className="relative h-dvh w-full overflow-hidden">
+                    // --drawer-h lifts the Run button above the open panel.
+                    <div className="relative h-dvh w-full overflow-hidden" style={{ '--drawer-h': showDrawer ? '65dvh' : '0px' } as React.CSSProperties}>
                         {canvas}
-                        {!drawerOpen && !selectedNode ? (
+                        {!showDrawer ? (
                             <Button variant="outline" className="absolute left-4 bottom-6 z-40 gap-2 shadow-md bg-card" onClick={() => setDrawerOpen(true)}>
                                 <PanelBottomOpen size={16} /> Run log
                             </Button>
                         ) : null}
-                        {drawerOpen || selectedNode ? (
-                            <div className="absolute inset-x-0 bottom-0 h-[65dvh] z-60 bg-background border-t border-border rounded-t-xl shadow-2xl flex flex-col">
+                        {showDrawer ? (
+                            // Below dialogs, menus and tooltips (z-50), which open from inside it.
+                            <div className="absolute inset-x-0 bottom-0 h-[65dvh] z-40 bg-background border-t border-border rounded-t-xl shadow-2xl flex flex-col">
                                 <div className="flex justify-end px-2 pt-1">
                                     <Button variant="ghost" size="icon" aria-label="Close panel" onClick={() => { setDrawerOpen(false); useFlowStore.getState().clearSelection() }}>
                                         <X size={18} />

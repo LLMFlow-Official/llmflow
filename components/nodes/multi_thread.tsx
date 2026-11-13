@@ -19,7 +19,7 @@ export const Metadata: NodeMetaData = {
 }
 
 export const Process = async (context: AppContext, node: AppNode, nextNodes: AppNode[]) => {
-    context[node.id]['name'] = node.data.name || 'hi'
+    context[node.id] = { ...(context[node.id] || {}), name: (node.data.name as string) || Metadata.name }
     return nextNodes
 }
 

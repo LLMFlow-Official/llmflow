@@ -55,7 +55,8 @@ function useFlowOpener() {
         <ConfirmAlert
             open={!!pending}
             title="This flow runs code"
-            description={pending ? `${pending.risky.map(x => `"${x.name}" ${x.reason}`).join(', ')} when you press Play. Only open flows from people you trust.` : ''}
+            description={pending ? `${pending.risky.map(x => `"${x.name}" ${x.reason}`).join(', ')} when you run it. Only open flows from people you trust.` : ''}
+            confirmLabel="Open anyway"
             onConfirm={() => pending && add(pending, pending.fallbackName)}
             onCancel={() => setPending(undefined)}
         />
@@ -187,7 +188,9 @@ export default function FlowMenu() {
 
     const exportFile = async () => {
         await flushSave()
-        const { nodes, edges } = useFlowStore.getState()
+        const { nodes: all, edges } = useFlowStore.getState()
+        // Files get passed around like share links, so the same secrets are left out.
+        const { nodes, removed } = sanitizeForSharing(all)
         const data = serializeFlow(nodes, edges, currentName)
         const url = URL.createObjectURL(new Blob([data], { type: 'application/json' }))
         const a = document.createElement('a')
@@ -195,6 +198,7 @@ export default function FlowMenu() {
         a.download = `${currentName.replace(/[^\w-]+/g, '_') || 'flow'}.flow`
         a.click()
         URL.revokeObjectURL(url)
+        if (removed.length) toast({ title: 'Secrets were left out of the file', description: `${removed.join(', ')}. Add them again after importing.`, duration: 6000 })
         track('export_a_file')
     }
 
@@ -247,6 +251,8 @@ export default function FlowMenu() {
                 open={!!deleting}
                 title={`Delete "${deleting?.name}"?`}
                 description="The flow and its run history are removed from this browser. This cannot be undone. Export it first if you may need it."
+                confirmLabel="Delete flow"
+                destructive
                 onConfirm={() => { if (deleting) deleteFlow(deleting.id); setDeleting(undefined) }}
                 onCancel={() => setDeleting(undefined)}
             />

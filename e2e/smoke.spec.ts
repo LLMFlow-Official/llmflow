@@ -1,5 +1,7 @@
 import { expect, Page, test } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
+import { compressToParam } from '../lib/share'
+import { serializeFlow } from '../lib/flow_file'
 
 /** A fresh browser with the intro seen and the Test API on. */
 async function openApp(page: Page) {
@@ -75,6 +77,29 @@ test('builds a flow by chatting and undoes the change', async ({ page }) => {
     await expect(page.getByText('Undone')).toBeVisible()
     await expect(page.getByText('AI step', { exact: true })).toHaveCount(0)
     expect(errors).toEqual([])
+})
+
+test('answering a question with Cmd/Ctrl+Enter keeps the run going', async ({ page }) => {
+    await openApp(page)
+    const flow = serializeFlow([
+        { id: 'start', type: 'start', position: { x: 0, y: 0 }, data: { thread: 'main' } },
+        { id: 'human_input_a1', type: 'human_input', position: { x: 0, y: 150 }, data: { thread: 'main', name: 'Ask', mode: 'text', message: 'Your name?' } },
+        { id: 'final_output_a2', type: 'final_output', position: { x: 0, y: 300 }, data: { thread: 'main', name: 'Greeting', value: 'Hello {human_input_a1.value}' } },
+    ], [
+        { id: 'e1', source: 'start', target: 'human_input_a1' },
+        { id: 'e2', source: 'human_input_a1', target: 'final_output_a2' },
+    ], 'Greeter')
+    await page.goto(`/#flow=${await compressToParam(flow)}`)
+    await expect(page.getByRole('button', { name: 'Flows menu' })).toContainText('Greeter')
+
+    await page.getByRole('button', { name: 'Run the flow' }).click()
+    const answer = page.getByPlaceholder('Type your answer…')
+    await answer.fill('Ada')
+    await answer.press('ControlOrMeta+Enter')
+    await expect(page.getByText('Hello Ada').first()).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Run the flow' })).toBeVisible()
+    await page.getByRole('tab', { name: 'History' }).click()
+    await expect(page.getByText('completed').first()).toBeVisible()
 })
 
 test('has no serious accessibility problems', async ({ page }) => {

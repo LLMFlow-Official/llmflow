@@ -54,7 +54,12 @@ export default function HumanInputPanel() {
                         placeholder={request.placeholder || 'Type your answer…'}
                         onChange={(e) => setValue(e.target.value)}
                         onKeyDown={(e) => {
-                            if (e.key == 'Enter' && (e.metaKey || e.ctrlKey)) request.respond(value)
+                            if (e.key == 'Enter' && (e.metaKey || e.ctrlKey)) {
+                                // Keep the app-wide ⌘/Ctrl+Enter (run / stop) from also stopping the run.
+                                e.preventDefault()
+                                e.stopPropagation()
+                                request.respond(value)
+                            }
                         }}
                         className='min-h-[80px] rounded-md border border-input p-2 text-sm focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring'
                     />

@@ -247,8 +247,10 @@ export const Properties = ({ node }: { node: AppNode }) => {
             </form>
             <ConfirmAlert
                 open={!!deleteProperty}
-                title="Delete property"
-                description="Are you sure you want to delete this property?"
+                title="Delete this input?"
+                description="Steps that use this input will get an empty value."
+                confirmLabel="Delete input"
+                destructive
                 onConfirm={() => handleDelete(deleteProperty as Property, true)}
                 onCancel={() => setDeleteProperty(undefined)}
             />

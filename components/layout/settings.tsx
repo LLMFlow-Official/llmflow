@@ -80,7 +80,9 @@ export function SettingsDialog() {
     }
 
     return (
-        <Dialog onOpenChange={(open) => open && setForm(snapshot())}>
+        // Changes are kept however the dialog is closed (Done, the X, Escape or a click outside),
+        // so a pasted key is never lost.
+        <Dialog onOpenChange={(open) => open ? setForm(snapshot()) : save()}>
             <DialogTrigger asChild>
                 <Button toolTip="Settings" size="icon" variant="ghost" aria-label="Settings">
                     <Bolt size={20} />
@@ -173,7 +175,7 @@ export function SettingsDialog() {
                 </div>
                 <DialogFooter>
                     <DialogClose asChild>
-                        <Button onClick={save}>Save changes</Button>
+                        <Button>Done</Button>
                     </DialogClose>
                 </DialogFooter>
             </DialogContent>

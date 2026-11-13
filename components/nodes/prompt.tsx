@@ -418,8 +418,10 @@ export const Properties = ({ node }: { node: AppNode<PromptData> }) => {
             />
             <ConfirmAlert
                 open={deletePrompt != undefined}
-                title="Delete prompt"
-                description="Are you sure you want to delete this prompt?"
+                title="Delete this prompt?"
+                description="The prompt text is removed from this step."
+                confirmLabel="Delete prompt"
+                destructive
                 onConfirm={() => handleDelete(deletePrompt, true)}
                 onCancel={() => setDeletePrompt(undefined)}
             />
