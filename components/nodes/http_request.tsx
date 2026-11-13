@@ -110,9 +110,9 @@ export const Properties = ({ node }: { node: AppNode<HttpRequestData> }) => {
         <div className='flex flex-col gap-3 px-3'>
             <NameField node={node} placeholder={Metadata.name} />
             <div className='flex flex-col gap-1'>
-                <Label className='text-sm font-semibold'>Method</Label>
+                <Label htmlFor="http-method" className='text-sm font-semibold'>Method</Label>
                 <Select value={method} onValueChange={(e) => setValue('method', e)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger id="http-method"><SelectValue /></SelectTrigger>
                     <SelectContent>
                         {METHODS.map(x => <SelectItem key={x} value={x}>{x}</SelectItem>)}
                     </SelectContent>

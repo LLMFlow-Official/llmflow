@@ -161,17 +161,17 @@ export default function TestCasesDialog({ open, onOpenChange }: { open: boolean,
                 <div className="flex flex-wrap gap-3 items-end">
                     {finalNames.length > 1 ? (
                         <div className="flex flex-col gap-1">
-                            <Label>Output to check</Label>
+                            <Label htmlFor="test-output">Output to check</Label>
                             <Select value={outputName} onValueChange={(v) => update({ output: v })}>
-                                <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+                                <SelectTrigger id="test-output" className="w-48"><SelectValue /></SelectTrigger>
                                 <SelectContent>{finalNames.map(n => <SelectItem key={n} value={n}>{n}</SelectItem>)}</SelectContent>
                             </Select>
                         </div>
                     ) : null}
                     <div className="flex flex-col gap-1">
-                        <Label>Check</Label>
+                        <Label htmlFor="test-check">Check</Label>
                         <Select value={saved.check} onValueChange={(v) => update({ check: v as CheckKind })}>
-                            <SelectTrigger className="w-56"><SelectValue /></SelectTrigger>
+                            <SelectTrigger id="test-check" className="w-56"><SelectValue /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="contains">Output contains expected</SelectItem>
                                 <SelectItem value="equals">Output equals expected</SelectItem>

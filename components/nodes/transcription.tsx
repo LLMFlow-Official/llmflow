@@ -99,9 +99,9 @@ export const Properties = ({ node }: { node: AppNode<TranscriptionData> }) => {
         <div className='flex flex-col gap-3 px-3'>
             <NameField node={node} placeholder={Metadata.name} />
             <div className='flex flex-col gap-1'>
-                <Label className='text-sm font-semibold'>Model</Label>
+                <Label htmlFor="transcription-model" className='text-sm font-semibold'>Model</Label>
                 <Select value={customMode ? CUSTOM_OPTION : model} onValueChange={(e) => { setCustomMode(e == CUSTOM_OPTION); if (e != CUSTOM_OPTION) setValue('model', e) }}>
-                    <SelectTrigger aria-label='Model'><SelectValue /></SelectTrigger>
+                    <SelectTrigger id="transcription-model" aria-label='Model'><SelectValue /></SelectTrigger>
                     <SelectContent>
                         {transcriptionModels.map(x => <SelectItem key={x.id} value={x.id}>{x.label}</SelectItem>)}
                         <SelectItem value={CUSTOM_OPTION}>Custom model ID…</SelectItem>
@@ -110,9 +110,9 @@ export const Properties = ({ node }: { node: AppNode<TranscriptionData> }) => {
                 {customMode ? <Input aria-label='Model ID' value={node.data.model || ''} placeholder='Model ID' onChange={(e) => setValue('model', e.target.value.trim())} /> : null}
             </div>
             <div className='flex flex-col gap-1'>
-                <Label className='text-sm font-semibold'>Audio</Label>
+                <Label htmlFor="audio-source" className='text-sm font-semibold'>Audio</Label>
                 <Select value={source} onValueChange={(e) => setValue('source', e == 'ask' ? undefined : e)}>
-                    <SelectTrigger aria-label='Audio source'><SelectValue /></SelectTrigger>
+                    <SelectTrigger id="audio-source" aria-label='Audio source'><SelectValue /></SelectTrigger>
                     <SelectContent>
                         <SelectItem value='ask'>Ask for a file when the flow runs</SelectItem>
                         <SelectItem value='url'>From a URL</SelectItem>

@@ -1,10 +1,7 @@
-import { NodeShell } from '../node_utils/node_shell';
+import { NameField, NodeShell } from '../node_utils/node_shell';
 import { Split } from 'lucide-react';
 import { AppContext, NodeMetaData } from '@/lib/nodes';
-import { useFlowStore, AppNode, AppNodeProp } from '@/lib/store';
-import { cloneDeep, set } from 'lodash';
-import { Label } from '../ui/label';
-import { Input } from '../ui/input';
+import { AppNode, AppNodeProp } from '@/lib/store';
 
 export const Metadata: NodeMetaData = {
     type: 'multi_thread',
@@ -21,25 +18,10 @@ export const Process = async (context: AppContext, node: AppNode, nextNodes: App
 }
 
 export const Properties = ({ node }: { node: AppNode }) => {
-    const updateNode = useFlowStore(state => state.updateNode);
-
-    const setValue = (key: string, value: string) => {
-        const clonedNode = cloneDeep(node);
-        set(clonedNode, `data.${key}`, value);
-        updateNode(clonedNode);
-    }
-
     return (
         <div className='flex flex-col gap-2 px-3'>
-            <div className='flex flex-col gap-1'>
-                <Label>Name</Label>
-                <Input
-                    name="name"
-                    value={node.data.name as string}
-                    placeholder={Metadata.name}
-                    onChange={(e) => setValue('name', e.target.value)}
-                />
-            </div>
+            <NameField node={node as AppNode} placeholder={Metadata.name} />
+            <p className='text-xs text-muted-foreground'>Every step connected below this one runs at the same time. Connect the end of each branch to a Wait for all step to continue once all of them are done.</p>
         </div>
     )
 }

@@ -1,11 +1,10 @@
-import { NodeShell } from '../node_utils/node_shell';
+import { NameField, NodeShell } from '../node_utils/node_shell';
 import { Captions } from 'lucide-react';
 import { AppContext, Controller, NodeLogViewProps, NodeMetaData, NodeOutput } from '@/lib/nodes';
 import { useFlowStore, AppNode, AppNodeProp, NodeData } from '@/lib/store';
 import { cloneDeep, set } from 'lodash';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
-import { Input } from '../ui/input';
 
 import { renderTextTemplate } from '@/lib/logics';
 import MarkdownViewer from '../ui/markdown_viewer';
@@ -71,15 +70,7 @@ export const Properties = ({ node }: { node: AppNode<ConsoleLogData> }) => {
 
     return (
         <div className='flex flex-col gap-3 px-3'>
-            <div className='flex flex-col gap-1'>
-                <Label>Name</Label>
-                <Input
-                    name="name"
-                    value={node.data.name}
-                    placeholder={Metadata.name}
-                    onChange={(e) => setValue('name', e.target.value)}
-                />
-            </div>
+            <NameField node={node as AppNode} placeholder={Metadata.name} />
             <div className='flex flex-col gap-1'>
                 <Label className='text-sm font-semibold' htmlFor="log">Log</Label>
                 <Textarea

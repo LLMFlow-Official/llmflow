@@ -66,9 +66,9 @@ export const Properties = ({ node }: { node: AppNode<SubFlowData> }) => {
         <div className='flex flex-col gap-3 px-3'>
             <NameField node={node} placeholder={Metadata.name} />
             <div className='flex flex-col gap-1'>
-                <Label className='text-sm font-semibold'>Flow to run</Label>
+                <Label htmlFor="sub-flow" className='text-sm font-semibold'>Flow to run</Label>
                 <Select value={node.data.flow_id || ''} onValueChange={(id) => setValue('flow_id', id)}>
-                    <SelectTrigger aria-label='Flow to run'><SelectValue placeholder='Choose a saved flow' /></SelectTrigger>
+                    <SelectTrigger id="sub-flow" aria-label='Flow to run'><SelectValue placeholder='Choose a saved flow' /></SelectTrigger>
                     <SelectContent>
                         {flows.filter(f => f.id != currentId).map(f => <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>)}
                     </SelectContent>

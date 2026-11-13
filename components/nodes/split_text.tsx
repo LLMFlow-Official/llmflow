@@ -63,9 +63,9 @@ export const Properties = ({ node }: { node: AppNode<SplitTextData> }) => {
             <NameField node={node} placeholder={Metadata.name} />
             <TemplateField node={node} field='source' label='Text' placeholder='{prompt_x.assistant_raw_output}' />
             <div className='flex flex-col gap-1'>
-                <Label className='text-sm font-semibold'>Split by</Label>
+                <Label htmlFor="split-by" className='text-sm font-semibold'>Split by</Label>
                 <Select value={mode} onValueChange={(e) => setValue('mode', e)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger id="split-by"><SelectValue /></SelectTrigger>
                     <SelectContent>
                         <SelectItem value='separator'>Separator</SelectItem>
                         <SelectItem value='chunk'>Fixed size chunks</SelectItem>

@@ -203,9 +203,9 @@ export const Properties = ({ node }: { node: AppNode<LoopData> }) => {
         <div className='flex flex-col gap-3 px-3'>
             <NameField node={node} placeholder={Metadata.name} />
             <div className='flex flex-col gap-1'>
-                <Label className='text-sm font-semibold'>Mode</Label>
+                <Label htmlFor="loop-mode" className='text-sm font-semibold'>Mode</Label>
                 <Select value={mode} onValueChange={(e) => setValue('mode', e == 'for_each' ? undefined : e)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger id="loop-mode"><SelectValue /></SelectTrigger>
                     <SelectContent>
                         <SelectItem value='for_each'>For each item in a list</SelectItem>
                         <SelectItem value='repeat'>Repeat until a condition is true</SelectItem>

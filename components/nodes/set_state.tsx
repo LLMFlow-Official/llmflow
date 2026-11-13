@@ -1,4 +1,4 @@
-import { NodeShell } from '../node_utils/node_shell';
+import { NameField, NodeShell } from '../node_utils/node_shell';
 import { Cog } from 'lucide-react';
 import { AppContext, Controller, NodeMetaData, NodeOutput } from '@/lib/nodes';
 import { useFlowStore, AppNode, AppNodeProp, NodeData, createStopSignal } from '@/lib/store';
@@ -83,15 +83,7 @@ export const Properties = ({ node }: { node: AppNode<SetStateData> }) => {
 
     return (
         <div className='flex flex-col gap-3 px-3'>
-            <div className='flex flex-col gap-1'>
-                <Label>Name</Label>
-                <Input
-                    name="name"
-                    value={node.data.name}
-                    placeholder={Metadata.name}
-                    onChange={(e) => setValue('name', e.target.value)}
-                />
-            </div>
+            <NameField node={node as AppNode} placeholder={Metadata.name} />
             <div className='flex flex-col gap-1'>
                 <Label htmlFor="variable">Variable Name</Label>
                 <Input

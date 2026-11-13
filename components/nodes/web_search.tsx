@@ -101,9 +101,9 @@ export const Properties = ({ node }: { node: AppNode<WebSearchData> }) => {
             <TemplateField node={node} field='query' label='Question' placeholder='What changed in {start.topic} this week?' />
             <TemplateField node={node} field='instructions' label='Instructions' placeholder='Optional, e.g. Answer in 3 bullet points' />
             {nodeProvider(node.data) == 'openai' ? <div className='flex flex-col gap-1'>
-                <Label className='text-sm font-semibold'>Search depth</Label>
+                <Label htmlFor="search-depth" className='text-sm font-semibold'>Search depth</Label>
                 <Select value={node.data.context_size || 'medium'} onValueChange={(e) => setValue('context_size', e == 'medium' ? undefined : e)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger id="search-depth"><SelectValue /></SelectTrigger>
                     <SelectContent>
                         <SelectItem value='low'>Low (faster, cheaper)</SelectItem>
                         <SelectItem value='medium'>Medium</SelectItem>

@@ -107,9 +107,9 @@ export const Properties = ({ node }: { node: AppNode<SemanticSearchData> }) => {
         <div className='flex flex-col gap-3 px-3'>
             <NameField node={node} placeholder={Metadata.name} />
             <div className='flex flex-col gap-1'>
-                <Label className='text-sm font-semibold'>Embedding model</Label>
+                <Label htmlFor="embedding-model" className='text-sm font-semibold'>Embedding model</Label>
                 <Select value={customMode ? '__custom__' : model} onValueChange={(e) => { setCustomMode(e == '__custom__'); if (e != '__custom__') setValue('model', e) }}>
-                    <SelectTrigger aria-label='Embedding model'><SelectValue /></SelectTrigger>
+                    <SelectTrigger id="embedding-model" aria-label='Embedding model'><SelectValue /></SelectTrigger>
                     <SelectContent>
                         {embeddingModels.map(x => <SelectItem key={x.id} value={x.id}>{x.label}</SelectItem>)}
                         <SelectItem value='__custom__'>Custom model ID…</SelectItem>

@@ -3,6 +3,7 @@
 import { Dispatch, SetStateAction, useState } from "react";
 import Editor, { Monaco } from '@monaco-editor/react';
 import type { editor } from 'monaco-editor';
+import { useIsDark } from '../layout/theme_toggle';
 
 type SchemaEditorProps = {
     defaultValue?: string,
@@ -13,6 +14,7 @@ type SchemaEditorProps = {
 
 export default function JsonEditor({ defaultValue, schema, onErrorChange, onChange }: SchemaEditorProps) {
     const [errors, setErrors] = useState<editor.IMarker[]>([])
+    const dark = useIsDark()
 
     const onMount = (editor: editor.ICodeEditor, monaco: Monaco) => {
         editor.updateOptions({ minimap: { enabled: false } });
@@ -52,7 +54,7 @@ export default function JsonEditor({ defaultValue, schema, onErrorChange, onChan
                 height={'30vh'}
                 language="json"
                 className="border rounded-md"
-                theme="vs-dark"
+                theme={dark ? "vs-dark" : "light"}
                 onMount={onMount}
                 defaultValue={defaultValue}
                 onValidate={(e) => {

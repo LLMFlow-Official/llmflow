@@ -120,8 +120,9 @@ export function NameField({ node, placeholder }: { node: AppNode, placeholder: s
     const setValue = useNodeSetter(node)
     return (
         <div className='flex flex-col gap-1'>
-            <Label>Name</Label>
+            <Label className='text-sm font-semibold' htmlFor={`name-${node.id}`}>Name</Label>
             <Input
+                id={`name-${node.id}`}
                 name="name"
                 value={(node.data.name as string) || ''}
                 placeholder={placeholder}

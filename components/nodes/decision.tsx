@@ -1,4 +1,4 @@
-import { NodeShell } from '../node_utils/node_shell';
+import { NameField, NodeShell } from '../node_utils/node_shell';
 import { CircleHelp, PenBox } from 'lucide-react';
 import { Card } from '../ui/card';
 import { AppContext, getNodeDetails, NodeConnectDisconnectPayload, NodeMetaData } from '@/lib/nodes';
@@ -82,11 +82,6 @@ export const Properties = ({ node }: { node: AppNode }) => {
         edges: state.edges
     })));
 
-    const setValue = (key: string, value: string) => {
-        const clonedNode = cloneDeep(node);
-        set(clonedNode, `data.${key}`, value);
-        updateNode(clonedNode);
-    }
 
     const updateDecisionEdge = (clonedNode: AppNode, targetNodeId: string) => {
         const currentEdge = edges.find(x => x.source == node.id && x.target == targetNodeId)
@@ -143,15 +138,7 @@ export const Properties = ({ node }: { node: AppNode }) => {
 
     return (
         <div className='flex flex-col gap-3 px-3'>
-            <div className='flex flex-col gap-1'>
-                <Label>Name</Label>
-                <Input
-                    name="name"
-                    value={node.data.name as string}
-                    placeholder={Metadata.name}
-                    onChange={(e) => setValue('name', e.target.value)}
-                />
-            </div>
+            <NameField node={node as AppNode} placeholder={Metadata.name} />
             <div>
                 <Label>Decisions</Label>
                 {outgoers.length === 0 ? (
@@ -163,13 +150,14 @@ export const Properties = ({ node }: { node: AppNode }) => {
 
                             {get(node, `data.decisions.${oNode.id}.type`) == 'else' ?
                                 (<div className='mt-2'>
-                                    <Button className='w-full' onClick={() => clearElse(oNode.id)}>Unset else condition</Button>
+                                    <Button variant='outline' className='w-full' onClick={() => clearElse(oNode.id)}>Turn off Else for this branch</Button>
                                 </div>)
                                 :
                                 (<>
                                     <div className="flex flex-col mb-1 gap-2 mt-2">
-                                        <Label className='text-sm'>Name</Label>
+                                        <Label className='text-sm' htmlFor={`branch-name-${oNode.id}`}>Branch name</Label>
                                         <Input
+                                            id={`branch-name-${oNode.id}`}
                                             name="name"
                                             disabled={get(node, `data.decisions.${oNode.id}.type`) == 'else'}
                                             value={get(node, `data.decisions.${oNode.id}.name`, '')}
@@ -177,9 +165,10 @@ export const Properties = ({ node }: { node: AppNode }) => {
                                         />
                                     </div>
                                     <div className="flex flex-col mb-1 gap-2">
-                                        <Label className='text-sm'>Condition</Label>
+                                        <Label className='text-sm' htmlFor={`branch-condition-${oNode.id}`}>Condition</Label>
                                         <div className='flex gap-2 items-start'>
                                             <Textarea
+                                                id={`branch-condition-${oNode.id}`}
                                                 name="condition"
                                                 readOnly
                                                 disabled={get(node, `data.decisions.${oNode.id}.type`) == 'else'}
@@ -187,7 +176,7 @@ export const Properties = ({ node }: { node: AppNode }) => {
                                                 withoutRichText
                                                 classNameFrame='flex-1'
                                             />
-                                            <Button toolTip="Condition Editor" size={'icon'} onClick={() => setConditionEditorNode({
+                                            <Button toolTip="Edit the condition" aria-label="Edit the condition" size={'icon'} variant="outline" onClick={() => setConditionEditorNode({
                                                 nodeId: oNode.id,
                                                 condition: get(node, `data.decisions.${oNode.id}.condition`, '')
                                             })}>
@@ -196,7 +185,7 @@ export const Properties = ({ node }: { node: AppNode }) => {
                                         </div>
                                     </div>
                                 </>)}
-                            {!alreadyHaveElse && outgoers.length > 1 && (!get(node, `data.decisions.${oNode.id}.name`) && !get(node, `data.decisions.${oNode.id}.condition`)) ? <Button className='mt-2' variant={'ghost'} onClick={() => markAsElse(oNode.id)}>Set else condition</Button> : null}
+                            {!alreadyHaveElse && outgoers.length > 1 && (!get(node, `data.decisions.${oNode.id}.name`) && !get(node, `data.decisions.${oNode.id}.condition`)) ? <Button className='mt-2' variant={'ghost'} onClick={() => markAsElse(oNode.id)}>Use as Else (when no other condition is true)</Button> : null}
                         </Card>
                     ))
                 )}

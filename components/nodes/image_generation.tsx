@@ -148,7 +148,7 @@ export const Properties = ({ node }: { node: AppNode<ImageGenerationData> }) => 
         <div className='flex flex-col gap-3 px-3'>
             <NameField node={node} placeholder={Metadata.name} />
             <div className='flex flex-col gap-1'>
-                <Label className='text-sm font-semibold'>Model</Label>
+                <Label htmlFor="image-model" className='text-sm font-semibold'>Model</Label>
                 <Select
                     value={customMode ? CUSTOM_OPTION : model}
                     onValueChange={(e) => {
@@ -156,7 +156,7 @@ export const Properties = ({ node }: { node: AppNode<ImageGenerationData> }) => 
                         if (e != CUSTOM_OPTION) setValue('model', e)
                     }}
                 >
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger id="image-model"><SelectValue /></SelectTrigger>
                     <SelectContent>
                         {imageModels.map(x => <SelectItem key={x.id} value={x.id}>{x.label}</SelectItem>)}
                         <SelectItem value={CUSTOM_OPTION}>Custom model ID…</SelectItem>

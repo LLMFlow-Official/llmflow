@@ -4,6 +4,9 @@ import { useMemo } from "react";
 import { Card, CardTitle } from "../ui/card";
 import OnErrorSettingsSection from "./on_error_settings";
 
+/** Steps that call a model, a server or code, where retrying or carrying on after a failure makes sense. */
+const CAN_FAIL = ['prompt', 'llm_router', 'web_search', 'image_generation', 'transcription', 'semantic_search', 'model_compare', 'http_request', 'code', 'sub_flow', 'json_extract']
+
 export default function Properties() {
     const selectedNode = useFlowStore((state) => state.selectedNode)
     const isDevMode = useSettingStore(state => state.devMode)
@@ -39,7 +42,7 @@ export default function Properties() {
                     <p className="text-muted-foreground whitespace-pre-wrap text-xs mt-2">{JSON.stringify(selectedNode.data, null, 4)}</p>
                 </Card></div> : null}
                 {PropertiesComponent && <PropertiesComponent key={selectedNode.id} node={selectedNode} />}
-                {selectedNode.type != 'start' ? <OnErrorSettingsSection key={`on-error-${selectedNode.id}`} node={selectedNode} /> : null}
+                {CAN_FAIL.includes(selectedNode.type) || selectedNode.data.on_error ? <OnErrorSettingsSection key={`on-error-${selectedNode.id}`} node={selectedNode} /> : null}
             </div>
         </div>
     )

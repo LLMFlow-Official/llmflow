@@ -1,4 +1,3 @@
-import { NodeShell } from '../node_utils/node_shell';
 import { ImageIcon, Plus, ScrollText, Trash } from 'lucide-react';
 import { AppContext, NodeMetaData, NodeOutput, OutputExtra, Controller, NodeLogViewProps } from '@/lib/nodes';
 import { useFlowStore, AppNode, AppNodeProp, NodeData } from '@/lib/store';
@@ -21,7 +20,7 @@ import MarkdownViewer from '../ui/markdown_viewer';
 import { Slider } from '../ui/slider';
 import SchemaEditor, { SchemaType } from '../ui/schema_editor';
 import { ModelNodeData, ModelSelect, modelSummary, nodeModel, nodeProvider, ReasoningEffortSelect, TierSelect, ToolsSection } from '../node_utils/model_select';
-import { TestOutputField } from '../node_utils/node_shell';
+import { NameField, NodeShell, TestOutputField } from '../node_utils/node_shell';
 import ViewAsCode from '../node_utils/view_as_code';
 
 type PromptData = NodeData & ModelNodeData & {
@@ -217,14 +216,18 @@ function ImageInputs({ node }: { node: AppNode<PromptData> }) {
 
 export const Properties = ({ node }: { node: AppNode<PromptData> }) => {
     const updateNode = useFlowStore(state => state.updateNode);
-    const [selectedType, setSelectedType] = useState<string>();
     const [deletePrompt, setDeletePrompt] = useState<number>();
-    const [prompts, setPrompts] = useState(node.data.prompts || []);
+    // A new step starts with one empty user message, so there is always somewhere to type.
+    const prompts: Message[] = node.data.prompts?.length ? node.data.prompts : [{ role: 'user', content: '' }]
 
     const model = nodeModel(node.data)
     const modelInfo = findModel(model)
     const showSampling = supportsSampling(model, node.data.reasoning_effort)
     const reasons = !modelInfo || !!modelInfo.reasoningEfforts
+    const hasAdvanced = (node.data.response_format || 'text') != 'text' || !!node.data.reasoning_effort || !!node.data.tier
+        || node.data.max_output_tokens != undefined || node.data.temperature != undefined || node.data.top_p != undefined
+        || !!(node.data as { images?: unknown[] }).images?.length || !!node.data.tools && Object.keys(node.data.tools).length > 0
+    const [advancedOpen, setAdvancedOpen] = useState(hasAdvanced)
 
     const setValue = (key: string, value: string | number | SchemaType | undefined) => {
         const clonedNode = cloneDeep(node);
@@ -233,190 +236,161 @@ export const Properties = ({ node }: { node: AppNode<PromptData> }) => {
         updateNode(clonedNode);
     }
 
-    const setPromptValue = (index: number, value: string) => {
-        const clonePrompts = cloneDeep(prompts);
-        clonePrompts[index].content = value
-        setPrompts(clonePrompts)
+    const setPrompts = (next: Message[]) => {
         const clonedNode = cloneDeep(node);
-        set(clonedNode, `data.prompts.${index}.content`, value);
+        set(clonedNode, 'data.prompts', next);
         updateNode(clonedNode);
     }
 
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        const formData = new FormData(e.target as HTMLFormElement);
-        const newProperty = {
-            role: formData.get('type') as 'user' | 'assistant'
-        };
-        setPrompts([...prompts, newProperty]);
-        const clonedNode = cloneDeep(node);
-        set(clonedNode, 'data.prompts', [...prompts, newProperty]);
-        updateNode(clonedNode);
-        setSelectedType(undefined);
-        (e.target as HTMLFormElement).reset();
-    };
+    const setPromptValue = (index: number, value: string) => {
+        const next = cloneDeep(prompts)
+        next[index].content = value
+        setPrompts(next)
+    }
+
+    const addPrompt = (role: 'user' | 'assistant') => setPrompts([...prompts, { role, content: '' }])
 
     const handleDelete = (promptIndex?: number, force: boolean = false) => {
         if (!force && promptIndex != undefined && prompts[promptIndex].content) {
             setDeletePrompt(promptIndex);
             return;
         }
-
-        const updatedPrompts = prompts.filter((_, i) => i != promptIndex);
         setDeletePrompt(undefined);
-        setPrompts(updatedPrompts);
-        const clonedNode = cloneDeep(node);
-        set(clonedNode, 'data.prompts', updatedPrompts);
-        updateNode(clonedNode);
+        setPrompts(prompts.filter((_, i) => i != promptIndex));
     };
 
     return (
         <div className='flex flex-col gap-3 px-3'>
+            <NameField node={node as AppNode} placeholder={Metadata.name} />
             <div className='flex flex-col gap-1'>
-                <Label>Name</Label>
-                <Input
-                    name="name"
-                    value={node.data.name}
-                    placeholder={Metadata.name}
-                    onChange={(e) => setValue('name', e.target.value)}
-                />
-            </div>
-            <ModelSelect node={node} />
-            <ViewAsCode request={() => buildRequest(node, (text) => text)} />
-            <div className='flex flex-col gap-1'>
-                <Label className='text-sm font-semibold flex'>Response Format</Label>
-                <Select
-                    name='type'
-                    required
-                    value={node.data.response_format || 'text'}
-                    onValueChange={(e) => setValue('response_format', e)}
-                >
-                    <SelectTrigger>
-                        <SelectValue className='w-full' placeholder="Response Format" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="text">Text</SelectItem>
-                        <SelectItem value="json_object">JSON Object</SelectItem>
-                        <SelectItem value="json_schema">JSON Schema</SelectItem>
-                    </SelectContent>
-                </Select>
-            </div>
-            {node.data.response_format == 'json_schema' ? <div className='flex flex-col gap-1'>
-                <Label className='text-sm font-semibold flex'>Output structure</Label>
-                <SchemaEditor defaultValue={node.data.response_schema} onSave={(e) => setValue('response_schema', e)} />
-            </div> : null}
-            <ReasoningEffortSelect node={node} />
-            <TierSelect node={node} />
-            <div className='flex flex-col gap-1'>
-                <Label className='text-sm font-semibold flex' htmlFor='max_output_tokens'>Max Output Tokens</Label>
-                <Input
-                    id='max_output_tokens'
-                    name='max_output_tokens'
-                    type='number'
-                    min={1}
-                    max={modelInfo?.maxOutputTokens}
-                    value={node.data.max_output_tokens ?? ''}
-                    placeholder='Model default'
-                    onChange={(e) => {
-                        const value = parseInt(e.target.value, 10)
-                        setValue('max_output_tokens', Number.isFinite(value) && value > 0 ? value : undefined)
-                    }}
-                />
-                {reasons ? <p className='text-xs text-muted-foreground'>Includes reasoning tokens.</p> : null}
-            </div>
-            {showSampling ? <>
-                <div className='flex flex-col gap-1'>
-                    <Label className='text-sm font-semibold flex items-center'>
-                        Temperature
-                        <div className='ml-auto flex items-center gap-2'>
-                            {node.data.temperature !== undefined ? <button className='text-xs font-normal text-muted-foreground underline' onClick={() => setValue('temperature', undefined)}>Reset</button> : null}
-                            {node.data.temperature ?? 'Default'}
-                        </div>
-                    </Label>
-                    <Slider value={[node.data.temperature ?? 1]} max={2} min={0} step={0.01} onValueChange={(e) => setValue('temperature', e[0])} />
-                </div>
-                <div className='flex flex-col gap-1'>
-                    <Label className='text-sm font-semibold flex items-center'>
-                        Top P
-                        <div className='ml-auto flex items-center gap-2'>
-                            {node.data.top_p !== undefined ? <button className='text-xs font-normal text-muted-foreground underline' onClick={() => setValue('top_p', undefined)}>Reset</button> : null}
-                            {node.data.top_p ?? 'Default'}
-                        </div>
-                    </Label>
-                    <Slider value={[node.data.top_p ?? 1]} max={1} min={0} step={0.01} onValueChange={(e) => setValue('top_p', e[0])} />
-                </div>
-            </> : modelInfo?.reasoningEfforts?.includes('none') ? (
-                <p className='text-xs text-muted-foreground'>Set reasoning effort to None to use temperature and top P with this model.</p>
-            ) : null}
-            <div className='flex flex-col gap-1'>
-                <Label className='text-sm font-semibold' htmlFor="system_prompt">System Prompt</Label>
+                <Label className='text-sm font-semibold' htmlFor="system_prompt">Instructions <span className='font-normal text-muted-foreground'>(optional)</span></Label>
                 <Textarea
                     id="system_prompt"
                     name="system_prompt"
                     value={node.data.system_prompt}
                     className='h-20'
-                    placeholder='Enter your system prompt here (optional)...'
+                    placeholder='How the model should behave, e.g. "You are a friendly support agent. Answer in two sentences."'
                     onChange={(e) => setValue('system_prompt', e.target.value)}
                     node={node}
                 />
             </div>
             {prompts.map((prompt, index) => (
                 <div key={index} className='flex flex-col gap-1'>
-                    <div className='flex'>
-                        <Label className='text-sm font-semibold' htmlFor="system_prompt">{prompt.role == 'user' ? "User" : "Assistant"} Prompt</Label>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDelete(index)}
-                            className="text-danger hover:text-danger/80 p-0.5 h-6 w-6 ml-auto"
-                        >
-                            <Trash className='w-4 h-4' />
-                        </Button>
+                    <div className='flex items-center'>
+                        <Label className='text-sm font-semibold' htmlFor={`prompt-${index}`}>
+                            {prompt.role == 'user' ? (index == 0 ? 'Message' : 'Next message') : 'Example answer'}
+                        </Label>
+                        {prompts.length > 1 || prompt.content ? (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                aria-label={`Delete ${prompt.role == 'user' ? 'message' : 'example answer'} ${index + 1}`}
+                                onClick={() => handleDelete(index)}
+                                className="text-danger hover:text-danger/80 p-0.5 h-6 w-6 ml-auto"
+                            >
+                                <Trash className='w-4 h-4' />
+                            </Button>
+                        ) : null}
                     </div>
                     <Textarea
-                        id="prompt"
-                        name="prompt"
+                        id={`prompt-${index}`}
+                        name={`prompt-${index}`}
                         value={prompt.content}
-                        className='h-20'
-                        placeholder='Enter your prompt here...'
+                        className='h-24'
+                        placeholder={prompt.role == 'user'
+                            ? (index == 0 ? 'What to ask, e.g. "Summarize this: {start.text}". Type { to use a value from an earlier step.' : 'A follow-up message')
+                            : 'An example of the answer you want (the model treats it as its own earlier reply)'}
                         onChange={(e) => setPromptValue(index, e.target.value)}
                         node={node}
                     />
                 </div>
             ))}
-            <form onSubmit={handleSubmit} className="flex flex-col gap-2">
-                <span className='text-sm font-semibold'>Add Prompt section</span>
-                <div className='flex gap-2'>
-                    <Select
-                        name='type'
-                        required
-                        value={selectedType}
-                        onValueChange={(e) => setSelectedType(e)}
-                    >
-                        <SelectTrigger>
-                            <SelectValue className='w-full' placeholder="Type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="user">User</SelectItem>
-                            <SelectItem value="assistant">Assistant</SelectItem>
-                        </SelectContent>
-                    </Select>
-                    <Button className='w-10' size={'icon'} type="submit">
-                        <Plus className='w-4 h-4' />
-                    </Button>
+            <div className='flex flex-wrap gap-2'>
+                <Button variant="outline" size="sm" className='gap-1' onClick={() => addPrompt('user')}><Plus className='w-4 h-4' /> Message</Button>
+                <Button variant="outline" size="sm" className='gap-1' onClick={() => addPrompt('assistant')}><Plus className='w-4 h-4' /> Example answer</Button>
+            </div>
+            <ModelSelect node={node} />
+            <details className='rounded-md border border-border' open={advancedOpen} onToggle={(e) => setAdvancedOpen(e.currentTarget.open)}>
+                <summary className='cursor-pointer select-none px-3 py-2 text-sm font-semibold'>Advanced <span className='font-normal text-muted-foreground'>(format, reasoning, length, tools, images)</span></summary>
+                <div className='flex flex-col gap-3 p-3 pt-1'>
+                    <div className='flex flex-col gap-1'>
+                        <Label className='text-sm font-semibold flex' htmlFor='response_format'>Answer format</Label>
+                        <Select
+                            name='response_format'
+                            value={node.data.response_format || 'text'}
+                            onValueChange={(e) => setValue('response_format', e)}
+                        >
+                            <SelectTrigger id='response_format'>
+                                <SelectValue className='w-full' placeholder="Answer format" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="text">Text</SelectItem>
+                                <SelectItem value="json_object">JSON</SelectItem>
+                                <SelectItem value="json_schema">JSON with fields you define</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    {node.data.response_format == 'json_schema' ? <div className='flex flex-col gap-1'>
+                        <Label className='text-sm font-semibold flex'>Fields</Label>
+                        <SchemaEditor defaultValue={node.data.response_schema} onSave={(e) => setValue('response_schema', e)} />
+                    </div> : null}
+                    <ReasoningEffortSelect node={node} />
+                    <TierSelect node={node} />
+                    <div className='flex flex-col gap-1'>
+                        <Label className='text-sm font-semibold flex' htmlFor='max_output_tokens'>Longest answer (tokens)</Label>
+                        <Input
+                            id='max_output_tokens'
+                            name='max_output_tokens'
+                            type='number'
+                            min={1}
+                            max={modelInfo?.maxOutputTokens}
+                            value={node.data.max_output_tokens ?? ''}
+                            placeholder='Model default'
+                            onChange={(e) => {
+                                const value = parseInt(e.target.value, 10)
+                                setValue('max_output_tokens', Number.isFinite(value) && value > 0 ? value : undefined)
+                            }}
+                        />
+                        {reasons ? <p className='text-xs text-muted-foreground'>Includes the tokens the model uses to think.</p> : null}
+                    </div>
+                    {showSampling ? <>
+                        <div className='flex flex-col gap-1'>
+                            <Label className='text-sm font-semibold flex items-center' id='temperature-label'>
+                                Temperature
+                                <div className='ml-auto flex items-center gap-2'>
+                                    {node.data.temperature !== undefined ? <button className='text-xs font-normal text-muted-foreground underline' onClick={() => setValue('temperature', undefined)}>Reset</button> : null}
+                                    {node.data.temperature ?? 'Default'}
+                                </div>
+                            </Label>
+                            <Slider aria-labelledby='temperature-label' value={[node.data.temperature ?? 1]} max={2} min={0} step={0.01} onValueChange={(e) => setValue('temperature', e[0])} />
+                        </div>
+                        <div className='flex flex-col gap-1'>
+                            <Label className='text-sm font-semibold flex items-center' id='top-p-label'>
+                                Top P
+                                <div className='ml-auto flex items-center gap-2'>
+                                    {node.data.top_p !== undefined ? <button className='text-xs font-normal text-muted-foreground underline' onClick={() => setValue('top_p', undefined)}>Reset</button> : null}
+                                    {node.data.top_p ?? 'Default'}
+                                </div>
+                            </Label>
+                            <Slider aria-labelledby='top-p-label' value={[node.data.top_p ?? 1]} max={1} min={0} step={0.01} onValueChange={(e) => setValue('top_p', e[0])} />
+                        </div>
+                    </> : modelInfo?.reasoningEfforts?.includes('none') ? (
+                        <p className='text-xs text-muted-foreground'>Set reasoning effort to None to use temperature and top P with this model.</p>
+                    ) : null}
+                    <ImageInputs node={node} />
+                    <ToolsSection node={node} />
+                    <ViewAsCode request={() => buildRequest(node, (text) => text)} />
                 </div>
-            </form>
-            <ImageInputs node={node} />
-            <ToolsSection node={node} />
+            </details>
             <TestOutputField
                 node={node as AppNode}
                 type={['json_schema', 'json_object'].includes(node.data.response_format || 'text') ? 'json' : 'text'}
             />
             <ConfirmAlert
                 open={deletePrompt != undefined}
-                title="Delete this prompt?"
-                description="The prompt text is removed from this step."
-                confirmLabel="Delete prompt"
+                title="Delete this message?"
+                description="Its text is removed from this step."
+                confirmLabel="Delete message"
                 destructive
                 onConfirm={() => handleDelete(deletePrompt, true)}
                 onCancel={() => setDeletePrompt(undefined)}

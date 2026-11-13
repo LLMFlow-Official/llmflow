@@ -2,6 +2,7 @@ import { Code2 } from 'lucide-react';
 import { AppContext, Controller, NodeLogViewProps, NodeMetaData, NodeOutput, OutputExtra } from '@/lib/nodes';
 import { AppNode, AppNodeProp, NodeData } from '@/lib/store';
 import { CodeStoppedError, runCodeInWorker } from '@/lib/code_runner';
+import dynamic from 'next/dynamic';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
 import { NameField, NodeShell, onFlowStop, useNodeSetter } from '../node_utils/node_shell';
@@ -11,10 +12,13 @@ type CodeData = NodeData & {
     timeout?: number
 }
 
-const PLACEHOLDER = `// Earlier nodes are available by id, e.g. start.topic or
-// prompt_x.assistant_raw_output ("context" holds them all).
-// "state" holds Set State values.
-// Return a value to use it later as {<this node id>.result}.
+// Monaco is large: load it only when a Code step is opened.
+const CodeEditor = dynamic(() => import('../ui/code_editor'), { ssr: false, loading: () => <div className='h-[260px] rounded-md border border-input bg-muted' /> })
+
+const PLACEHOLDER = `// Earlier steps are available by id, e.g. start.topic or
+// prompt_1.assistant_raw_output ("context" holds them all).
+// "state" holds Set variable values.
+// Return a value to use it later as {<this step's id>.result}.
 const words = start.topic.split(' ')
 return { count: words.length, upper: start.topic.toUpperCase() }`
 
@@ -75,23 +79,11 @@ export const Properties = ({ node }: { node: AppNode<CodeData> }) => {
         <div className='flex flex-col gap-3 px-3'>
             <NameField node={node} placeholder={Metadata.name} />
             <div className='flex flex-col gap-1'>
-                <Label className='text-sm font-semibold' htmlFor='code'>JavaScript</Label>
-                <textarea
-                    id='code'
-                    spellCheck={false}
-                    value={node.data.code || ''}
-                    placeholder={PLACEHOLDER}
-                    onChange={(e) => setValue('code', e.target.value)}
-                    onKeyDown={(e) => {
-                        if (e.key != 'Tab') return
-                        e.preventDefault()
-                        const el = e.currentTarget
-                        const { selectionStart, selectionEnd, value } = el
-                        setValue('code', `${value.slice(0, selectionStart)}    ${value.slice(selectionEnd)}`)
-                        requestAnimationFrame(() => el.setSelectionRange(selectionStart + 4, selectionStart + 4))
-                    }}
-                    className='min-h-[220px] rounded-md border border-input bg-muted text-foreground p-2 text-xs font-mono focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring'
-                />
+                <Label className='text-sm font-semibold'>JavaScript</Label>
+                {!node.data.code ? (
+                    <button type='button' className='text-left text-xs text-muted-foreground underline w-fit' onClick={() => setValue('code', PLACEHOLDER)}>Start from an example</button>
+                ) : null}
+                <CodeEditor aria-label='JavaScript code' value={node.data.code || ''} onChange={(code) => setValue('code', code)} />
                 <p className='text-xs text-muted-foreground'>
                     The function body can use await and console.log. It runs in a separate worker that cannot see this page or your API key, and it can only return values that can be turned into JSON.
                 </p>

@@ -76,9 +76,9 @@ export const Properties = ({ node }: { node: AppNode<HumanInputData> }) => {
         <div className='flex flex-col gap-3 px-3'>
             <NameField node={node} placeholder={Metadata.name} />
             <div className='flex flex-col gap-1'>
-                <Label className='text-sm font-semibold'>Ask for</Label>
+                <Label htmlFor="ask-for" className='text-sm font-semibold'>Ask for</Label>
                 <Select value={mode} onValueChange={(e) => setValue('mode', e == 'text' ? undefined : e)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger id="ask-for"><SelectValue /></SelectTrigger>
                     <SelectContent>
                         <SelectItem value='text'>A typed answer</SelectItem>
                         <SelectItem value='approve'>Approve or reject</SelectItem>
