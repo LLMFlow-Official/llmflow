@@ -11,6 +11,7 @@ import HumanInputPanel from "../node_utils/human_input_panel";
 import { RunButton } from "./controllers";
 import { ThemeController } from "./theme_toggle";
 import { Button } from "../ui/button";
+import ErrorBoundary from "../ui/error_boundary";
 
 function useIsNarrow() {
     const [narrow, setNarrow] = useState(false)
@@ -28,7 +29,12 @@ export default function BaseLayout({ children }: { children: React.ReactNode }) 
     const selectedNode = useFlowStore((state) => state.selectedNode)
     const narrow = useIsNarrow()
     const [drawerOpen, setDrawerOpen] = useState(false)
-    const panel = selectedNode ? <Properties /> : <SidePanel />
+    // A crash in one node's settings shows a message in the panel instead of breaking the app.
+    const panel = (
+        <ErrorBoundary label="this panel" compact resetKey={selectedNode?.id}>
+            {selectedNode ? <Properties /> : <SidePanel />}
+        </ErrorBoundary>
+    )
 
     const canvas = <>
         <Topbar />
@@ -63,11 +69,11 @@ export default function BaseLayout({ children }: { children: React.ReactNode }) 
                     </div>
                 ) : (
                     <ResizablePanelGroup direction="horizontal" className="!h-dvh">
-                        <ResizablePanel defaultSize={72} className="relative h-full">
+                        <ResizablePanel id="canvas-panel" order={1} defaultSize={72} className="relative h-full">
                             {canvas}
                         </ResizablePanel>
                         <ResizableHandle withHandle />
-                        <ResizablePanel collapsible maxSize={50} defaultSize={28} minSize={20} className="h-full bg-background">
+                        <ResizablePanel id="side-panel" order={2} collapsible maxSize={50} defaultSize={28} minSize={20} className="h-full bg-background">
                             {panel}
                         </ResizablePanel>
                     </ResizablePanelGroup>

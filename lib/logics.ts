@@ -4,12 +4,6 @@ import { CodeStoppedError, expressionBody, isValidExpression, runCodeInWorker } 
 
 export const valueReg = new RegExp('\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}', 'gm')
 
-export const headlights = [
-    {
-        highlight: valueReg,
-        className: "font-semibold text-blue-600 bg-white", //tw
-    },
-]
 
 const filterStatement = (statement: string) => {
     if(!statement) return ''

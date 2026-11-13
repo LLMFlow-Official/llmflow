@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { track } from "@/lib/analytics";
 import { AppNode, useFlowStore } from "@/lib/store";
 import { nodeMetaDetails } from "@/lib/nodes";
-import { FlowEdge, FlowNode, parseFlow, ParsedFlow, riskyNodes, serializeFlow } from "@/lib/flow_file";
+import { parseFlow, ParsedFlow, riskyNodes, serializeFlow } from "@/lib/flow_file";
 import { createFlow, deleteFlow, duplicateFlow, flushSave, openFlow, renameCurrent, useLibraryStore } from "@/lib/library";
 import { compressToParam, decompressParam, sanitizeForSharing, SHARE_PREFIX } from "@/lib/share";
 import { templates } from "@/lib/templates";
@@ -34,7 +34,8 @@ function useFlowOpener() {
 
     const add = async (flow: ParsedFlow, fallbackName: string) => {
         setPending(undefined)
-        await createFlow(flow.name || fallbackName, flow.nodes as unknown as AppNode[], flow.edges as unknown as Edge[])
+        // parseFlow has checked node types, ids and connections, so the data matches the editor's shape.
+        await createFlow(flow.name || fallbackName, flow.nodes as unknown as AppNode[], flow.edges as Edge[])
         toast({ title: `Opened "${flow.name || fallbackName}"`, duration: 3000 })
     }
 
@@ -109,9 +110,9 @@ function ShareDialog({ open, onOpenChange }: { open: boolean, onOpenChange: (ope
         if (!open) return
         setLink('')
         const { nodes, edges } = useFlowStore.getState()
-        const clean = sanitizeForSharing(nodes as unknown as FlowNode[])
+        const clean = sanitizeForSharing(nodes)
         setRemoved(clean.removed)
-        compressToParam(serializeFlow(clean.nodes, edges as unknown as FlowEdge[], useLibraryStore.getState().currentName))
+        compressToParam(serializeFlow(clean.nodes, edges, useLibraryStore.getState().currentName))
             .then(param => setLink(`${location.origin}${location.pathname}${SHARE_PREFIX}${param}`))
             .catch(error => toast({ title: 'Could not create a link', description: error.message }))
     }, [open, toast])
@@ -182,7 +183,7 @@ export default function FlowMenu() {
     const exportFile = async () => {
         await flushSave()
         const { nodes, edges } = useFlowStore.getState()
-        const data = serializeFlow(nodes as unknown as FlowNode[], edges as unknown as FlowEdge[], currentName)
+        const data = serializeFlow(nodes, edges, currentName)
         const url = URL.createObjectURL(new Blob([data], { type: 'application/json' }))
         const a = document.createElement('a')
         a.href = url
@@ -198,7 +199,7 @@ export default function FlowMenu() {
         <Card className="p-1 flex items-center gap-1 pointer-events-auto max-w-[min(18rem,40vw)]">
             <Popover open={menuOpen} onOpenChange={setMenuOpen}>
                 <PopoverTrigger asChild>
-                    <Button variant="ghost" className="h-10 px-2 gap-1 min-w-0" aria-label="Flows menu">
+                    <Button variant="ghost" className="h-10 px-2 gap-1 min-w-0" aria-label={`${currentName || 'Loading'}, flows menu`}>
                         <span className="truncate font-semibold text-sm">{currentName || 'Loading…'}</span>
                         <ChevronDown size={16} className="shrink-0" />
                     </Button>

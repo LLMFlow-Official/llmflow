@@ -1,4 +1,4 @@
-import type { Node, XYPosition } from 'reactflow'
+import type { Node, XYPosition } from '@xyflow/react'
 import { roundDown, roundUp } from './utils'
 
 export type NodeBoundingBox = {
@@ -34,14 +34,14 @@ export type GraphBoundingBox = {
  * @returns Graph and nodes bounding boxes.
  */
 
-export type NodeWithDetails<T = unknown> = Node<T> & {
+export type NodeWithDetails<T extends Record<string, unknown> = Record<string, unknown>> = Node<T> & {
 	measured: {
 		width: number
 		height: number
 	}
 }
 
-export const getBoundingBoxes = <NodeDataType = unknown>(
+export const getBoundingBoxes = <NodeDataType extends Record<string, unknown> = Record<string, unknown>>(
 	nodes: NodeWithDetails<NodeDataType>[],
 	nodePadding = 2,
 	roundTo = 2

@@ -1,5 +1,5 @@
 import { Grid } from 'pathfinding'
-import type { Position } from 'reactflow'
+import type { Position } from '@xyflow/react'
 import { round, roundUp } from './utils'
 import { graphToGridPoint } from './pointConversion'
 import { GraphBoundingBox, NodeBoundingBox } from './getBoundingBoxes'

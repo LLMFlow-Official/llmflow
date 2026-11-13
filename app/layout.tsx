@@ -1,14 +1,9 @@
-"use client"
-
+import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import '@xyflow/react/dist/base.css';
 import "./globals.css";
-import { ReactNode, useEffect } from "react";
-import BaseLayout from "@/components/layout/base_layout";
-import { Toaster } from "@/components/ui/toaster";
-import IntroSlider from "@/components/layout/intro_slider";
-import { setupAnalytics } from "@/lib/analytics";
-import { useSettingStore } from "@/lib/store";
+import { ReactNode } from "react";
+import AppShell from "@/components/layout/app_shell";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -21,41 +16,33 @@ const geistMono = localFont({
   weight: "100 900",
 });
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: ReactNode;
-}>) {
+const description = "Build, test and compare AI workflows without code. Chain prompts across OpenAI, Claude and Gemini, add branches, loops and tools, and see the cost of every step."
 
-  const analyticsEnabled = useSettingStore((s) => s.analyticsEnabled)
+export const metadata: Metadata = {
+  metadataBase: new URL("https://llmflow.netlify.app"),
+  title: "LLM Flow",
+  description,
+  keywords: ["AI", "LLM", "flow", "workflow", "prompt", "OpenAI", "Claude", "Gemini", "no-code"],
+  authors: [{ name: "Thanura Nadun Ranasinghe" }],
+  openGraph: { title: "LLM Flow", description, type: "website", url: "/" },
+  twitter: { card: "summary_large_image", title: "LLM Flow", description },
+  icons: { icon: "/favicon.ico" },
+};
 
-  useEffect(() => {
-    setupAnalytics(analyticsEnabled)
-  }, [analyticsEnabled])
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#020817" },
+  ],
+};
 
+export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <html lang="en">
-      <head>
-        <title>LLM Flow</title>
-        <meta name="description" content="LLM Flow is a web application that enables you to test and refine your AI workflows without any coding. It also helps to create proof of concept from flow charts, making it easier to visualize and iterate on your ideas." />
-        <meta name="keywords" content="AI, LLM, flow, tester, machine learning, artificial intelligence, OPENAI, CHATGPT" />
-        <meta name="author" content="Thanura Nadun Ranasinghe" />
-        <meta property="og:title" content="LLM Flow" />
-        <meta property="og:description" content="LLM Flow is a web application that enables you to test and refine your AI workflows without any coding. It also helps to create proof of concept from flow charts, making it easier to visualize and iterate on your ideas." />
-        <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://llmflow.netlify.com" />
-        <meta property="og:image" content="/logo.svg" />
-        <link rel="icon" href="/favicon.ico" />
-      </head>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        suppressHydrationWarning
-      >
-        <IntroSlider />
-        <BaseLayout>
-          {children}
-        </BaseLayout>
-        <Toaster />
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );

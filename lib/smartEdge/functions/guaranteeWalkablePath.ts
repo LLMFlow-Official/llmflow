@@ -1,5 +1,5 @@
 import type { Grid } from 'pathfinding'
-import type { Position, XYPosition } from 'reactflow'
+import type { Position, XYPosition } from '@xyflow/react'
 
 type Direction = 'top' | 'bottom' | 'left' | 'right'
 

@@ -30,7 +30,7 @@ TooltipContent.displayName = TooltipPrimitive.Content.displayName
 const BasicToolTip = ({ text, children }: { text?: string } & React.PropsWithChildren) => {
   if (!text) return children;
   return (<Tooltip>
-    <TooltipTrigger>{children}</TooltipTrigger>
+    <TooltipTrigger asChild>{children}</TooltipTrigger>
     <TooltipContent>{text}</TooltipContent>
   </Tooltip>)
 }

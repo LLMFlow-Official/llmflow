@@ -1,15 +1,18 @@
+import dynamic from "next/dynamic"
 import { ChangeEvent, useEffect, useState } from "react"
 import { cn } from "@/lib/utils"
 import { PenBox, Route } from "lucide-react"
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTrigger } from "./dialog"
 import { DialogTitle } from "@radix-ui/react-dialog"
 import { Button } from "./button"
-import RichTextEditor from "./rich_text_editor"
 import { AppNode } from "@/lib/store"
-import { HighlightWithinTextarea } from 'react-highlight-within-textarea'
-import { headlights } from "@/lib/logics"
+import { TemplateInput } from "./template_input"
 import DynamicEditorPopup from "../node_utils/dynamic_editor_popup"
-import JsonEditor from "./json_editor"
+
+// Monaco and TipTap are large; they load only when an editor dialog opens.
+const JsonEditor = dynamic(() => import("./json_editor"), { ssr: false, loading: () => <div className="h-[30vh] rounded-md bg-muted animate-pulse" /> })
+const RichTextEditor = dynamic(() => import("./rich_text_editor"), { ssr: false, loading: () => <div className="h-[60vh] rounded-md bg-muted animate-pulse" /> })
+
 
 export type TextareaProps = React.TextareaHTMLAttributes<HTMLTextAreaElement> & {
   node?: AppNode
@@ -20,7 +23,7 @@ export type TextareaProps = React.TextareaHTMLAttributes<HTMLTextAreaElement> & 
   classNameFrame?: string
 }
 
-export function Textarea({ className, classNameFrame, withoutRichText, type = 'text', schema, withoutHighlights, node, value, onChange }: TextareaProps) {
+export function Textarea({ className, classNameFrame, withoutRichText, type = 'text', schema, withoutHighlights, node, value, onChange, placeholder, id, readOnly, disabled, 'aria-label': ariaLabel }: TextareaProps) {
   const [openValueSelector, setOpenValueSelector] = useState(false)
 
   const [key, setKey] = useState(Math.random() * 1000)
@@ -32,23 +35,18 @@ export function Textarea({ className, classNameFrame, withoutRichText, type = 't
 
   return (
     <div className={cn('relative group overflow-hidden rounded-md', classNameFrame)}>
-      {/* <textarea
-        key={key+10}
-        className={cn(
-          "flex min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 h-20 overflow-y-scroll w-full p-2",
-          className
-        )}
-        ref={ref}
-        {...props}
-        value={value}
-      /> */}
-      <div className={cn(
-        "flex justify-stretch items-stretch min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 h-20 overflow-y-scroll w-full p-2",
-        "[&>div]:h-full [&_.DraftEditor-root]:flex-1", //tw
-        className
-      )}>
-        <HighlightWithinTextarea highlight={!withoutHighlights && headlights} value={value?.toString() || ''} onChange={(value) => onChange && onChange({ target: { value } } as ChangeEvent<HTMLTextAreaElement>)} />
-      </div>
+      <TemplateInput
+        value={value?.toString() || ''}
+        onChange={(text) => onChange && onChange({ target: { value: text } } as ChangeEvent<HTMLTextAreaElement>)}
+        highlight={!withoutHighlights}
+        nodeId={node?.id}
+        className={cn("min-h-[80px] h-20 overflow-y-auto", className)}
+        aria-label={ariaLabel}
+        placeholder={placeholder}
+        id={id}
+        readOnly={readOnly}
+        disabled={disabled}
+      />
       {node || !withoutRichText ? <div className="absolute -top-12 right-2 flex gap-1 p-1 bg-muted rounded-md transition-all duration-100 group-hover:top-1 z-10">
         {node ? <Button toolTip="Value Selector" size="icon" variant="ghost" className="h-6 w-6" onClick={() => setOpenValueSelector(true)}>
           <Route size={16} />
@@ -82,8 +80,9 @@ export function Textarea({ className, classNameFrame, withoutRichText, type = 't
                 initialContent={value?.toString() || ''}
                 onChange={(value) => onChange && onChange({ target: { value } } as ChangeEvent<HTMLTextAreaElement>)}
                 withoutHighlights={withoutHighlights}
+                nodeId={node?.id}
                 extraToolButtons={node && (
-                  <Button size="icon" variant="ghost" onClick={() => setOpenValueSelector(true)}>
+                  <Button size="icon" variant="ghost" aria-label="Value selector" onClick={() => setOpenValueSelector(true)}>
                     <Route size={16} />
                   </Button>
                 )}

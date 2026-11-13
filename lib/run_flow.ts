@@ -1,5 +1,5 @@
 import type { Edge } from '@xyflow/react'
-import { allReachable, EngineNode, ProcessFn, runFlow, validateGraph } from './engine'
+import { allReachable, ProcessFn, runFlow, validateGraph } from './engine'
 import { AppContext, Controller, getNodeDetails, NodeType } from './nodes'
 import { AppNode, FinalOutput, NodeLogs, useFlowStore, useRuntimeStore, waitWhileRunning } from './store'
 import { saveRun, useLibraryStore } from './library'
@@ -19,8 +19,8 @@ export type RunSummary = {
     errors: { nodeId: string, message: string }[]
 }
 
-export const getBodyTargets = (node: EngineNode) => getNodeDetails(node.type as NodeType).bodyTargets?.(node as AppNode) || []
-const getProcess = (type: string) => getNodeDetails(type as NodeType).process as unknown as ProcessFn
+export const getBodyTargets = (node: AppNode) => getNodeDetails(node.type).bodyTargets?.(node) || []
+const getProcess = (type: string): ProcessFn<AppNode> => getNodeDetails(type as NodeType).process
 
 /** Returns the nodes with the Start node's input values replaced (used by test cases and sub-flows). */
 export function withStartValues(nodes: AppNode[], values?: Record<string, unknown>): AppNode[] {

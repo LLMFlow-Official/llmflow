@@ -1,5 +1,6 @@
 "use client"
 
+import dynamic from "next/dynamic"
 import { PenBox, Plus, Trash } from "lucide-react";
 import { Button } from "./button";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "./dialog";
@@ -9,9 +10,12 @@ import { Label } from "./label";
 import { Switch } from "./switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select";
 import { FieldType, fieldsFromSchema, makeStrict, SchemaField, schemaFromFields, strictIssues } from "@/lib/schema_tools";
-import { editor } from 'monaco-editor';
-import JsonEditor from "./json_editor";
+import type { editor } from 'monaco-editor';
 import { track } from "@/lib/analytics";
+
+// Monaco and TipTap are large; they load only when an editor dialog opens.
+const JsonEditor = dynamic(() => import("./json_editor"), { ssr: false, loading: () => <div className="h-[30vh] rounded-md bg-muted animate-pulse" /> })
+
 
 type SchemaEditorProps = {
   defaultValue?: SchemaType,

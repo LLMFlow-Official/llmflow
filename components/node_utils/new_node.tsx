@@ -49,8 +49,8 @@ export default function NewNode() {
 
     return (
         <Popover open={open} onOpenChange={setOpen}>
-            <PopoverTrigger>
-                <Toggle toolTip="Add Nodes" pressed={open}>
+            <PopoverTrigger asChild>
+                <Toggle toolTip="Add a node" aria-label="Add a node" pressed={open}>
                     <Plus size={20} />
                 </Toggle>
             </PopoverTrigger>

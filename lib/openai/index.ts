@@ -1,4 +1,3 @@
-import axios, { AxiosError, AxiosResponse } from "axios";
 import Decimal from "decimal.js-light";
 import { ReasoningEffort, supportsSampling, Usage } from "./models";
 
@@ -245,10 +244,6 @@ export function parseJsonOutput(text: string): Record<string, unknown> {
     }
 }
 
-export type ResponsesClient = {
-    create: (payload: ResponsesPayload) => Promise<AxiosResponse<ResponseObject>>
-}
-
 /* ---------------- Image generation (POST /v1/images/generations) ---------------- */
 
 export type ImageModelInfo = {
@@ -317,74 +312,27 @@ export function imageResponseToUrl(response: ImageResponse, format: string = 'pn
     throw new Error("The image API returned no image")
 }
 
-export function OpenAiFaker(output?: string): ResponsesClient {
-    return {
-        create: (payload) => new Promise<AxiosResponse<ResponseObject>>((resolve) => {
-            setTimeout(() => {
-                resolve({
-                    data: {
-                        id: 'fake-id',
-                        object: 'response',
-                        model: payload.model,
-                        status: 'completed',
-                        output: [{
-                            type: 'message',
-                            role: 'assistant',
-                            content: [{ type: 'output_text', text: output || '' }]
-                        }],
-                        usage: {
-                            input_tokens: 10,
-                            input_tokens_details: { cached_tokens: 0 },
-                            output_tokens: 10,
-                            output_tokens_details: { reasoning_tokens: 5 },
-                            total_tokens: 20
-                        }
-                    },
-                    status: 200,
-                    statusText: 'OK',
-                    headers: {},
-                    config: {},
-                    request: {}
-                } as AxiosResponse<ResponseObject>)
-            }, 1000);
-        })
-    }
-}
+import { providerFetch } from "../providers/http";
 
-function createAxios(token: string) {
-    return axios.create({
-        baseURL: 'https://api.openai.com/v1',
-        headers: {
-            "Content-Type": 'application/json',
-            "Authorization": `Bearer ${token}`
-        }
-    })
-}
+const OPENAI_URL = 'https://api.openai.com/v1'
 
-export function OpenAi(token: string): ResponsesClient & {
-    generateImage: (payload: ImagePayload, signal?: AbortSignal) => Promise<AxiosResponse<ImageResponse>>
-} {
-    const client = createAxios(token)
-    return {
-        create: (payload) => client.post<ResponseObject, AxiosResponse<ResponseObject>>('/responses', payload),
-        generateImage: (payload, signal) => client.post<ImageResponse, AxiosResponse<ImageResponse>>('/images/generations', payload, { signal })
-    }
+export async function generateImage(apiKey: string, payload: ImagePayload, signal?: AbortSignal): Promise<ImageResponse> {
+    const response = await providerFetch(`${OPENAI_URL}/images/generations`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+        body: JSON.stringify(payload),
+        signal,
+    }, 'OpenAI')
+    return response.json()
 }
 
 /** Text-generation model IDs available to this key, from GET /v1/models. */
-export async function listAccountModels(token: string): Promise<string[]> {
-    const response = await createAxios(token).get<{ data: { id: string }[] }>('/models')
-    return response.data.data
+export async function listAccountModels(apiKey: string): Promise<string[]> {
+    const response = await providerFetch(`${OPENAI_URL}/models`, { headers: { Authorization: `Bearer ${apiKey}` } }, 'OpenAI')
+    const body = await response.json() as { data: { id: string }[] }
+    return body.data
         .map(x => x.id)
         .filter(id => /^(gpt-|o\d|chatgpt-|chat-latest)/.test(id))
         .filter(id => !/(audio|realtime|transcribe|tts|image|embedding|search|moderation)/.test(id))
         .sort()
-}
-
-/** Turns an axios error from OpenAI into an Error carrying OpenAI's message. */
-export function toOpenAiError(error: unknown): Error {
-    if (error instanceof AxiosError && error.response?.data?.error?.message) {
-        return new Error(error.response.data.error.message)
-    }
-    return error instanceof Error ? error : new Error(String(error))
 }

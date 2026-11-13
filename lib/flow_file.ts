@@ -58,19 +58,19 @@ const isFiniteNumber = (value: unknown): value is number => typeof value == 'num
 const TRANSIENT_NODE_KEYS = ['selected', 'dragging', 'resizing']
 const TRANSIENT_EDGE_KEYS = ['selected']
 
-function clean<T extends Record<string, unknown>>(item: T, keys: string[]): T {
-    const copy = { ...item }
+function clean<T extends object>(item: T, keys: string[]): T {
+    const copy = { ...item } as Record<string, unknown>
     for (const key of keys) delete copy[key]
-    return copy
+    return copy as T
 }
 
-export function serializeFlow(nodes: FlowNode[], edges: FlowEdge[], name?: string): string {
+export function serializeFlow(nodes: object[], edges: object[], name?: string): string {
     const file: FlowFile = {
         app: 'llmflow',
         version: FLOW_FILE_VERSION,
         ...(name ? { name } : {}),
-        nodes: nodes.map(x => clean(x, TRANSIENT_NODE_KEYS)),
-        edges: edges.map(x => clean(x, TRANSIENT_EDGE_KEYS)),
+        nodes: nodes.map(x => clean(x, TRANSIENT_NODE_KEYS)) as FlowNode[],
+        edges: edges.map(x => clean(x, TRANSIENT_EDGE_KEYS)) as FlowEdge[],
     }
     return JSON.stringify(file, null, 2)
 }

@@ -3,7 +3,7 @@
  * needed. Things that look like secrets are removed first.
  */
 
-type AnyNode = { id: string, type: string, data: Record<string, unknown> }
+type AnyNode = { id: string, type: string, data: object }
 
 const SECRET_HEADER = /^(authorization|proxy-authorization|x-api-key|api-key|x-goog-api-key|cookie)\s*:/i
 

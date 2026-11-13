@@ -127,40 +127,28 @@
 }
 
 .RichEditor-editor {
-  @apply border-t border-border cursor-text text-base h-[60vh] overflow-y-auto;
+  @apply border-t border-border cursor-text text-base h-[60vh] overflow-y-auto p-3;
 }
 
-.RichEditor-root {
-  @apply bg-card border border-border text-sm h-full;
-}
+.RichEditor-editor h1 { @apply text-2xl font-bold my-2; }
+.RichEditor-editor h2 { @apply text-xl font-bold my-2; }
+.RichEditor-editor h3 { @apply text-lg font-semibold my-2; }
 
-.RichEditor-editor .DraftEditor-root {
-  @apply h-full;
-}
-
-.RichEditor-editor .public-DraftEditor-content {
-  @apply w-full;
-}
-
-.RichEditor-editor .public-DraftEditorPlaceholder-root,
-.RichEditor-editor .public-DraftEditor-content {
-  @apply p-3;
-}
-
-.RichEditor-editor .public-DraftEditor-content {
-  @apply min-h-[100px];
-}
-
-.RichEditor-hidePlaceholder .public-DraftEditorPlaceholder-root {
-  @apply hidden;
-}
-
-.RichEditor-editor .RichEditor-blockquote {
+.RichEditor-editor blockquote {
   @apply border-l-4 border-border text-muted-foreground italic my-4 py-2.5 px-5;
 }
 
-.RichEditor-editor .public-DraftStyleDefault-pre {
-  @apply bg-muted font-mono text-base p-5;
+.RichEditor-editor pre {
+  @apply bg-muted font-mono text-sm p-4 rounded-md;
+}
+
+.RichEditor-editor code {
+  @apply bg-muted rounded px-1 font-mono text-[0.9em];
+}
+
+/* {node.value} references inside the rich editor */
+.reference-chip {
+  @apply bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300 rounded-sm font-semibold;
 }
 
 .RichEditor-controls {

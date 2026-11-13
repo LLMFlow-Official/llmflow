@@ -4,7 +4,7 @@ import { AppContext, Controller, NodeLogViewProps, NodeMetaData, NodeOutput, Out
 import { AppNode, AppNodeProp, NodeData } from '@/lib/store';
 import { renderTextTemplate } from '@/lib/logics';
 import {
-    DEFAULT_IMAGE_MODEL_ID, ImagePayload, imageModels, imageResponseToUrl, imageUsageToCost, OpenAi, toOpenAiError
+    DEFAULT_IMAGE_MODEL_ID, generateImage, ImagePayload, imageModels, imageResponseToUrl, imageUsageToCost
 } from '@/lib/openai';
 import { getProviderKey, isTestApi } from '@/lib/providers';
 import { Label } from '../ui/label';
@@ -93,7 +93,7 @@ export const Process = async (context: AppContext, node: AppNode<ImageGeneration
         const abort = new AbortController()
         const removeStopListener = onFlowStop(() => abort.abort())
         try {
-            const response = (await OpenAi(token).generateImage(payload, abort.signal)).data
+            const response = await generateImage(token, payload, abort.signal)
             image = imageResponseToUrl(response, format)
             revisedPrompt = response.data?.[0]?.revised_prompt
             inToken = response.usage?.input_tokens ?? 0
@@ -105,7 +105,7 @@ export const Process = async (context: AppContext, node: AppNode<ImageGeneration
             controller.increaseAmount(cost)
         } catch (error) {
             if (abort.signal.aborted) return []
-            throw toOpenAiError(error)
+            throw error
         } finally {
             removeStopListener()
         }

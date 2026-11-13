@@ -32,17 +32,17 @@ export type EngineController = Controller & {
     runBranch: (entryIds: string[], context: AppContext) => Promise<void>
 }
 
-export type ProcessFn = (context: AppContext, node: EngineNode, nextNodes: EngineNode[], controller: EngineController) => Promise<EngineNode[]>
+export type ProcessFn<N extends EngineNode = EngineNode> = (context: AppContext, node: N, nextNodes: N[], controller: EngineController) => Promise<N[]>
 
-export type EngineHooks = {
-    getProcess: (type: string) => ProcessFn
+export type EngineHooks<N extends EngineNode = EngineNode> = {
+    getProcess: (type: string) => ProcessFn<N>
     /** Targets a node runs itself as a loop body (not part of the normal flow). */
-    getBodyTargets?: (node: EngineNode) => string[]
+    getBodyTargets?: (node: N) => string[]
     setNodeState: (id: string, state: NodeState) => void
     isRunning: () => boolean
     controller: Controller
     /** Called when a node fails for good (after retries), before its downstream nodes are skipped. */
-    onNodeError?: (node: EngineNode, error: Error) => void
+    onNodeError?: (node: N, error: Error) => void
     /** Waits between retry attempts; resolves false if the run was stopped. */
     wait?: (ms: number) => Promise<boolean>
 }
@@ -56,7 +56,7 @@ export class BranchError extends Error {
 const defaultWait = (ms: number) => new Promise<boolean>(resolve => setTimeout(() => resolve(true), ms))
 
 /** Nodes reachable from `entryIds`, without entering loop bodies. */
-export function reachable(entryIds: string[], nodes: EngineNode[], edges: EngineEdge[], getBodyTargets?: EngineHooks['getBodyTargets']): Set<string> {
+export function reachable<N extends EngineNode>(entryIds: string[], nodes: N[], edges: EngineEdge[], getBodyTargets?: (node: N) => string[]): Set<string> {
     const byId = new Map(nodes.map(x => [x.id, x]))
     const seen = new Set<string>()
     const stack = [...entryIds]
@@ -76,7 +76,7 @@ export function reachable(entryIds: string[], nodes: EngineNode[], edges: Engine
  * Checks that the flow can run: no cycles (outside the Loop node's body connection) and no node
  * that belongs to a loop body and is also reachable from outside it. Returns an error message or null.
  */
-export function validateGraph(startId: string, nodes: EngineNode[], edges: EngineEdge[], getBodyTargets?: EngineHooks['getBodyTargets']): string | null {
+export function validateGraph<N extends EngineNode>(startId: string, nodes: N[], edges: EngineEdge[], getBodyTargets?: (node: N) => string[]): string | null {
     const byId = new Map(nodes.map(x => [x.id, x]))
 
     const checkScope = (entryIds: string[], label: string): string | null => {
@@ -129,19 +129,19 @@ export function validateGraph(startId: string, nodes: EngineNode[], edges: Engin
 
 type Status = 'pending' | 'running' | 'done' | 'skipped'
 
-class Run {
+class Run<N extends EngineNode> {
     private status = new Map<string, Status>()
     private edgeState = new Map<string, 'active' | 'dead'>()
     private scope: Set<string>
-    private byId: Map<string, EngineNode>
+    private byId: Map<string, N>
     private failures: BranchError[] = []
 
     constructor(
         private entryIds: string[],
         private context: AppContext,
-        private nodes: EngineNode[],
+        private nodes: N[],
         private edges: EngineEdge[],
-        private hooks: EngineHooks,
+        private hooks: EngineHooks<N>,
         /** Inside a loop body, a failure stops the whole branch. */
         private failFast: boolean,
     ) {
@@ -158,7 +158,7 @@ class Run {
         return this.edges.filter(e => e.target == id && this.scope.has(e.source))
     }
 
-    private outgoing(node: EngineNode) {
+    private outgoing(node: N) {
         const body = new Set(this.hooks.getBodyTargets?.(node) || [])
         return this.edges.filter(e => e.source == node.id && this.scope.has(e.target) && !body.has(e.target))
     }
@@ -187,9 +187,9 @@ class Run {
         const allNext = this.edges
             .filter(e => e.source == id)
             .map(e => this.byId.get(e.target))
-            .filter((x): x is EngineNode => !!x)
+            .filter((x): x is N => !!x)
 
-        let chosen: EngineNode[]
+        let chosen: N[]
         try {
             chosen = await this.runWithRetries(node, allNext)
         } catch (error) {
@@ -226,7 +226,7 @@ class Run {
         await this.activate(outgoing, chosen.map(x => x.id))
     }
 
-    private async runWithRetries(node: EngineNode, nextNodes: EngineNode[]): Promise<EngineNode[]> {
+    private async runWithRetries(node: N, nextNodes: N[]): Promise<N[]> {
         const settings = (node.data.on_error || {}) as OnErrorSettings
         const attempts = 1 + Math.min(Math.max(settings.retries || 0, 0), 5)
         const process = this.hooks.getProcess(node.type)
@@ -255,7 +255,7 @@ class Run {
         await Promise.all(targets.map(t => this.visit(t)))
     }
 
-    private async skip(node: EngineNode) {
+    private async skip(node: N) {
         this.status.set(node.id, 'skipped')
         this.hooks.setNodeState(node.id, 'skipped')
         const outgoing = this.outgoing(node)
@@ -263,7 +263,7 @@ class Run {
     }
 }
 
-function runBranch(entryIds: string[], context: AppContext, nodes: EngineNode[], edges: EngineEdge[], hooks: EngineHooks) {
+function runBranch<N extends EngineNode>(entryIds: string[], context: AppContext, nodes: N[], edges: EngineEdge[], hooks: EngineHooks<N>) {
     const run = new Run(entryIds, context, nodes, edges, hooks, true)
     for (const id of run.nodeIds()) hooks.setNodeState(id, 'waiting')
     return run.start()
@@ -275,7 +275,7 @@ export function allReachable(startId: string, nodes: EngineNode[], edges: Engine
 }
 
 /** Runs the flow from the start node. Node failures are reported through hooks; this resolves when everything has finished. */
-export async function runFlow(startId: string, context: AppContext, nodes: EngineNode[], edges: EngineEdge[], hooks: EngineHooks) {
+export async function runFlow<N extends EngineNode>(startId: string, context: AppContext, nodes: N[], edges: EngineEdge[], hooks: EngineHooks<N>) {
     const run = new Run([startId], context, nodes, edges, hooks, false)
     await run.start()
 }
