@@ -5,6 +5,8 @@ import { useReactFlow } from "@xyflow/react";
 import { useCallback, useEffect } from "react";
 import { useFlowStore, useRuntimeStore } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
+import { ToastAction } from "../ui/toast";
+import { openSettings } from "./settings";
 import UndoRedo from "../node_utils/undo_redo";
 import FindNode from "../node_utils/find_node";
 import { Button } from "../ui/button";
@@ -30,13 +32,13 @@ export default function Controllers() {
       <NewNode />
       <FindNode />
       <Button toolTip="Tidy up layout" aria-label="Tidy up layout" variant={'ghost'} size={'icon'} onClick={tidy}>
-        <LayoutGrid />
+        <LayoutGrid size={18} />
       </Button>
       <Button toolTip="Fit in view" aria-label="Fit in view" variant={'ghost'} size={'icon'} onClick={() => reactFlow.fitView({
         padding: 0.3,
         duration: 300
       })} onMouseDown={() => track('fit_in_view_pressed')} >
-        <Scan />
+        <Scan size={18} />
       </Button>
     </Card>
   );
@@ -51,7 +53,15 @@ export function RunButton() {
   const run = useCallback(() => {
     useFlowStore.getState().clearSelection()
     return runInEditor({
-      notify: (title, description) => toast({ title, description, duration: description ? 4000 : 3000 }),
+      notify: (title, description, options) => toast({
+        title,
+        description,
+        // Errors stay until closed; a missing key gets a button that opens Settings.
+        ...(options?.error ? { variant: 'destructive' as const, duration: Infinity } : { duration: description ? 4000 : 3000 }),
+        action: description && /API key|key was rejected/i.test(description)
+          ? <ToastAction altText="Open Settings" onClick={openSettings}>Open Settings</ToastAction>
+          : undefined,
+      }),
     })
   }, [toast])
 
@@ -71,16 +81,17 @@ export function RunButton() {
   }, [run, stop])
 
   return (
-    <div className={cn("rounded-full p-2 absolute right-4 bottom-[calc(var(--drawer-h,0px)+1rem)] z-45 shadow-md h-16 w-16 flex items-center justify-center", isRunning ? "bg-danger text-danger-foreground" : "bg-success text-success-foreground")} >
-      <Button
-        className="rounded-full h-14 w-14 bg-transparent hover:bg-transparent text-inherit hover:text-inherit p-2"
-        variant="ghost"
-        toolTip={isRunning ? `Stop (${MOD_KEY}+Enter)` : `Run (${MOD_KEY}+Enter)`}
-        aria-label={isRunning ? "Stop the flow" : "Run the flow"}
-        onClick={isRunning ? stop : run}
-      >
-        {isRunning ? <Square className="stroke-current" size={32} /> : <Play className="stroke-current" size={32} />}
-      </Button>
-    </div>
+    <Button
+      className={cn(
+        "absolute right-4 bottom-[calc(var(--drawer-h,0px)+1rem)] z-45 h-12 rounded-full px-5 gap-2 text-base font-semibold shadow-lg",
+        isRunning ? "bg-danger text-danger-foreground hover:bg-danger/90" : "bg-success text-success-foreground hover:bg-success/90",
+      )}
+      toolTip={isRunning ? `Stop (${MOD_KEY}+Enter)` : `Run (${MOD_KEY}+Enter)`}
+      aria-label={isRunning ? "Stop the flow" : "Run the flow"}
+      onClick={isRunning ? stop : run}
+    >
+      {isRunning ? <Square size={18} className="fill-current" aria-hidden /> : <Play size={18} className="fill-current" aria-hidden />}
+      {isRunning ? 'Stop' : 'Run'}
+    </Button>
   )
 }

@@ -1,6 +1,6 @@
 import { useTemporalFlowStore } from "@/lib/store";
 import { useEffect } from "react";
-import { Toggle } from "../ui/toggle";
+import { Button } from "../ui/button";
 import { Redo, Undo } from "lucide-react";
 import { MOD_KEY, onCanvas } from "@/lib/utils";
 
@@ -29,11 +29,11 @@ export default function UndoRedo() {
   }, [redo, undo])
 
     return <>
-     <Toggle toolTip={`Undo (${MOD_KEY}+Z)`} aria-label="Undo" onClick={() => undo()} disabled={pastStates.length == 0} >
-        <Undo/>
-      </Toggle>
-      <Toggle toolTip={`Redo (${MOD_KEY}+Shift+Z)`} aria-label="Redo" onClick={() => redo()} disabled={futureStates.length == 0} >
-        <Redo/>
-      </Toggle>
+      <Button variant="ghost" size="icon" toolTip={`Undo (${MOD_KEY}+Z)`} aria-label="Undo" onClick={() => undo()} disabled={pastStates.length == 0}>
+        <Undo size={18} />
+      </Button>
+      <Button variant="ghost" size="icon" toolTip={`Redo (${MOD_KEY}+Shift+Z)`} aria-label="Redo" onClick={() => redo()} disabled={futureStates.length == 0}>
+        <Redo size={18} />
+      </Button>
     </>
 }

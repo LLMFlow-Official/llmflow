@@ -11,6 +11,7 @@ import { Badge } from "../ui/badge";
 import { Stats, StatsProps } from "./stats";
 import { capitalize } from "lodash";
 import { MOD_KEY } from "@/lib/utils";
+import { selectStepKeepingTab } from "./panel_tab";
 
 export function FinalOutputCards({ outputs }: { outputs: FinalOutput[] }) {
     return <>
@@ -29,7 +30,7 @@ export function FinalOutputCards({ outputs }: { outputs: FinalOutput[] }) {
 
 /** Log entries of a run (live or from history). */
 export function LogCards({ logs }: { logs: NodeLogs[] }) {
-    const { nodes, onNodesChange } = useFlowStore(useShallow((state) => ({ nodes: state.nodes, onNodesChange: state.onNodesChange })))
+    const nodes = useFlowStore((state) => state.nodes)
     const { fitView } = useReactFlow()
 
     const logsWithDetails = useMemo(() => logs.map(x => ({
@@ -38,9 +39,10 @@ export function LogCards({ logs }: { logs: NodeLogs[] }) {
         details: getNodeDetails(x.nodeType)
     })), [logs, nodes]);
 
+    // Centres and selects the step but keeps the log open (the Step tab shows its settings).
     const focusNode = (node: AppNode) => {
         fitView({ nodes: [node], maxZoom: 1.5, duration: 300 })
-        onNodesChange([{ type: 'select', id: node.id, selected: true }])
+        selectStepKeepingTab(node.id)
     }
 
     return <>
@@ -56,7 +58,7 @@ export function LogCards({ logs }: { logs: NodeLogs[] }) {
                             </div>
                             {x.type != 'info' ? <Badge size="small" variant={x.type} className="ml-auto">{capitalize(x.type)}</Badge> : null}
                             {x.node ? (
-                                <button aria-label="Show this node" title="Show this node" className="ml-auto text-muted-foreground hover:text-foreground" onClick={() => focusNode(x.node as AppNode)}>
+                                <button aria-label="Show this step on the canvas" title="Show this step on the canvas" className="ml-auto text-muted-foreground hover:text-foreground" onClick={() => focusNode(x.node as AppNode)}>
                                     <Crosshair size={16} />
                                 </button>
                             ) : null}

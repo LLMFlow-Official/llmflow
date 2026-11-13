@@ -12,11 +12,12 @@ import {
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
-import { Bolt, Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Settings as SettingsIcon } from "lucide-react";
 import ThemeToggle from "./theme_toggle";
 import { DevMode, useSettingStore } from "@/lib/store";
 import { Switch } from "../ui/switch";
 import { useState } from "react";
+import { create } from "zustand";
 import { track } from "@/lib/analytics";
 import { PROVIDERS } from "@/lib/openai/models";
 
@@ -61,8 +62,19 @@ function SettingSwitch({ id, label, help, checked, onChange }: { id: string, lab
     )
 }
 
+/** Lets other parts of the app open Settings, e.g. "Open Settings" on a missing-key error. */
+export const useSettingsDialog = create<{ open: boolean }>()(() => ({ open: false }))
+export const openSettings = () => useSettingsDialog.setState({ open: true })
+
 export function SettingsDialog() {
+    const open = useSettingsDialog(s => s.open)
     const [form, setForm] = useState(() => snapshot())
+    // Load the current values each time the dialog opens (also when opened from elsewhere).
+    const [wasOpen, setWasOpen] = useState(open)
+    if (open != wasOpen) {
+        setWasOpen(open)
+        if (open) setForm(snapshot())
+    }
     const set = <K extends keyof SettingsForm>(key: K, value: SettingsForm[K]) => setForm(f => ({ ...f, [key]: value }))
 
     const save = () => {
@@ -82,10 +94,10 @@ export function SettingsDialog() {
     return (
         // Changes are kept however the dialog is closed (Done, the X, Escape or a click outside),
         // so a pasted key is never lost.
-        <Dialog onOpenChange={(open) => open ? setForm(snapshot()) : save()}>
+        <Dialog open={open} onOpenChange={(next) => { if (!next) save(); useSettingsDialog.setState({ open: next }) }}>
             <DialogTrigger asChild>
                 <Button toolTip="Settings" size="icon" variant="ghost" aria-label="Settings">
-                    <Bolt size={20} />
+                    <SettingsIcon size={18} />
                 </Button>
             </DialogTrigger>
             <DialogContent className="max-h-[90vh] overflow-y-auto">

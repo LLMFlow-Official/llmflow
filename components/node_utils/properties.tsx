@@ -17,8 +17,8 @@ export default function Properties() {
     if (!selectedNode) {
         return (
             <div className="flex flex-col items-center justify-center h-full">
-                <p className="text-muted-foreground">No node selected</p>
-                <p className="text-sm text-muted-foreground">Select a node to view its properties</p>
+                <p className="text-muted-foreground">No step selected</p>
+                <p className="text-sm text-muted-foreground">Select a step on the canvas to change its settings</p>
             </div>
         );
     }
@@ -28,13 +28,10 @@ export default function Properties() {
             <div className="border-b border-border p-3">
                 <h2 className="font-bold">{nodeDetails?.name}</h2>
                 <p className="text-xs text-muted-foreground">{nodeDetails?.description}</p>
-                <div className="mt-2 flex flex-col gap-1">
-                    <div className="flex items-center gap-2 text-xs">
-                        <span className="font-semibold">Node ID : </span>
-                        <p className="text-muted-foreground">{selectedNode.id}</p>
-                    </div>
-
-                </div>
+                {isDevMode ? (
+                    // Ids are what references use ({id.output}); only needed when working with them directly.
+                    <p className="mt-2 text-xs"><span className="font-semibold">Step id:</span> <span className="text-muted-foreground font-mono">{selectedNode.id}</span></p>
+                ) : null}
             </div>
             <div className="flex-1 overflow-y-auto py-3">
                 {isDevMode?.showPropData ? <div className="px-2 pb-2"><Card className="p-2">

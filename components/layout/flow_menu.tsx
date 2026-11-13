@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ChevronDown, Copy, FilePlus2, FileUp, Download, Link2, ListChecks, Trash, FolderOpen } from "lucide-react";
+import { Check, ChevronDown, CloudAlert, Copy, FilePlus2, FileUp, Download, Link2, ListChecks, Loader2, Trash, FolderOpen } from "lucide-react";
 import { useShallow } from "zustand/shallow";
 import { Edge } from "@xyflow/react";
 import { useToast } from "@/hooks/use-toast";
@@ -7,7 +7,7 @@ import { track } from "@/lib/analytics";
 import { AppNode, useFlowStore } from "@/lib/store";
 import { nodeMetaDetails } from "@/lib/nodes";
 import { parseFlow, ParsedFlow, riskyNodes, serializeFlow } from "@/lib/flow_file";
-import { createFlow, deleteFlow, duplicateFlow, flushSave, openFlow, renameCurrent, useLibraryStore } from "@/lib/library";
+import { createFlow, deleteFlow, duplicateFlow, flushSave, openFlow, renameCurrent, retrySave, useLibraryStore } from "@/lib/library";
 import { compressToParam, decompressParam, sanitizeForSharing, SHARE_PREFIX } from "@/lib/share";
 import { templates } from "@/lib/templates";
 import { Card } from "../ui/card";
@@ -143,6 +143,25 @@ function ShareDialog({ open, onOpenChange }: { open: boolean, onOpenChange: (ope
     )
 }
 
+/** "Saved", "Saving…" or "Couldn't save" next to the flow name. */
+function SaveStatus() {
+    const { status, error } = useLibraryStore(useShallow(s => ({ status: s.saveStatus, error: s.saveError })))
+    if (status == 'error') {
+        return (
+            <Button variant="ghost" size="sm" className="h-8 px-2 gap-1 text-danger hover:text-danger" toolTip={`Couldn't save: ${error || 'unknown error'}. Click to try again.`} onClick={() => retrySave()}>
+                <CloudAlert size={16} /> <span className="text-xs">Couldn&apos;t save</span>
+            </Button>
+        )
+    }
+    return (
+        <span role="status" className="flex items-center gap-1 px-1 text-xs text-muted-foreground" title={status == 'saving' ? 'Saving…' : 'Saved in this browser'}>
+            {status == 'saving' ? <Loader2 size={14} className="motion-safe:animate-spin" aria-hidden /> : <Check size={14} aria-hidden />}
+            <span className="hidden @5xl:inline">{status == 'saving' ? 'Saving…' : 'Saved'}</span>
+            <span className="sr-only @5xl:hidden">{status == 'saving' ? 'Saving' : 'Saved'}</span>
+        </span>
+    )
+}
+
 export default function FlowMenu() {
     const { flows, currentId, currentName, ready } = useLibraryStore(useShallow(s => ({ flows: s.flows, currentId: s.currentId, currentName: s.currentName, ready: s.ready })))
     const [menuOpen, setMenuOpen] = useState(false)
@@ -205,11 +224,11 @@ export default function FlowMenu() {
     const commitName = () => { if (name.trim() && name != currentName) renameCurrent(name) }
 
     return (
-        <Card className="p-1 flex items-center gap-1 pointer-events-auto max-w-[min(18rem,40vw)]">
+        <Card className="p-1 flex items-center gap-1 pointer-events-auto min-w-0">
             <Popover open={menuOpen} onOpenChange={setMenuOpen}>
                 <PopoverTrigger asChild>
                     <Button variant="ghost" className="h-10 px-2 gap-1 min-w-0" aria-label={`${currentName || 'Loading'}, flows menu`}>
-                        <span className="truncate font-semibold text-sm">{currentName || 'Loading…'}</span>
+                        <span className="truncate font-semibold text-sm max-w-[10rem] @3xl:max-w-[16rem]">{currentName || 'Loading…'}</span>
                         <ChevronDown size={16} className="shrink-0" />
                     </Button>
                 </PopoverTrigger>
@@ -223,8 +242,6 @@ export default function FlowMenu() {
                         <Button variant="outline" size="sm" className="justify-start gap-2" onClick={choose(() => currentId && duplicateFlow(currentId))}><Copy size={14} /> Duplicate</Button>
                         <Button variant="outline" size="sm" className="justify-start gap-2" onClick={choose(importFile)}><FileUp size={14} /> Import file</Button>
                         <Button variant="outline" size="sm" className="justify-start gap-2" onClick={choose(exportFile)}><Download size={14} /> Export file</Button>
-                        <Button variant="outline" size="sm" className="justify-start gap-2" onClick={choose(() => setDialog('share'))}><Link2 size={14} /> Share link</Button>
-                        <Button variant="outline" size="sm" className="justify-start gap-2" onClick={choose(() => setDialog('tests'))}><ListChecks size={14} /> Test cases</Button>
                     </div>
                     <div className="flex flex-col">
                         <span className="text-xs font-semibold flex items-center gap-1 px-1 py-1"><FolderOpen size={12} /> Your flows</span>
@@ -244,6 +261,13 @@ export default function FlowMenu() {
                     </div>
                 </PopoverContent>
             </Popover>
+            <SaveStatus />
+            <Button variant="ghost" size="sm" className="h-10 gap-2 px-2.5" toolTip="Share a link to this flow" aria-label="Share" onClick={() => setDialog('share')}>
+                <Link2 size={18} /><span className="hidden @4xl:inline">Share</span>
+            </Button>
+            <Button variant="ghost" size="sm" className="h-10 gap-2 px-2.5" toolTip="Run the flow on many inputs and check the results" aria-label="Test cases" onClick={() => setDialog('tests')}>
+                <ListChecks size={18} /><span className="hidden @4xl:inline">Test cases</span>
+            </Button>
             <NewFlowDialog open={dialog == 'new'} onOpenChange={(o) => setDialog(o ? 'new' : undefined)} />
             <ShareDialog open={dialog == 'share'} onOpenChange={(o) => setDialog(o ? 'share' : undefined)} />
             <TestCasesDialog open={dialog == 'tests'} onOpenChange={(o) => setDialog(o ? 'tests' : undefined)} />

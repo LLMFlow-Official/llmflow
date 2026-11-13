@@ -123,6 +123,9 @@ type LibraryState = {
     revision: number
     /** Increases when a run is added to the history. */
     historyRevision?: number
+    /** Autosave of the open flow: shown next to the flow name. */
+    saveStatus: 'saved' | 'saving' | 'error'
+    saveError?: string
     setFlows: (flows: FlowSummary[]) => void
 }
 
@@ -131,6 +134,7 @@ export const useLibraryStore = create<LibraryState>()(set => ({
     flows: [],
     currentName: '',
     revision: 0,
+    saveStatus: 'saved',
     setFlows: flows => set({ flows }),
 }))
 
@@ -159,7 +163,27 @@ export async function saveCurrent() {
     await refreshList()
 }
 
-const autosave = debounce(() => { saving = saving.then(saveCurrent).catch(console.error) }, 600)
+/** Saves the open flow and keeps the save status up to date. */
+function saveWithStatus() {
+    saving = saving.then(async () => {
+        useLibraryStore.setState({ saveStatus: 'saving' })
+        try {
+            await saveCurrent()
+            useLibraryStore.setState({ saveStatus: 'saved', saveError: undefined })
+        } catch (error) {
+            console.error(error)
+            useLibraryStore.setState({ saveStatus: 'error', saveError: (error as Error)?.message || String(error) })
+        }
+    })
+    return saving
+}
+
+const autosave = debounce(saveWithStatus, 600)
+
+/** Tries again after a failed save. */
+export function retrySave() {
+    return saveWithStatus()
+}
 
 export async function openFlow(id: string) {
     await flushSave()

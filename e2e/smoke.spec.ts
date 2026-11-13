@@ -105,6 +105,36 @@ test('answering a question with Cmd/Ctrl+Enter keeps the run going', async ({ pa
     await expect(page.getByText('completed').first()).toBeVisible()
 })
 
+test('selecting a step opens its settings without hiding the other tabs', async ({ page }) => {
+    await openApp(page)
+    await newFlowFromTemplate(page, 'Summarize a text')
+    await page.locator('.react-flow__node', { hasText: 'Summarize' }).first().click()
+    await expect(page.getByRole('tab', { name: 'Step' })).toHaveAttribute('aria-selected', 'true')
+    await expect(page.locator('#panel-step input[name="name"]')).toHaveValue('Summarize')
+
+    await page.getByRole('tab', { name: 'Run log' }).click()
+    await expect(page.getByRole('tab', { name: 'Step' })).toBeVisible()
+    await page.locator('.react-flow__pane').click({ position: { x: 20, y: 300 } })
+    await expect(page.getByRole('tab', { name: 'Step' })).toHaveCount(0)
+
+    await page.locator('.react-flow__node', { hasText: 'Summarize' }).first().click()
+    await page.keyboard.press('Escape')
+    await expect(page.getByRole('tab', { name: 'Step' })).toHaveCount(0)
+    await expect(page.getByRole('tab', { name: 'Run log' })).toHaveAttribute('aria-selected', 'true')
+})
+
+test('on a phone, the panel leaves Run and menus usable', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await openApp(page)
+    await newFlowFromTemplate(page, 'Summarize a text')
+    await page.locator('.react-flow__node', { hasText: 'Summarize' }).first().click()
+    await page.getByRole('combobox', { name: /provider/i }).or(page.getByRole('combobox').first()).first().click()
+    await expect(page.getByRole('option', { name: 'Anthropic (Claude)' })).toBeVisible()
+    await page.keyboard.press('Escape')
+    await page.getByRole('button', { name: 'Run the flow' }).click()
+    await expect(page.getByText('(Test answer from Summarize)').first()).toBeVisible()
+})
+
 test('has no serious accessibility problems', async ({ page }) => {
     await openApp(page)
     const results = await new AxeBuilder({ page }).analyze()

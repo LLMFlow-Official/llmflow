@@ -44,7 +44,7 @@ export default function FindNode() {
     return (
         <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
-                <Button toolTip={`Find a node (${MOD_KEY}+K)`} aria-label="Find a node" variant="ghost" size="icon"><Search /></Button>
+                <Button toolTip={`Find a step (${MOD_KEY}+K)`} aria-label="Find a step" variant="ghost" size="icon"><Search size={18} /></Button>
             </PopoverTrigger>
             <PopoverContent align="start" className="p-0 w-72">
                 <input

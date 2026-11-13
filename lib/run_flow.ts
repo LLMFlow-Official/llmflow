@@ -48,7 +48,7 @@ export async function runInEditor(options: {
     nodes?: AppNode[]
     edges?: Edge[]
     startValues?: Record<string, unknown>
-    notify: (title: string, description?: string) => void
+    notify: (title: string, description?: string, options?: { error?: boolean }) => void
     saveHistory?: boolean
 }): Promise<RunSummary | null> {
     if (running || useRuntimeStore.getState().isRunning) return null
@@ -60,7 +60,7 @@ export async function runInEditor(options: {
 
     const problem = validateGraph(startNode.id, nodes, edges, getBodyTargets)
     if (problem) {
-        options.notify("This flow can't run", problem)
+        options.notify("This flow can't run", problem, { error: true })
         return null
     }
 
@@ -94,7 +94,7 @@ export async function runInEditor(options: {
                 // Only the node type: error messages can contain prompt text or model output.
                 track('flow_error', { nodeType: node.type })
                 controller.log({ id: node.id, nodeType: node.type as NodeType, type: 'error', title: error.message })
-                options.notify(`Something went wrong on ${(node.data.name as string) || getNodeDetails(node.type as NodeType).name}`, error.message)
+                options.notify(`Something went wrong on ${(node.data.name as string) || getNodeDetails(node.type as NodeType).name}`, error.message, { error: true })
             },
         })
     } finally {

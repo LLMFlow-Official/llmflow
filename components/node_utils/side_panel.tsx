@@ -1,42 +1,98 @@
-import { create } from "zustand";
+import { useEffect, useRef } from "react";
+import { X } from "lucide-react";
 import RuntimeLogs from "./runtime_logs";
 import RunHistory from "./run_history";
 import FlowAssistantPanel from "./flow_assistant_panel";
-import { useRuntimeStore } from "@/lib/store";
+import Properties from "./properties";
+import { useFlowStore } from "@/lib/store";
+import { PanelTab, showPanelTab, usePanelTab } from "./panel_tab";
+import { getNodeDetails } from "@/lib/nodes";
+import { cn } from "@/lib/utils";
+import { Button } from "../ui/button";
+import ErrorBoundary from "../ui/error_boundary";
 
-type Tab = 'build' | 'log' | 'history'
+/** Escape deselects the step (unless focus is in a text box or a dialog is open). */
+function useEscapeToDeselect() {
+    useEffect(() => {
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key != 'Escape' || e.defaultPrevented) return
+            const target = e.target instanceof Element ? e.target : null
+            if (target?.closest('input, textarea, select, [contenteditable="true"], [role="dialog"], [role="alertdialog"], [role="listbox"], [role="menu"]')) return
+            if (document.querySelector('[role="dialog"], [role="alertdialog"]')) return
+            if (useFlowStore.getState().selectedNode) useFlowStore.getState().clearSelection()
+        }
+        document.addEventListener('keydown', onKey)
+        return () => document.removeEventListener('keydown', onKey)
+    }, [])
+}
 
-/** Kept outside the component so the tab survives selecting a node (which replaces this panel). */
-const useTab = create<{ tab: Tab }>()(() => ({ tab: 'build' }))
+const TABS: { id: PanelTab, label: string }[] = [
+    { id: 'build', label: 'Build' },
+    { id: 'log', label: 'Run log' },
+    { id: 'history', label: 'History' },
+    { id: 'step', label: 'Step' },
+]
 
-// Show the log when a run starts.
-useRuntimeStore.subscribe((state, previous) => {
-    if (state.isRunning && !previous.isRunning) useTab.setState({ tab: 'log' })
-})
-
-const TABS: [Tab, string][] = [['build', 'Build'], ['log', 'Run log'], ['history', 'History']]
-
-/** The right-hand panel when no node is selected: the build assistant, the current run's log, or past runs. */
+/**
+ * The right-hand panel: the build assistant, the current run's log, past runs and, when a step is
+ * selected, that step's settings. The tabs stay mounted so each keeps its place.
+ */
 export default function SidePanel() {
-    const tab = useTab(s => s.tab)
+    const tab = usePanelTab(s => s.tab)
+    const selectedNode = useFlowStore((state) => state.selectedNode)
+    const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({})
+    useEscapeToDeselect()
+
+    const visible = TABS.filter(t => t.id != 'step' || selectedNode)
+    const active = tab == 'step' && !selectedNode ? 'build' : tab
+    const stepName = selectedNode ? ((selectedNode.data.name as string) || getNodeDetails(selectedNode.type).name) : ''
+
+    const onTabKey = (e: React.KeyboardEvent) => {
+        if (e.key != 'ArrowRight' && e.key != 'ArrowLeft') return
+        const index = visible.findIndex(t => t.id == active)
+        const next = visible[(index + (e.key == 'ArrowRight' ? 1 : visible.length - 1)) % visible.length]
+        showPanelTab(next.id)
+        tabRefs.current[next.id]?.focus()
+    }
+
     return (
         <div className="flex flex-col h-full min-h-0">
-            <div className="flex gap-1 px-3 pt-2 border-b border-border" role="tablist">
-                {TABS.map(([id, label]) => (
+            <div className="flex items-center gap-1 px-3 pt-2 border-b border-border" role="tablist" aria-label="Panel" onKeyDown={onTabKey}>
+                {visible.map(({ id, label }) => (
                     <button
                         key={id}
+                        ref={el => { tabRefs.current[id] = el }}
+                        id={`panel-tab-${id}`}
                         role="tab"
-                        aria-selected={tab == id}
-                        className={`px-3 py-1.5 text-sm -mb-px border-b-2 ${tab == id ? 'border-primary font-semibold' : 'border-transparent text-muted-foreground'}`}
-                        onClick={() => useTab.setState({ tab: id })}
+                        aria-selected={active == id}
+                        aria-controls={`panel-${id}`}
+                        tabIndex={active == id ? 0 : -1}
+                        title={id == 'step' ? stepName : undefined}
+                        className={cn('px-3 py-1.5 text-sm -mb-px border-b-2 whitespace-nowrap', active == id ? 'border-primary font-semibold' : 'border-transparent text-muted-foreground hover:text-foreground')}
+                        onClick={() => showPanelTab(id)}
                     >
                         {label}
                     </button>
                 ))}
+                {selectedNode && active == 'step' ? (
+                    <Button variant="ghost" size="icon" className="ml-auto h-8 w-8" toolTip="Close (Esc)" aria-label="Close step settings" onClick={() => useFlowStore.getState().clearSelection()}>
+                        <X size={16} />
+                    </Button>
+                ) : null}
             </div>
-            <div className="flex-1 min-h-0 pt-2">
-                {tab == 'build' ? <FlowAssistantPanel /> : tab == 'log' ? <RuntimeLogs /> : <RunHistory />}
-            </div>
+            {visible.map(({ id }) => (
+                <div key={id} id={`panel-${id}`} role="tabpanel" aria-labelledby={`panel-tab-${id}`} hidden={active != id} className={cn('flex-1 min-h-0', id == 'step' ? '' : 'pt-2')}>
+                    {id == 'build' ? <FlowAssistantPanel />
+                        : id == 'log' ? <RuntimeLogs />
+                            : id == 'history' ? <RunHistory />
+                                : (
+                                    // A crash in one step's settings shows a message here instead of breaking the app.
+                                    <ErrorBoundary label="this panel" compact resetKey={selectedNode?.id}>
+                                        <Properties />
+                                    </ErrorBoundary>
+                                )}
+                </div>
+            ))}
         </div>
     )
 }

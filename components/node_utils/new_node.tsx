@@ -1,6 +1,6 @@
 import { Plus } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
-import { Toggle } from "../ui/toggle";
+import { Button } from "../ui/button";
 import { useState } from "react";
 import { randomId } from "@/lib/utils";
 import { useFlowStore } from "@/lib/store";
@@ -46,9 +46,9 @@ export default function NewNode() {
     return (
         <Popover open={open} onOpenChange={(o) => { setOpen(o); if (o) setSearch('') }}>
             <PopoverTrigger asChild>
-                <Toggle toolTip="Add a node" aria-label="Add a node" pressed={open}>
-                    <Plus size={20} />
-                </Toggle>
+                <Button variant={open ? 'secondary' : 'ghost'} className="h-10 gap-1.5 px-3" toolTip="Add a step" aria-label="Add step">
+                    <Plus size={18} /> <span className="hidden @xl:inline">Add step</span>
+                </Button>
             </PopoverTrigger>
             <PopoverContent align="start" alignOffset={-2} sideOffset={10} side="bottom" className="p-0">
                 <input

@@ -35,7 +35,7 @@ export default function ThemeToggle() {
     const Icon = theme == 'dark' ? Moon : theme == 'light' ? Sun : Monitor
     return (
         <Button size="icon" variant="ghost" toolTip={labels[theme]} aria-label={`${labels[theme]}. Switch to ${next}.`} onClick={() => setSettings({ theme: next })}>
-            <Icon size={20} />
+            <Icon size={18} />
         </Button>
     )
 }
