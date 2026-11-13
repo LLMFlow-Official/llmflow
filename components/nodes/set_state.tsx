@@ -1,6 +1,7 @@
 import { Cog } from 'lucide-react';
 import { AppContext, Controller, NodeMetaData, NodeOutput } from '@/lib/nodes';
-import { useFlowStore, AppNode, AppNodeProp, NodeData, useRuntimeStore } from '@/lib/store';
+import { useFlowStore, AppNode, AppNodeProp, NodeData, useRuntimeStore, createStopSignal } from '@/lib/store';
+import { CodeStoppedError } from '@/lib/code_runner';
 import { cloneDeep, set } from 'lodash';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
@@ -49,7 +50,16 @@ export const Process = async (context: AppContext, node: AppNode<SetStateData>, 
     if (!isValidStatement) throw Error("Value statement is invalid")
 
     const valueIdentifier = Metadata.valueIdentifier && Metadata.valueIdentifier(node) || ''
-    const output = runStatement(node.data.value, context)
+    const { signal, dispose } = createStopSignal()
+    let output: unknown
+    try {
+        output = await runStatement(node.data.value, context, signal)
+    } catch (error) {
+        if (error instanceof CodeStoppedError) return []
+        throw error
+    } finally {
+        dispose()
+    }
 
     set(context, `${valueIdentifier}.${node.data.variable}`, output)
 
@@ -58,7 +68,7 @@ export const Process = async (context: AppContext, node: AppNode<SetStateData>, 
         type: 'success',
         title: "State value has been updated",
         nodeType: node.type,
-        payload: `${node.data.variable} = ${output}`
+        payload: `${node.data.variable} = ${typeof output == 'string' ? output : JSON.stringify(output)}`
     });
     return nextNodes
 }

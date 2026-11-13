@@ -3,12 +3,12 @@ import { Button } from "./button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "./dialog";
 import Markdown from "react-markdown";
 import { useEffect } from "react";
-import mixpanel from "mixpanel-browser";
+import { track } from "@/lib/analytics";
 
 export default function MarkdownViewer({text}: {text: string}) {
 
     useEffect(() => {
-        mixpanel.track('markdown_viewer_opened')
+        track('markdown_viewer_opened')
     }, [])    
 
     return (

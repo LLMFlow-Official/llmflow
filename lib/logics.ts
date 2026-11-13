@@ -1,6 +1,6 @@
 import { get } from "lodash";
 import { AppContext } from "./nodes";
-import safeEval from 'safe-eval'
+import { CodeStoppedError, expressionBody, isValidExpression, runCodeInWorker } from "./code_runner";
 
 export const valueReg = new RegExp('\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}', 'gm')
 
@@ -62,31 +62,22 @@ export const replaceDynamicValueWithValueRef = (statement: string) => {
     }, filteredStatement) 
 }
 
-export const replaceDynamicValueWithDummyValues = (statement: string) => {
-    const filteredStatement = filterStatement(statement)
-    const allTemplateWords = filteredStatement.match(valueReg) || []
-    const valueMap = Object.fromEntries(allTemplateWords.map(x => [x, 0]))
-    return Object.keys(valueMap).reduce((c, x) => {
-        return c.replaceAll(x, JSON.stringify(valueMap[x]) as string)
-    }, filteredStatement) 
-}
+/** True when the statement (with {node.key} references) is a valid JavaScript expression. Never runs it. */
+export const validateStatement = (statement: string = '') => isValidExpression(replaceDynamicValueWithValueRef(statement))
 
-export const runStatement = (statement: string, context: AppContext) => {
-    const logic = `(function () { return ${replaceDynamicValueWithValueRef(statement)} })()`
+/**
+ * Evaluates a Decision / Set State / Assert expression in the sandboxed worker and returns its value.
+ * Throws a readable error when the expression is invalid or fails, and CodeStoppedError when the
+ * flow is stopped.
+ */
+export const runStatement = async (statement: string, context: AppContext, signal?: AbortSignal): Promise<unknown> => {
+    const expression = replaceDynamicValueWithValueRef(statement)
+    if (!isValidExpression(expression)) throw new Error(`This is not a valid expression: ${statement}`)
     try {
-        return safeEval(logic, context)
+        const { result } = await runCodeInWorker(expressionBody(expression), context, 5000, signal)
+        return result
     } catch (error) {
-        console.log(logic, error);
-        return false
-    }
-}
-
-export const validateStatement = (statement: string = '') => {
-    const logic = `(function () { return ${replaceDynamicValueWithDummyValues(statement)} })()`
-    try {
-        safeEval(logic)
-        return true
-    } catch {
-        return false
+        if (error instanceof CodeStoppedError) throw error
+        throw new Error(`The expression "${statement}" failed: ${(error as Error).message}`)
     }
 }

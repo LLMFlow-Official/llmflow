@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import UndoRedo from "../node_utils/undo_redo";
 import { Button } from "../ui/button";
 import { cn } from "@/lib/utils";
-import mixpanel from "mixpanel-browser";
+import { track } from "@/lib/analytics";
 
 export default function Controllers() {
   const { toast } = useToast()
@@ -49,7 +49,7 @@ export default function Controllers() {
 
   const startWrapper = async () => {
     if (isRunning) return;
-    mixpanel.track('started')
+    track('started')
     clearSelection()
     const context = {};
     const startNode = nodes.find((node: AppNode) => node.type === 'start');
@@ -81,12 +81,8 @@ export default function Controllers() {
         updateNodeState(node, 'completed', context);
       } catch (error) {
         console.log(error);
-        mixpanel.track('flow_error', {
-          id: node.id,
-          nodeType: node.type,
-          type: 'error',
-          title: (error as Error).message,
-        })
+        // Only the node type: error messages can contain prompt text or model output.
+        track('flow_error', { nodeType: node.type })
 
         controller.log({
           id: node.id,
@@ -113,7 +109,7 @@ export default function Controllers() {
     await processNode(startNode);
 
     stop();
-    mixpanel.track('ended')
+    track('ended')
     setTimeout(() => {
       setNodeState(Object.fromEntries(nodes.map(x => [x.id, 'idle'])))
     }, 3000);
@@ -127,7 +123,7 @@ export default function Controllers() {
         <Button toolTip="Fit in view" variant={'ghost'} size={'icon'} onClick={() => reactFlow.fitView({
           padding: 0.3,
           duration: 300
-        })} onMouseDown={() => mixpanel.track('fit_in_view_pressed')} >
+        })} onMouseDown={() => track('fit_in_view_pressed')} >
           <Scan/>
         </Button>
       </Card>

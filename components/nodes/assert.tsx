@@ -1,7 +1,8 @@
 import { ShieldCheck } from 'lucide-react';
 import { useMemo } from 'react';
 import { AppContext, Controller, NodeMetaData, NodeOutput } from '@/lib/nodes';
-import { AppNode, AppNodeProp, NodeData } from '@/lib/store';
+import { AppNode, AppNodeProp, NodeData, createStopSignal } from '@/lib/store';
+import { CodeStoppedError } from '@/lib/code_runner';
 import { renderTextTemplate, runStatement, validateStatement } from '@/lib/logics';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
@@ -29,7 +30,17 @@ export const Process = async (context: AppContext, node: AppNode<AssertData>, ne
     if (!condition.trim()) throw Error("Condition is required")
     if (!validateStatement(condition)) throw Error("Condition is not a valid expression")
 
-    if (!runStatement(condition, context)) {
+    const { signal, dispose } = createStopSignal()
+    let passed: unknown
+    try {
+        passed = await runStatement(condition, context, signal)
+    } catch (error) {
+        if (error instanceof CodeStoppedError) return []
+        throw error
+    } finally {
+        dispose()
+    }
+    if (!passed) {
         throw Error(renderTextTemplate(node.data.message || '', context) || `Check failed: ${condition}`)
     }
 
@@ -58,7 +69,7 @@ export const Properties = ({ node }: { node: AppNode<AssertData> }) => {
                     withoutRichText
                 />
                 {isValid ? (
-                    <p className='text-xs text-gray-500'>A JavaScript expression, the same as a Decision condition.</p>
+                    <p className='text-xs text-gray-500'>A JavaScript expression, the same as a Decision condition. It runs in an isolated worker.</p>
                 ) : (
                     <p className='text-xs text-red-600'>This condition is not a valid expression.</p>
                 )}

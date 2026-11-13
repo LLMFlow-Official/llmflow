@@ -108,6 +108,11 @@ export type DevMode = {
 
 export type SettingsState = {
     openAIKey: string;
+    /** Keep API keys in this browser between visits. When false they are kept in memory only. */
+    rememberKeys: boolean;
+    analyticsEnabled: boolean;
+    setRememberKeys: (value: boolean) => void;
+    setAnalyticsEnabled: (value: boolean) => void;
     devMode?: DevMode;
     /** Text model IDs loaded from the user's OpenAI account (GET /v1/models). */
     accountModels: string[];
@@ -118,6 +123,10 @@ export type SettingsState = {
 
 export const useSettingStore = create<SettingsState>()(persist(set => ({
     openAIKey: '',
+    rememberKeys: true,
+    analyticsEnabled: true,
+    setRememberKeys: rememberKeys => set({ rememberKeys }),
+    setAnalyticsEnabled: analyticsEnabled => set({ analyticsEnabled }),
     devMode: undefined,
     accountModels: [],
     setOpenAIKey: key => set({ openAIKey: key }),
@@ -125,7 +134,9 @@ export const useSettingStore = create<SettingsState>()(persist(set => ({
     setDevMode: value => set({ devMode: value }),
 }), {
     name: 'flow-setting-store',
-    storage: createJSONStorage(() => localStorage)
+    storage: createJSONStorage(() => localStorage),
+    // Keys are only written to storage when the user chose to remember them.
+    partialize: (state) => state.rememberKeys ? state : { ...state, openAIKey: '' },
 }));
 
 export const useRuntimeStore = create<RuntimeState>()(set => ({
@@ -365,3 +376,15 @@ export const useFlowStore = create<AppState>()(temporal(persist(computed((set, g
     }),
     partialize: ({ nodes, edges }) => ({ nodes, edges }) as AppState
 }));
+
+/**
+ * An AbortSignal that fires when the running flow is stopped. Call dispose() when the work is done.
+ */
+export function createStopSignal(): { signal: AbortSignal, dispose: () => void } {
+    const controller = new AbortController()
+    if (!useRuntimeStore.getState().isRunning) controller.abort()
+    const unsubscribe = useRuntimeStore.subscribe((state, previous) => {
+        if (previous.isRunning && !state.isRunning) controller.abort()
+    })
+    return { signal: controller.signal, dispose: unsubscribe }
+}

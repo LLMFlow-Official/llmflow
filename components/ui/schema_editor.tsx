@@ -9,7 +9,7 @@ import { Label } from "./label";
 import { cloneDeep, set } from "lodash";
 import { editor } from 'monaco-editor';
 import JsonEditor from "./json_editor";
-import mixpanel from "mixpanel-browser";
+import { track } from "@/lib/analytics";
 
 type SchemaEditorProps = {
   defaultValue?: SchemaType,
@@ -168,7 +168,7 @@ export default function SchemaEditor({ defaultValue, onSave }: SchemaEditorProps
   }
 
   useEffect(() => {
-    mixpanel.track('schema_editor_opened')
+    track('schema_editor_opened')
   }, [])
 
   return (

@@ -1,7 +1,8 @@
 import { CircleHelp, PenBox } from 'lucide-react';
 import { Card } from '../ui/card';
 import { AppContext, getNodeDetails, NodeConnectDisconnectPayload, NodeMetaData } from '@/lib/nodes';
-import { useFlowStore, AppNode, AppNodeProp, useRuntimeStore, UpdatePayload } from '@/lib/store';
+import { useFlowStore, AppNode, AppNodeProp, useRuntimeStore, UpdatePayload, createStopSignal } from '@/lib/store';
+import { CodeStoppedError } from '@/lib/code_runner';
 import { cloneDeep, get, set } from 'lodash';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
@@ -51,13 +52,22 @@ export const Process = async (context: AppContext, node: AppNode, nextNodes: App
         }
     }
 
-    const nextNode = nextNodes.find(nextNode => {
-        if (nextNode.id in allDecisions && allDecisions[nextNode.id].condition && allDecisions[nextNode.id].condition != 'else') {
-            return runStatement(allDecisions[nextNode.id].condition, context)
+    const { signal, dispose } = createStopSignal()
+    try {
+        for (const nextNode of nextNodes) {
+            const decision = allDecisions[nextNode.id]
+            if (!decision?.condition || decision.condition == 'else') continue
+            if (await runStatement(decision.condition, context, signal)) return [nextNode]
         }
-    }) || nextNodes.find(nextNode => nextNode.id in allDecisions && allDecisions[nextNode.id].condition && allDecisions[nextNode.id].condition == 'else')
+    } catch (error) {
+        if (error instanceof CodeStoppedError) return []
+        throw error
+    } finally {
+        dispose()
+    }
 
-    return nextNode ? [nextNode] : []
+    const elseNode = nextNodes.find(nextNode => allDecisions[nextNode.id]?.condition == 'else')
+    return elseNode ? [elseNode] : []
 }
 
 export const Properties = ({ node }: { node: AppNode }) => {

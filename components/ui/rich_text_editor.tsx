@@ -6,7 +6,7 @@ import { Heading1, Heading2, Heading3, Heading4, Heading5, Heading6, TextQuote, 
 import { Toggle } from './toggle';
 import { DecoratorFactory } from 'react-highlight-within-textarea'
 import { headlights } from '@/lib/logics';
-import mixpanel from 'mixpanel-browser';
+import { track } from "@/lib/analytics";
 
 const styleMap: DraftStyleMap = {
   CODE: {
@@ -178,7 +178,7 @@ function RichTextEditor({ initialContent, onChange, extraToolButtons, withoutHig
   }
 
   useEffect(() => {
-    mixpanel.track('rich_text_editor_opened')
+    track('rich_text_editor_opened')
   }, [])
     
   return (

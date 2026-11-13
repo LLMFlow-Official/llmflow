@@ -11,11 +11,12 @@ type CodeData = NodeData & {
     timeout?: number
 }
 
-const PLACEHOLDER = `// "context" holds the outputs of earlier nodes, e.g. context.start.topic
-// and context.prompt_x.assistant_raw_output. "state" holds Set State values.
+const PLACEHOLDER = `// Earlier nodes are available by id, e.g. start.topic or
+// prompt_x.assistant_raw_output ("context" holds them all).
+// "state" holds Set State values.
 // Return a value to use it later as {<this node id>.result}.
-const words = context.start.topic.split(' ')
-return { count: words.length, upper: context.start.topic.toUpperCase() }`
+const words = start.topic.split(' ')
+return { count: words.length, upper: start.topic.toUpperCase() }`
 
 export const Metadata: NodeMetaData = {
     type: 'code',

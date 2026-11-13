@@ -6,7 +6,7 @@ import { useFlowStore } from "@/lib/store";
 import { nodeDetails } from "@/lib/nodes";
 import { useShallow } from "zustand/shallow";
 import { useReactFlow } from "@xyflow/react";
-import mixpanel from "mixpanel-browser";
+import { track } from "@/lib/analytics";
 
 export default function NewNode() {
     const [open, setOpen] = useState(false);
@@ -44,7 +44,7 @@ export default function NewNode() {
             }
         });
 
-        mixpanel.track('node_created', { type: node.type })
+        track('node_created', { type: node.type })
     }
 
     return (

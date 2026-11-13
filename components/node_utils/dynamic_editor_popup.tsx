@@ -7,7 +7,7 @@ import { Label } from "../ui/label";
 import { validateStatement } from "@/lib/logics";
 import ValueSelector from "./value_selector";
 import { Textarea } from "../ui/textarea";
-import mixpanel from "mixpanel-browser";
+import { track } from "@/lib/analytics";
 
 type DynamicEditorPopupProps = {
     baseNode: AppNode,
@@ -28,7 +28,7 @@ export default function DynamicEditorPopup({ baseNode, open, type, value, onChan
     const isValidCondition = useMemo(() => validateStatement(condition), [condition])
 
     useEffect(() => {
-        if (open) mixpanel.track('dynamic_editor_opened', {type})
+        if (open) track('dynamic_editor_opened', {type})
     }, [open,type])  
 
     return (

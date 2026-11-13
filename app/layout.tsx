@@ -7,7 +7,8 @@ import { ReactNode, useEffect } from "react";
 import BaseLayout from "@/components/layout/base_layout";
 import { Toaster } from "@/components/ui/toaster";
 import IntroSlider from "@/components/layout/intro_slider";
-import mixpanel from 'mixpanel-browser'
+import { setupAnalytics } from "@/lib/analytics";
+import { useSettingStore } from "@/lib/store";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -26,9 +27,11 @@ export default function RootLayout({
   children: ReactNode;
 }>) {
 
+  const analyticsEnabled = useSettingStore((s) => s.analyticsEnabled)
+
   useEffect(() => {
-    mixpanel.init("862df36b564f6a34e7f5829c4ad99fef", { debug: false, track_pageview: true, persistence: 'localStorage' });
-  },[])
+    setupAnalytics(analyticsEnabled)
+  }, [analyticsEnabled])
 
   return (
     <html lang="en">

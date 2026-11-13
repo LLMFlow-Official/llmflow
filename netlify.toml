@@ -1,0 +1,16 @@
+# Security headers for the static site. Build settings are unchanged (Netlify UI / plugin).
+#
+# Content-Security-Policy notes:
+# - 'unsafe-eval' is needed by the Code node and conditions, which run user JavaScript inside a
+#   sandboxed Web Worker (created from a blob: URL, hence worker-src blob:).
+# - cdn.jsdelivr.net serves the Monaco editor; fonts.googleapis.com / fonts.gstatic.com serve Poppins.
+# - connect-src allows any https URL because HTTP Request nodes and AI providers are called from
+#   the browser; plain http is allowed only for local development servers.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com https://cdn.jsdelivr.net; img-src 'self' data: blob: https:; media-src 'self' data: blob: https:; connect-src 'self' https: http://localhost:* http://127.0.0.1:*; worker-src 'self' blob:; frame-src 'none'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'"
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), geolocation=(), microphone=(self)"
