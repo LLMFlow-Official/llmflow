@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 import NoteIcon from '../node_utils/node_icon';
 import { ThreadSourceHandle, ThreadTargetHandle } from '../node_utils/thread_handle';
 import DevMode from '../node_utils/dev_mode';
-import { replaceDynamicValueWithActual } from '@/lib/logics';
+import { renderTextTemplate } from '@/lib/logics';
 import MarkdownViewer from '../ui/markdown_viewer';
 
 type ConsoleLogData = NodeData & {
@@ -47,7 +47,7 @@ export function LogView({ payload }: NodeLogViewProps<string>) {
 }
 
 export const Process = async (context: AppContext, node: AppNode<ConsoleLogData>, nextNodes: AppNode[], controller: Controller) => {
-    const output = replaceDynamicValueWithActual(node.data.log, context)
+    const output = renderTextTemplate(node.data.log, context)
     if (output) {
         console.log(`Log:${node.id} `, output);
         controller.log({

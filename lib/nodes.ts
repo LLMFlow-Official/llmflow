@@ -5,12 +5,26 @@ import * as TreadMergeNode from "@/components/nodes/thread_merge";
 import * as DecisionNode from "@/components/nodes/decision";
 import * as ConsoleLogNode from "@/components/nodes/console_log";
 import * as SetStateNode from "@/components/nodes/set_state";
+import * as LlmRouterNode from "@/components/nodes/llm_router";
+import * as WebSearchNode from "@/components/nodes/web_search";
+import * as ImageGenerationNode from "@/components/nodes/image_generation";
+import * as TextTemplateNode from "@/components/nodes/text_template";
+import * as JsonExtractNode from "@/components/nodes/json_extract";
+import * as SplitTextNode from "@/components/nodes/split_text";
+import * as CodeNode from "@/components/nodes/code";
+import * as HttpRequestNode from "@/components/nodes/http_request";
+import * as HumanInputNode from "@/components/nodes/human_input";
+import * as AssertNode from "@/components/nodes/assert";
+import * as DelayNode from "@/components/nodes/delay";
+import * as FinalOutputNode from "@/components/nodes/final_output";
 
 import { AppNode, NodeLogs, UpdatePayload } from "./store";
 import Decimal from "decimal.js-light";
 import { Edge } from "@xyflow/react";
 
 export type NodeType = "start" | "prompt" | "multi_thread" | "thread_merge" | "decision" | "console_log" | "set_state"
+    | "llm_router" | "web_search" | "image_generation" | "text_template" | "json_extract" | "split_text"
+    | "code" | "http_request" | "human_input" | "assert" | "delay" | "final_output"
 
 const nodes = [
     StartNode,
@@ -19,7 +33,19 @@ const nodes = [
     TreadMergeNode,
     DecisionNode,
     ConsoleLogNode,
-    SetStateNode
+    SetStateNode,
+    LlmRouterNode,
+    WebSearchNode,
+    ImageGenerationNode,
+    TextTemplateNode,
+    JsonExtractNode,
+    SplitTextNode,
+    CodeNode,
+    HttpRequestNode,
+    HumanInputNode,
+    AssertNode,
+    DelayNode,
+    FinalOutputNode,
 ];
 
 export type NodeState = 'idle' | 'faded' | 'waiting' | 'running' | 'completed' | 'failed';
@@ -38,7 +64,7 @@ export type Controller = {
     log: <T=unknown>(payload:NodeLogs<T>) => void;
     increaseInToken: (amount: number) => void;
     increaseOutToken: (amount: number) => void;
-    increaseAmount:(amount: Decimal) => void;
+    increaseAmount:(amount: Decimal | null) => void;
 }
 
 export type NodeOutput = {

@@ -2,7 +2,8 @@ import { AppNode, useFlowStore, useRuntimeStore } from "@/lib/store"
 import { Card, CardContent, CardDescription, CardHeader } from "../ui/card"
 import { useMemo } from "react";
 import { getNodeDetails, NodeLogView } from "@/lib/nodes";
-import { Crosshair } from "lucide-react";
+import { Crosshair, Flag } from "lucide-react";
+import MarkdownViewer from "../ui/markdown_viewer";
 import { useReactFlow } from "@xyflow/react";
 import { useShallow } from "zustand/shallow";
 import { Badge } from "../ui/badge";
@@ -11,13 +12,15 @@ import { BasicToolTip } from "../ui/tooltip";
 import { capitalize } from "lodash";
 
 export default function RuntimeLogs() {
-    const { startTime, endTime, inToken, outToken, amount, logs } = useRuntimeStore(useShallow((state) => ({
+    const { startTime, endTime, inToken, outToken, amount, costIncomplete, logs, finalOutputs } = useRuntimeStore(useShallow((state) => ({
+        finalOutputs: state.finalOutputs,
         logs: state.logs,
         startTime: state.startTime,
         endTime: state.endTime,
         inToken: state.inToken,
         outToken: state.outToken,
-        amount: state.amount
+        amount: state.amount,
+        costIncomplete: state.costIncomplete
     })))
     const { nodes, onNodesChange } = useFlowStore(useShallow((state) => ({ nodes: state.nodes, onNodesChange: state.onNodesChange })))
 
@@ -43,9 +46,19 @@ export default function RuntimeLogs() {
             <div className="border-b border-gray-200 p-2">
                 <h2 className="font-bold">Runtime Logs</h2>
                 <p className="text-xs text-gray-500">This section displays the logs generated during the runtime of the flow, providing insights into the flows&apos;s operations and any potential issues.</p>
-                <Stats startTime={startTime} endTime={endTime} inToken={inToken} outToken={outToken} amount={amount} />
+                <Stats startTime={startTime} endTime={endTime} inToken={inToken} outToken={outToken} amount={amount} costIncomplete={costIncomplete} />
             </div>
             <div className="flex-1 overflow-y-auto py-3 px-3 space-y-3">
+                {finalOutputs.map((x) => (
+                    <Card key={x.nodeId} className="border-2 border-green-600">
+                        <CardHeader className="p-3 pb-2">
+                            <div className="flex items-center gap-2 text-sm font-bold text-green-700"><Flag size={16} /> {x.name}</div>
+                        </CardHeader>
+                        <CardContent className="p-3 pt-0">
+                            <MarkdownViewer text={x.value} />
+                        </CardContent>
+                    </Card>
+                ))}
                 {logsWithDetails.length === 0 ? (
                     <div className="text-center text-xs text-gray-500 h-full flex items-center justify-center">No logs available.</div>
                 ) : (

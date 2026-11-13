@@ -1,6 +1,9 @@
 import { useFlowStore,  AppNode, findParentMultiThreadNodeThread } from "@/lib/store";
 import { Handle, Position, Edge, Connection, getIncomers, getOutgoers, useHandleConnections } from "@xyflow/react";
 
+/** Node types whose source handle may connect to several nodes. */
+const multiSourceTypes = ["multi_thread", "decision", "llm_router"]
+
 type ThreadHandleProp = {
     active?: boolean
     type?: 'normal' | 'multi'
@@ -18,7 +21,7 @@ export function ThreadTargetHandle({ active = true, type = 'normal' }: ThreadHan
 
         const otherNode = nodes.find(x => x.id == connection.source) as AppNode
 
-        if (otherNode.type == "multi_thread" || otherNode.type == "decision") return true
+        if (multiSourceTypes.includes(otherNode.type)) return true
 
         const outgoers = getOutgoers(otherNode, nodes, edges)
         if (connections.length == 0 && outgoers.length == 0) return true
@@ -64,7 +67,7 @@ export function ThreadSourceHandle({ active = true, type = 'normal' }: ThreadHan
             if (otherNode.data.thread == selfThread) return true
         }
 
-        if (selfNode.type == "multi_thread" || selfNode.type == "decision") return true
+        if (multiSourceTypes.includes(selfNode.type)) return true
 
         return selfNode?.data.thread == otherNode?.data.thread;
     }

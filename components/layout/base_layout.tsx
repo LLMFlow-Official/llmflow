@@ -6,6 +6,7 @@ import Properties from "../node_utils/properties";
 import { useFlowStore } from "@/lib/store";
 import RuntimeLogs from "../node_utils/runtime_logs";
 import { TooltipProvider } from "../ui/tooltip";
+import HumanInputPanel from "../node_utils/human_input_panel";
 
 export default function BaseLayout({ children }: { children: React.ReactNode }) {
 
@@ -18,6 +19,7 @@ export default function BaseLayout({ children }: { children: React.ReactNode }) 
                     <ResizablePanel defaultSize={75} className="relative h-screen">
                         <Topbar />
                         {children}
+                        <HumanInputPanel />
                     </ResizablePanel>
                     <ResizableHandle withHandle />
                     <ResizablePanel collapsible maxSize={30} defaultSize={30} minSize={25}>

@@ -1,6 +1,6 @@
-import { Plus, ScrollText, Trash } from 'lucide-react';
+import { ImageIcon, Plus, ScrollText, Trash } from 'lucide-react';
 import { AppContext, NodeMetaData, NodeOutput, OutputExtra, Controller, NodeLogViewProps } from '@/lib/nodes';
-import { useFlowStore, AppNode, AppNodeProp, NodeData, useSettingStore, useRuntimeStore } from '@/lib/store';
+import { useFlowStore, AppNode, AppNodeProp, NodeData, useRuntimeStore } from '@/lib/store';
 import { capitalize, cloneDeep, set } from 'lodash';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
@@ -14,31 +14,35 @@ import { ThreadSourceHandle, ThreadTargetHandle } from '../node_utils/thread_han
 import DevMode from '../node_utils/dev_mode';
 import { Button } from '../ui/button';
 import ConfirmAlert from '../ui/confirm_alert';
-import { ChatCompletion, Message, modelDetails, OpenAi, OpenAiFaker, openAiTokenToCost } from '@/lib/openai';
-import { replaceDynamicValueWithActual } from '@/lib/logics';
+import {
+    buildResponsesPayload, DEFAULT_MODEL_ID, findModel, Message, parseJsonOutput, parseResponse,
+    ReasoningEffort, ResponseFormat, supportsSampling, Usage
+} from '@/lib/openai';
+import { runResponses } from '@/lib/openai/run';
+import { renderTextTemplate } from '@/lib/logics';
 import { Stats } from '../node_utils/stats';
 import MarkdownViewer from '../ui/markdown_viewer';
 import { Slider } from '../ui/slider';
 import SchemaEditor, { SchemaType } from '../ui/schema_editor';
-import { AxiosError } from 'axios';
+import { ModelSelect, ReasoningEffortSelect } from '../node_utils/model_select';
+import { TestOutputField } from '../node_utils/node_shell';
 
 type PromptData = NodeData & {
-    model: string
-    system_prompt: string
-    prompts: Message[]
-    response_format: 'text' | 'json_object' | 'json_schema'
-    response_schema: {
-        schema: {
-            properties: {
-                [key: string]: {
-                    title: string
-                    description: string
-                }
-            }
-        }
-    },
+    model?: string
+    system_prompt?: string
+    prompts?: Message[]
+    /** Image URLs or {nodeId.image} references, sent with the last user prompt. */
+    images?: string[]
+    response_format?: ResponseFormat
+    response_schema?: SchemaType
+    reasoning_effort?: ReasoningEffort
+    max_output_tokens?: number
+    temperature?: number
+    top_p?: number
     test_output?: string
 }
+
+type SchemaProperties = Record<string, { title?: string, description?: string }>
 
 export const Metadata: NodeMetaData = {
     type: 'prompt',
@@ -49,8 +53,8 @@ export const Metadata: NodeMetaData = {
 
 type LogViewPayload = {
     assistant_output: string
-    usage: ChatCompletion['usage']
-    amount: number
+    usage: Usage
+    amount: number | null
     startTime: number
     endTime: number
 }
@@ -58,7 +62,15 @@ type LogViewPayload = {
 export function LogView({ payload }: NodeLogViewProps<LogViewPayload>) {
     return <>
         <MarkdownViewer text={payload.assistant_output} />
-        <Stats amount={payload.amount} outToken={payload.usage.prompt_tokens} inToken={payload.usage.completion_tokens} startTime={payload.startTime} endTime={payload.endTime} />
+        <Stats
+            amount={payload.amount}
+            inToken={payload.usage.input_tokens}
+            outToken={payload.usage.output_tokens}
+            cachedToken={payload.usage.input_tokens_details?.cached_tokens}
+            reasoningToken={payload.usage.output_tokens_details?.reasoning_tokens}
+            startTime={payload.startTime}
+            endTime={payload.endTime}
+        />
     </>;
 }
 
@@ -72,7 +84,7 @@ export const Outputs = (node: AppNode<PromptData>, extra: OutputExtra) => {
         model_name: {
             title: 'Model Name',
             description: 'Model used in the node',
-            value: node.data.model
+            value: node.data.model || DEFAULT_MODEL_ID
         },
         system_prompt: {
             title: 'System Prompt',
@@ -86,19 +98,21 @@ export const Outputs = (node: AppNode<PromptData>, extra: OutputExtra) => {
         },
     } as NodeOutput
 
-    if (node.data.response_format == 'json_schema') {
-        const props = node.data.response_schema?.schema.properties || {}
-
+    if (node.data.response_format == 'json_object' || node.data.response_format == 'json_schema') {
         outputs['assistant_json_output'] = {
             title: 'Assistant Json Output',
             description: 'JSON formatted output from the assistant',
             value: extra.assistant_json_output as string
         }
+    }
+
+    if (node.data.response_format == 'json_schema') {
+        const props = (node.data.response_schema?.schema as { properties?: SchemaProperties } | undefined)?.properties || {}
 
         for (const key in props) {
             outputs[`assistant_json_output.${key}`] = {
-                title: props[key].title as unknown as string || `${capitalize(key)} Value`,
-                description: props[key].description as unknown as string || 'This value will set from the output structure',
+                title: props[key].title || `${capitalize(key)} Value`,
+                description: props[key].description || 'This value will set from the output structure',
                 value: extra.assistant_json_output ? (extra.assistant_json_output as Record<string, unknown>)[key] as string : undefined
             }
         }
@@ -107,98 +121,109 @@ export const Outputs = (node: AppNode<PromptData>, extra: OutputExtra) => {
     return outputs
 }
 
+
 export const Process = async (context: AppContext, node: AppNode<PromptData>, nextNodes: AppNode[], controller: Controller) => {
-    const token = useSettingStore.getState().openAIKey
-    const isTestAPI = useSettingStore.getState().devMode?.testOpenAPI || false
-    if (!isTestAPI && !token) throw Error("You need to add OpenAI Token in the setting to continue or you can use test api on dev mode for testing")
+    const model = node.data.model || DEFAULT_MODEL_ID
+    const response_format = node.data.response_format || 'text'
 
-    const test_output = node.data.test_output
-    if (isTestAPI && !test_output) throw Error("Test Output is required")
+    const payload = buildResponsesPayload({
+        model,
+        systemPrompt: renderTextTemplate(node.data.system_prompt || '', context),
+        messages: (node.data.prompts || []).map(x => ({
+            ...x,
+            content: renderTextTemplate(x.content || '', context)
+        })),
+        images: (node.data.images || []).map(x => renderTextTemplate(x, context)),
+        responseFormat: response_format,
+        responseSchema: node.data.response_schema,
+        reasoningEffort: node.data.reasoning_effort,
+        maxOutputTokens: node.data.max_output_tokens,
+        temperature: node.data.temperature,
+        topP: node.data.top_p,
+    })
 
-    const model = node.data.model
-    if (!model) throw Error("Model type is required")
+    const { response, cost, startTime, endTime } = await runResponses(payload, controller, node.data.test_output)
 
-    const systemPrompt = node.data.system_prompt
-    if (!systemPrompt) throw Error("System prompt is required")
-
-    const response_format = node.data.response_format
-    const response_schema = node.data.response_schema
-    if (response_format && response_format == 'json_schema' && !response_schema) throw Error("Output structure is required")
-
-    const client = isTestAPI ? OpenAiFaker(test_output) : OpenAi(token)
-
-    const otherPrompts = node.data.prompts || []
-
-    const messages = [
-        {
-            role: 'system',
-            content: systemPrompt
-        },
-        ...otherPrompts
-    ] as Message[]
-
-    const startTime = new Date().getTime();
-
-    let response = null
-    try {
-        response = await client.chat({
-            model,
-            temperature: node.data.temperature as number || 1,
-            top_p: node.data.top_p as number || 1,
-            messages: messages.map(x => ({
-                ...x,
-                content: replaceDynamicValueWithActual(x.content || '', context)
-            })),
-            response_format: { type: response_format || 'text', json_schema: response_schema }
-        })
-    } catch (error) {
-        if (error instanceof AxiosError && error.response?.data?.error?.message) {
-            throw new Error(error.response?.data?.error?.message);
-        } else {
-            throw error;
-        }
-    }
-
-    const endTime = new Date().getTime();
-    const amount = openAiTokenToCost(response.data.usage.total_tokens, model)
-    const output = response.data.choices[0].message.content
+    const { text, warning } = parseResponse(response, response_format)
+    const jsonOutput = response_format != 'text' ? parseJsonOutput(text) : undefined
 
     controller.log({
         id: node.id,
-        type: 'success',
-        title: "Request successfully executed",
+        type: warning ? 'warning' : 'success',
+        title: warning || "Request successfully executed",
         nodeType: node.type,
         payload: {
-            assistant_output: (response_format || 'text') != 'text' ? JSON.stringify(JSON.parse(output || '{}'), null, 2) : output,
-            usage: response.data.usage,
-            amount,
+            assistant_output: jsonOutput ? JSON.stringify(jsonOutput, null, 2) : text,
+            usage: response.usage,
+            amount: cost === null ? null : cost.toNumber(),
             startTime,
             endTime
-        }
+        } as LogViewPayload
     });
 
-    controller.increaseOutToken(response.data.usage.prompt_tokens)
-    controller.increaseInToken(response.data.usage.completion_tokens)
-    controller.increaseAmount(amount)
-
     context[node.id] = Object.fromEntries(Object.entries(Outputs(node, {
-        assistant_raw_output: output,
-        assistant_json_output: (response_format || 'text') != 'text' ? JSON.parse(output || '{}') : undefined
+        assistant_raw_output: text,
+        assistant_json_output: jsonOutput
     })).map(([key, value]) => [key, value.value]))
 
     return nextNodes
 }
 
+function ImageInputs({ node }: { node: AppNode<PromptData> }) {
+    const updateNode = useFlowStore(state => state.updateNode);
+    const images = node.data.images || []
+
+    const setImages = (next: string[]) => {
+        const clonedNode = cloneDeep(node);
+        set(clonedNode, 'data.images', next);
+        updateNode(clonedNode);
+    }
+
+    return (
+        <div className='flex flex-col gap-1'>
+            <div className='flex items-center'>
+                <Label className='text-sm font-semibold'>Images</Label>
+                <Button variant='ghost' size='icon' className='h-6 w-6 p-1 ml-auto' toolTip='Add image' onClick={() => setImages([...images, ''])}>
+                    <ImageIcon className='w-4 h-4' />
+                </Button>
+            </div>
+            {images.length == 0 ? <p className='text-xs text-gray-500'>Optional. Add an image URL or pick an image from an Image Generation node.</p> : null}
+            {images.map((image, index) => (
+                <div key={index} className='flex gap-1 items-start'>
+                    <Textarea
+                        name={`image_${index}`}
+                        value={image}
+                        className='h-12 min-h-0'
+                        classNameFrame='flex-1'
+                        placeholder='https://… or {node.image}'
+                        onChange={(e) => setImages(images.map((x, i) => i == index ? e.target.value : x))}
+                        node={node}
+                        withoutRichText
+                    />
+                    <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700 p-0.5 h-6 w-6" onClick={() => setImages(images.filter((_, i) => i != index))}>
+                        <Trash className='w-4 h-4' />
+                    </Button>
+                </div>
+            ))}
+        </div>
+    )
+}
+
 export const Properties = ({ node }: { node: AppNode<PromptData> }) => {
-    const isTestAPI = useSettingStore((s) => s.devMode?.testOpenAPI || false)
     const updateNode = useFlowStore(state => state.updateNode);
     const [selectedType, setSelectedType] = useState<string>();
     const [deletePrompt, setDeletePrompt] = useState<number>();
     const [prompts, setPrompts] = useState(node.data.prompts || []);
 
-    const setValue = (key: string, value: string | number | SchemaType) => {
+    const model = node.data.model || DEFAULT_MODEL_ID
+    const modelInfo = findModel(model)
+    const showSampling = supportsSampling(model, node.data.reasoning_effort)
+    const reasons = !modelInfo || !!modelInfo.reasoningEfforts
+
+    const setValue = (key: string, value: string | number | SchemaType | undefined) => {
         const clonedNode = cloneDeep(node);
-        set(clonedNode, `data.${key}`, value);
+        if (value === undefined) delete (clonedNode.data as Record<string, unknown>)[key];
+        else set(clonedNode, `data.${key}`, value);
         updateNode(clonedNode);
     }
 
@@ -250,25 +275,13 @@ export const Properties = ({ node }: { node: AppNode<PromptData> }) => {
                     onChange={(e) => setValue('name', e.target.value)}
                 />
             </div>
-            <div className='flex flex-col gap-1'>
-                <Label className='text-sm font-semibold' htmlFor="model">Model</Label>
-                <Select name="model" value={node.data.model} onValueChange={(e) => setValue('model', e)}>
-                    <SelectTrigger>
-                        <SelectValue id="model" placeholder="Select a model" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {modelDetails.map((x, index) => (
-                            <SelectItem key={index} value={x.title}>{x.name}</SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-            </div>
+            <ModelSelect node={node} />
             <div className='flex flex-col gap-1'>
                 <Label className='text-sm font-semibold flex'>Response Format</Label>
                 <Select
                     name='type'
                     required
-                    value={node.data.response_format as string || 'text'}
+                    value={node.data.response_format || 'text'}
                     onValueChange={(e) => setValue('response_format', e)}
                 >
                     <SelectTrigger>
@@ -283,16 +296,50 @@ export const Properties = ({ node }: { node: AppNode<PromptData> }) => {
             </div>
             {node.data.response_format == 'json_schema' ? <div className='flex flex-col gap-1'>
                 <Label className='text-sm font-semibold flex'>Output structure</Label>
-                <SchemaEditor defaultValue={node.data.response_schema as SchemaType} onSave={(e) => setValue('response_schema', e)} />
+                <SchemaEditor defaultValue={node.data.response_schema} onSave={(e) => setValue('response_schema', e)} />
             </div> : null}
+            <ReasoningEffortSelect node={node} />
             <div className='flex flex-col gap-1'>
-                <Label className='text-sm font-semibold flex'>Temperature <div className='ml-auto'>{node.data.temperature === undefined ? 1 : node.data.temperature as string }</div></Label>
-                <Slider defaultValue={[node.data.temperature === undefined ? 1 : node.data.temperature as number]} max={2} min={0} step={0.01} onValueChange={(e) => setValue('temperature', e[0])} />
+                <Label className='text-sm font-semibold flex' htmlFor='max_output_tokens'>Max Output Tokens</Label>
+                <Input
+                    id='max_output_tokens'
+                    name='max_output_tokens'
+                    type='number'
+                    min={1}
+                    max={modelInfo?.maxOutputTokens}
+                    value={node.data.max_output_tokens ?? ''}
+                    placeholder='Model default'
+                    onChange={(e) => {
+                        const value = parseInt(e.target.value, 10)
+                        setValue('max_output_tokens', Number.isFinite(value) && value > 0 ? value : undefined)
+                    }}
+                />
+                {reasons ? <p className='text-xs text-gray-500'>Includes reasoning tokens.</p> : null}
             </div>
-            <div className='flex flex-col gap-1'>
-                <Label className='text-sm font-semibold flex'>Top P <div className='ml-auto'>{node.data.top_p === undefined ? 1 : node.data.top_p as string}</div></Label>
-                <Slider defaultValue={[node.data.top_p === undefined ? 1 : node.data.top_p as number]} max={1} min={0} step={0.01} onValueChange={(e) => setValue('top_p', e[0])} />
-            </div>
+            {showSampling ? <>
+                <div className='flex flex-col gap-1'>
+                    <Label className='text-sm font-semibold flex items-center'>
+                        Temperature
+                        <div className='ml-auto flex items-center gap-2'>
+                            {node.data.temperature !== undefined ? <button className='text-xs font-normal text-gray-500 underline' onClick={() => setValue('temperature', undefined)}>Reset</button> : null}
+                            {node.data.temperature ?? 'Default'}
+                        </div>
+                    </Label>
+                    <Slider value={[node.data.temperature ?? 1]} max={2} min={0} step={0.01} onValueChange={(e) => setValue('temperature', e[0])} />
+                </div>
+                <div className='flex flex-col gap-1'>
+                    <Label className='text-sm font-semibold flex items-center'>
+                        Top P
+                        <div className='ml-auto flex items-center gap-2'>
+                            {node.data.top_p !== undefined ? <button className='text-xs font-normal text-gray-500 underline' onClick={() => setValue('top_p', undefined)}>Reset</button> : null}
+                            {node.data.top_p ?? 'Default'}
+                        </div>
+                    </Label>
+                    <Slider value={[node.data.top_p ?? 1]} max={1} min={0} step={0.01} onValueChange={(e) => setValue('top_p', e[0])} />
+                </div>
+            </> : modelInfo?.reasoningEfforts?.includes('none') ? (
+                <p className='text-xs text-gray-500'>Set reasoning effort to None to use temperature and top P with this model.</p>
+            ) : null}
             <div className='flex flex-col gap-1'>
                 <Label className='text-sm font-semibold' htmlFor="system_prompt">System Prompt</Label>
                 <Textarea
@@ -300,7 +347,7 @@ export const Properties = ({ node }: { node: AppNode<PromptData> }) => {
                     name="system_prompt"
                     value={node.data.system_prompt}
                     className='h-20'
-                    placeholder='Enter your system prompt here...'
+                    placeholder='Enter your system prompt here (optional)...'
                     onChange={(e) => setValue('system_prompt', e.target.value)}
                     node={node}
                 />
@@ -351,20 +398,11 @@ export const Properties = ({ node }: { node: AppNode<PromptData> }) => {
                     </Button>
                 </div>
             </form>
-            {isTestAPI ? <div className='flex flex-col gap-1'>
-                <Label className='text-sm font-semibold' htmlFor="test_output">Test Output</Label>
-                <Textarea
-                    id="test_output"
-                    name="test_output"
-                    type={ ['json_schema','json_object'].includes(node.data.response_format) ? 'json' : 'text'}
-                    value={node.data.test_output}
-                    className='h-20'
-                    schema={node.data.response_format == 'json_schema' ? node.data.response_schema.schema : undefined}
-                    placeholder='Enter your output here...'
-                    onChange={(e) => setValue('test_output', e.target.value)}
-                    withoutHighlights
-                />
-            </div> : null}
+            <ImageInputs node={node} />
+            <TestOutputField
+                node={node as AppNode}
+                type={['json_schema', 'json_object'].includes(node.data.response_format || 'text') ? 'json' : 'text'}
+            />
             <ConfirmAlert
                 open={deletePrompt != undefined}
                 title="Delete prompt"

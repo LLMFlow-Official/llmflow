@@ -51,8 +51,31 @@ export type AppState = {
     clearSelection: () => void;
 };
 
+export type HumanInputRequest = {
+    nodeId: string
+    title: string
+    message: string
+    mode: 'text' | 'approve'
+    placeholder?: string
+    /** Text mode: the typed value. Approve mode: "approved" or null when rejected. */
+    respond: (value: string | null) => void
+}
+
+export type FinalOutput = {
+    nodeId: string
+    name: string
+    value: string
+}
+
 export type RuntimeState = {
     isRunning: boolean;
+    /** Human Input nodes waiting for the user, oldest first. */
+    pendingInputs: HumanInputRequest[];
+    /** Values from Final Output nodes in this run, in the order they finished. */
+    finalOutputs: FinalOutput[];
+    requestInput: (request: HumanInputRequest) => void;
+    resolveInput: (nodeId: string) => void;
+    addFinalOutput: (output: FinalOutput) => void;
     nodeStates: {
         [key: string]: NodeState
     }
@@ -62,6 +85,8 @@ export type RuntimeState = {
     inToken: number;
     outToken: number;
     amount: number;
+    /** True when a node used a model with unknown prices, so `amount` is a lower bound. */
+    costIncomplete: boolean;
     start: () => void;
     stop: () => void;
     log: (payload: NodeLogs) => void;
@@ -69,7 +94,7 @@ export type RuntimeState = {
     setNodeStateFromNodeId: (nodeId: string, state: NodeState) => void;
     increaseInToken: (amount: number) => void;
     increaseOutToken: (amount: number) => void;
-    increaseAmount: (amount: Decimal) => void;
+    increaseAmount: (amount: Decimal | null) => void;
     setInToken: (inToken: number) => void;
     setOutToken: (outToken: number) => void;
     setAmount: (amount: number) => void;
@@ -84,14 +109,19 @@ export type DevMode = {
 export type SettingsState = {
     openAIKey: string;
     devMode?: DevMode;
+    /** Text model IDs loaded from the user's OpenAI account (GET /v1/models). */
+    accountModels: string[];
     setOpenAIKey: (key: string) => void;
+    setAccountModels: (models: string[]) => void;
     setDevMode: (value?: DevMode) => void;
 };
 
 export const useSettingStore = create<SettingsState>()(persist(set => ({
     openAIKey: '',
     devMode: undefined,
+    accountModels: [],
     setOpenAIKey: key => set({ openAIKey: key }),
+    setAccountModels: accountModels => set({ accountModels }),
     setDevMode: value => set({ devMode: value }),
 }), {
     name: 'flow-setting-store',
@@ -108,14 +138,22 @@ export const useRuntimeStore = create<RuntimeState>()(set => ({
     inToken: 0,
     outToken: 0,
     amount: 0,
-    start: () => set({ isRunning: true, startTime: new Date().getTime(), endTime: undefined, inToken: 0, outToken: 0, amount: 0, logs: [] }),
+    costIncomplete: false,
+    pendingInputs: [],
+    finalOutputs: [],
+    start: () => set({ isRunning: true, startTime: new Date().getTime(), endTime: undefined, inToken: 0, outToken: 0, amount: 0, costIncomplete: false, logs: [], pendingInputs: [], finalOutputs: [] }),
     stop: () => set({ isRunning: false, endTime: new Date().getTime() }),
+    requestInput: (request) => set((state) => ({ pendingInputs: [...state.pendingInputs, request] })),
+    resolveInput: (nodeId) => set((state) => ({ pendingInputs: state.pendingInputs.filter(x => x.nodeId !== nodeId) })),
+    addFinalOutput: (output) => set((state) => ({ finalOutputs: [...state.finalOutputs, output] })),
     log: (payload) => set((state) => ({ logs: [...state.logs, payload] })),
     setNodeState: (nodeStates) => set({ nodeStates }),
     setNodeStateFromNodeId: (nodeId, nodeState) => set((state) => ({ nodeStates: { ...state.nodeStates, [nodeId]: nodeState } })),
     increaseInToken: (amount) => set((state) => ({ inToken: state.inToken + amount })),
     increaseOutToken: (amount) => set((state) => ({ outToken: state.outToken + amount })),
-    increaseAmount: (amount) => set((state) => ({ amount: new Decimal(state.amount).add(amount).toNumber() })),
+    increaseAmount: (amount) => set((state) => amount === null
+        ? { costIncomplete: true }
+        : { amount: new Decimal(state.amount).add(amount).toNumber() }),
     setInToken: (inToken) => set({ inToken }),
     setOutToken: (outToken) => set({ outToken }),
     setAmount: (amount) => set({ amount }),
