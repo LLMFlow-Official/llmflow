@@ -26,7 +26,7 @@ export const Metadata: NodeMetaData = {
 }
 
 export const Outputs = (node: AppNode<SplitTextData>, extra: OutputExtra) => ({
-    name: { title: 'Node name', value: node.data.name },
+    name: { title: 'Step name', value: node.data.name },
     chunks: { title: 'Chunks', description: 'The list of pieces (inserted as JSON)', value: extra.chunks as string },
     count: { title: 'Count', description: 'Number of pieces', value: extra.count as number },
     first: { title: 'First piece', value: extra.first as string },

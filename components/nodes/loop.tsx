@@ -58,7 +58,7 @@ export const Metadata: NodeMetaData = {
 }
 
 export const Outputs = (node: AppNode<LoopData>, extra: OutputExtra) => ({
-    name: { title: 'Node name', value: node.data.name },
+    name: { title: 'Step name', value: node.data.name },
     item: { title: 'Current item', description: 'Inside the loop: the item being processed', value: extra.item as string },
     index: { title: 'Current index', description: 'Inside the loop: 0 for the first item', value: extra.index as number },
     results: { title: 'Results', description: 'After the loop: the "Result for each item" values, as a list', value: extra.results as string },

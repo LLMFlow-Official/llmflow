@@ -23,7 +23,7 @@ export const Metadata: NodeMetaData = {
 }
 
 export const Outputs = (node: AppNode<HumanInputData>, extra: OutputExtra) => ({
-    name: { title: 'Node name', value: node.data.name },
+    name: { title: 'Step name', value: node.data.name },
     value: { title: 'Value', description: 'What you typed (text mode)', value: extra.value as string },
     approved: { title: 'Approved', description: '"true" when you approved (approve mode)', value: extra.approved as string },
 } as NodeOutput)

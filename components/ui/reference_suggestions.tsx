@@ -20,7 +20,7 @@ export function ReferenceSuggestions({ options, query, active, onPick }: {
     const matches = filterReferences(options, query)
     if (!matches.length) return null
     return (
-        <div role="listbox" aria-label="Values from earlier nodes" className="absolute left-0 right-0 top-full mt-1 z-50 max-h-56 overflow-y-auto rounded-md border border-border bg-popover text-popover-foreground shadow-md py-1">
+        <div role="listbox" aria-label="Values from earlier steps" className="absolute left-0 right-0 top-full mt-1 z-50 max-h-56 overflow-y-auto rounded-md border border-border bg-popover text-popover-foreground shadow-md py-1">
             {matches.map((o, i) => (
                 <button
                     key={o.path}
@@ -30,8 +30,8 @@ export function ReferenceSuggestions({ options, query, active, onPick }: {
                     // Keep focus in the editor while picking.
                     onMouseDown={(e) => { e.preventDefault(); onPick(o) }}
                 >
-                    <span className="font-mono">{`{${o.path}}`}</span>
-                    <span className="text-muted-foreground">{o.label}</span>
+                    <span className="font-medium">{o.label}</span>
+                    <span className="font-mono text-muted-foreground">{`{${o.path}}`}</span>
                 </button>
             ))}
         </div>

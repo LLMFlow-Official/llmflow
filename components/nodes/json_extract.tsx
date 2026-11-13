@@ -27,7 +27,7 @@ export const Metadata: NodeMetaData = {
 
 export const Outputs = (node: AppNode<JsonExtractData>, extra: OutputExtra) => {
     const outputs: NodeOutput = {
-        name: { title: 'Node name', value: node.data.name },
+        name: { title: 'Step name', value: node.data.name },
         json: { title: 'JSON', description: 'The whole parsed value', value: extra.json as string },
     }
     for (const field of node.data.fields || []) {

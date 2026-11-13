@@ -150,6 +150,31 @@ test('adds a step with the keyboard, connected after the last one', async ({ pag
     await expect(page.getByRole('tab', { name: 'Step' })).toHaveAttribute('aria-selected', 'true')
 })
 
+test('the pre-run check stops a run and shows where to fix it', async ({ page }) => {
+    await openApp(page)
+    await page.getByRole('button', { name: 'Flows menu' }).click()
+    await page.getByRole('button', { name: 'New flow' }).click()
+    await page.getByRole('button', { name: 'Blank flow' }).click()
+    await page.getByRole('button', { name: 'Add step' }).click()
+    await page.getByRole('combobox', { name: 'Search steps' }).fill('AI Prompt')
+    await page.keyboard.press('Enter')
+    await page.locator('.react-flow__pane').click({ position: { x: 20, y: 300 } })
+
+    await page.getByRole('button', { name: 'Run the flow' }).click()
+    await expect(page.getByText('Fix these before running')).toBeVisible()
+    await page.getByRole('button', { name: /Write what to ask the model/ }).click()
+    await expect(page.getByRole('tab', { name: 'Step' })).toHaveAttribute('aria-selected', 'true')
+    await expect(page.getByRole('tab', { name: 'Run log' })).toHaveAttribute('aria-selected', 'false')
+})
+
+test('every template is ready to run', async ({ page }) => {
+    await openApp(page)
+    for (const template of ['Summarize a text', 'Route support emails', 'Research with web search', 'Answer from a document', 'Process a list item by item', 'Human review before finishing', 'Compare models']) {
+        await newFlowFromTemplate(page, template)
+        await expect(page.getByRole('button', { name: /problems? in this flow/ }), template).toHaveCount(0)
+    }
+})
+
 test('has no serious accessibility problems', async ({ page }) => {
     await openApp(page)
     const results = await new AxeBuilder({ page }).analyze()

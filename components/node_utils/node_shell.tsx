@@ -6,6 +6,7 @@ import type { NodeCategory, NodeState } from '@/lib/nodes';
 import { findModel } from '@/lib/openai/models';
 import { cn } from '@/lib/utils';
 import DevMode from './dev_mode';
+import { ProblemBadge } from './flow_problems_state';
 import { ThreadSourceHandle, ThreadTargetHandle } from './thread_handle';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
@@ -98,6 +99,7 @@ export function NodeShell({ id, selectable, selected, isConnectable, data, icon:
             {line ? <span className='text-xs text-muted-foreground truncate max-w-full'>{line}</span> : null}
             <DevMode data={data} />
             {preview ? null : <StateBadge state={state} />}
+            {preview ? null : <ProblemBadge nodeId={id} />}
             <ThreadSourceHandle active={isConnectable} type={sourceType} />
         </div>
     );

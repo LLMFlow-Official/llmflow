@@ -19,7 +19,7 @@ export const Metadata: NodeMetaData = {
 }
 
 export const Outputs = (node: AppNode<TextTemplateData>, extra: OutputExtra) => ({
-    name: { title: 'Node name', value: node.data.name },
+    name: { title: 'Step name', value: node.data.name },
     text: { title: 'Text', description: 'The filled-in text', value: extra.text as string },
 } as NodeOutput)
 

@@ -26,13 +26,13 @@ export const Metadata: NodeMetaData = {
 export const Outputs = (node: AppNode<ConsoleLogData>) => {
     return {
         name: {
-            title: 'Node name',
-            description: 'Name used in the node',
+            title: 'Step name',
+            
             value: node.data.name
         },
         log: {
-            title: 'Log statement',
-            description: 'statement used in the node',
+            title: 'Logged text',
+            description: 'The text that was logged',
             value: node.data.log
         },
     } as NodeOutput
@@ -52,7 +52,7 @@ export const Process = async (context: AppContext, node: AppNode<ConsoleLogData>
         controller.log({
             id: node.id,
             type: 'success',
-            title: "Log has send to the browser console as well",
+            title: "Logged (also in the browser console)",
             nodeType: node.type,
             payload: output
         });

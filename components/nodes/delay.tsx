@@ -21,7 +21,7 @@ export const Metadata: NodeMetaData = {
 }
 
 export const Outputs = (node: AppNode<DelayData>) => ({
-    name: { title: 'Node name', value: node.data.name },
+    name: { title: 'Step name', value: node.data.name },
 } as NodeOutput)
 
 export const Process = async (context: AppContext, node: AppNode<DelayData>, nextNodes: AppNode[], controller: Controller) => {

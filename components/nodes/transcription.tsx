@@ -34,7 +34,7 @@ export const Metadata: NodeMetaData = {
 }
 
 export const Outputs = (node: AppNode<TranscriptionData>, extra: OutputExtra) => ({
-    name: { title: 'Node name', value: node.data.name },
+    name: { title: 'Step name', value: node.data.name },
     text: { title: 'Text', description: 'What was said', value: extra.text as string },
     languages: { title: 'Languages', description: 'Detected language codes', value: extra.languages as string },
 } as NodeOutput)

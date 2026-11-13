@@ -67,25 +67,23 @@ export function LogView({ payload }: NodeLogViewProps<LogViewPayload>) {
 
 export const Outputs = (node: AppNode<PromptData>, extra: OutputExtra) => {
     const outputs = {
+        assistant_raw_output: {
+            title: 'Answer',
+            description: "The model's reply as text",
+            value: extra.assistant_raw_output
+        },
         name: {
-            title: 'Node name',
-            description: 'Name used in the node',
+            title: 'Step name',
             value: node.data.name
         },
         model_name: {
-            title: 'Model Name',
-            description: 'Model used in the node',
+            title: 'Model',
+            description: 'The model this step uses',
             value: nodeModel(node.data)
         },
         system_prompt: {
-            title: 'System Prompt',
-            description: 'System prompt used in the node',
+            title: 'System prompt',
             value: node.data.system_prompt
-        },
-        assistant_raw_output: {
-            title: 'Assistant Raw Output',
-            description: 'Raw assistant output that getting from the response',
-            value: extra.assistant_raw_output
         },
     } as NodeOutput
 
@@ -99,8 +97,8 @@ export const Outputs = (node: AppNode<PromptData>, extra: OutputExtra) => {
 
     if (node.data.response_format == 'json_object' || node.data.response_format == 'json_schema') {
         outputs['assistant_json_output'] = {
-            title: 'Assistant Json Output',
-            description: 'JSON formatted output from the assistant',
+            title: 'Answer as JSON',
+            description: 'The reply read as JSON; pick fields with {step.assistant_json_output.field}',
             value: extra.assistant_json_output as string
         }
     }
@@ -111,7 +109,7 @@ export const Outputs = (node: AppNode<PromptData>, extra: OutputExtra) => {
             const last = field.path.split('.').at(-1)!
             outputs[`assistant_json_output.${field.path}`] = {
                 title: field.title || `${capitalize(last)} Value`,
-                description: field.description || 'This value will set from the output structure',
+                description: field.description || 'A field from the output structure',
                 value: json ? get(json, field.path) as string : undefined
             }
         }

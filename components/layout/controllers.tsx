@@ -7,6 +7,7 @@ import { useFlowStore, useRuntimeStore } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "../ui/toast";
 import { openSettings } from "./settings";
+import { blockingProblems, ProblemsButton, useFlowProblems } from "../node_utils/flow_problems";
 import UndoRedo from "../node_utils/undo_redo";
 import FindNode from "../node_utils/find_node";
 import { Button } from "../ui/button";
@@ -51,6 +52,11 @@ export function RunButton() {
   const stop = useRuntimeStore(s => s.stop)
 
   const run = useCallback(() => {
+    // Problems that would make the run fail are shown first, with a link to each step.
+    if (blockingProblems().length) {
+      useFlowProblems.setState({ open: true })
+      return Promise.resolve(null)
+    }
     useFlowStore.getState().clearSelection()
     return runInEditor({
       notify: (title, description, options) => toast({
@@ -81,17 +87,20 @@ export function RunButton() {
   }, [run, stop])
 
   return (
-    <Button
-      className={cn(
-        "absolute right-4 bottom-[calc(var(--drawer-h,0px)+1rem)] z-45 h-12 rounded-full px-5 gap-2 text-base font-semibold shadow-lg",
-        isRunning ? "bg-danger text-danger-foreground hover:bg-danger/90" : "bg-success text-success-foreground hover:bg-success/90",
-      )}
-      toolTip={isRunning ? `Stop (${MOD_KEY}+Enter)` : `Run (${MOD_KEY}+Enter)`}
-      aria-label={isRunning ? "Stop the flow" : "Run the flow"}
-      onClick={isRunning ? stop : run}
-    >
-      {isRunning ? <Square size={18} className="fill-current" aria-hidden /> : <Play size={18} className="fill-current" aria-hidden />}
-      {isRunning ? 'Stop' : 'Run'}
-    </Button>
+    <div className="absolute right-4 bottom-[calc(var(--drawer-h,0px)+1rem)] z-45 flex items-center gap-2">
+      <ProblemsButton />
+      <Button
+        className={cn(
+          "h-12 rounded-full px-5 gap-2 text-base font-semibold shadow-lg",
+          isRunning ? "bg-danger text-danger-foreground hover:bg-danger/90" : "bg-success text-success-foreground hover:bg-success/90",
+        )}
+        toolTip={isRunning ? `Stop (${MOD_KEY}+Enter)` : `Run (${MOD_KEY}+Enter)`}
+        aria-label={isRunning ? "Stop the flow" : "Run the flow"}
+        onClick={isRunning ? stop : run}
+      >
+        {isRunning ? <Square size={18} className="fill-current" aria-hidden /> : <Play size={18} className="fill-current" aria-hidden />}
+        {isRunning ? 'Stop' : 'Run'}
+      </Button>
+    </div>
   )
 }

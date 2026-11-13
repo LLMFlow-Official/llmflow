@@ -31,7 +31,7 @@ export const Metadata: NodeMetaData = {
 }
 
 export const Outputs = (node: AppNode<HttpRequestData>, extra: OutputExtra) => ({
-    name: { title: 'Node name', value: node.data.name },
+    name: { title: 'Step name', value: node.data.name },
     status: { title: 'Status', description: 'HTTP status code, e.g. 200', value: extra.status as number },
     ok: { title: 'OK', description: 'true when the status is 200-299', value: extra.ok as string },
     body: { title: 'Body', description: 'Parsed JSON when the response is JSON, otherwise text', value: extra.body as string },

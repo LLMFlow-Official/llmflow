@@ -28,7 +28,7 @@ export const Metadata: NodeMetaData = {
 }
 
 export const Outputs = (node: AppNode<CodeData>, extra: OutputExtra) => ({
-    name: { title: 'Node name', value: node.data.name },
+    name: { title: 'Step name', value: node.data.name },
     result: { title: 'Result', description: 'The value the code returned. Objects can be read with {node.result.key}', value: extra.result as string },
 } as NodeOutput)
 

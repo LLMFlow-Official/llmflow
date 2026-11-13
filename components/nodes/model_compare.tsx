@@ -37,7 +37,7 @@ export const Metadata: NodeMetaData = {
 }
 
 export const Outputs = (node: AppNode<CompareData>, extra: OutputExtra) => ({
-    name: { title: 'Node name', value: node.data.name },
+    name: { title: 'Step name', value: node.data.name },
     answers: { title: 'Answers', description: 'List of {model, text, cost, seconds}', value: extra.answers as string },
     first: { title: 'First answer', description: 'The answer from the first model in the list', value: extra.first as string },
     table: { title: 'Comparison table', description: 'A Markdown table of all answers with cost and time', value: extra.table as string },
@@ -59,8 +59,13 @@ export function LogView({ payload }: NodeLogViewProps<{ answers: Answer[] }>) {
 
 const cell = (text: string) => text.replace(/\|/g, '\\|').replace(/\n+/g, ' ')
 
+/** The models to compare: the ones chosen, or OpenAI's and Claude's defaults (what the settings show). */
+export function contendersOf(data: { models?: Contender[] }): Contender[] {
+    return data.models?.length ? data.models : [{ provider: 'openai', model: DEFAULT_MODELS.openai }, { provider: 'anthropic', model: DEFAULT_MODELS.anthropic }]
+}
+
 export const Process = async (context: AppContext, node: AppNode<CompareData>, nextNodes: AppNode[], controller: Controller) => {
-    const contenders = (node.data.models || []).filter(x => x.model)
+    const contenders = contendersOf(node.data).filter(x => x.model)
     if (contenders.length < 2) throw Error("Choose at least two models to compare")
     const user = renderTextTemplate(node.data.prompt || '', context)
     if (!user.trim()) throw Error("Prompt is required")
@@ -106,7 +111,7 @@ export const Process = async (context: AppContext, node: AppNode<CompareData>, n
 
 export const Properties = ({ node }: { node: AppNode<CompareData> }) => {
     const setValue = useNodeSetter(node)
-    const models = node.data.models?.length ? node.data.models : [{ provider: 'openai', model: DEFAULT_MODELS.openai }, { provider: 'anthropic', model: DEFAULT_MODELS.anthropic }] as Contender[]
+    const models = contendersOf(node.data)
     const setModels = (next: Contender[]) => setValue('models', next)
     const update = (index: number, patch: Partial<Contender>) => setModels(models.map((x, i) => i == index ? { ...x, ...patch } : x))
 

@@ -19,7 +19,7 @@ export const Metadata: NodeMetaData = {
 }
 
 export const Outputs = (node: AppNode<FinalOutputData>, extra: OutputExtra) => ({
-    name: { title: 'Node name', value: node.data.name },
+    name: { title: 'Step name', value: node.data.name },
     value: { title: 'Value', description: 'The final result', value: extra.value as string },
 } as NodeOutput)
 

@@ -24,7 +24,7 @@ export const Metadata: NodeMetaData = {
 }
 
 export const Outputs = (node: AppNode<AssertData>) => ({
-    name: { title: 'Node name', value: node.data.name },
+    name: { title: 'Step name', value: node.data.name },
 } as NodeOutput)
 
 export const Process = async (context: AppContext, node: AppNode<AssertData>, nextNodes: AppNode[], controller: Controller) => {

@@ -1,9 +1,9 @@
 import dynamic from "next/dynamic"
-import { ChangeEvent, useState } from "react"
+import { ChangeEvent, useRef, useState } from "react"
 import { cn } from "@/lib/utils"
-import { PenBox, Route } from "lucide-react"
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTrigger } from "./dialog"
-import { DialogTitle } from "@radix-ui/react-dialog"
+import { Braces, PenBox } from "lucide-react"
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "./dialog"
+
 import { Button } from "./button"
 import { AppNode } from "@/lib/store"
 import { TemplateInput } from "./template_input"
@@ -25,6 +25,8 @@ export type TextareaProps = React.TextareaHTMLAttributes<HTMLTextAreaElement> & 
 
 export function Textarea({ className, classNameFrame, withoutRichText, type = 'text', schema, withoutHighlights, node, value, onChange, placeholder, id, readOnly, disabled, 'aria-label': ariaLabel }: TextareaProps) {
   const [openValueSelector, setOpenValueSelector] = useState(false)
+  // Where the cursor was, so a picked value goes there instead of at the end.
+  const cursor = useRef<number | null>(null)
 
   // Remount the rich editor after the value selector closes, so it shows the inserted value.
   const [key, setKey] = useState(0)
@@ -37,6 +39,7 @@ export function Textarea({ className, classNameFrame, withoutRichText, type = 't
         onChange={(text) => onChange && onChange({ target: { value: text } } as ChangeEvent<HTMLTextAreaElement>)}
         highlight={!withoutHighlights}
         nodeId={node?.id}
+        onCursor={(position) => { cursor.current = position }}
         className={cn("min-h-[80px] h-20 overflow-y-auto", className)}
         aria-label={ariaLabel}
         placeholder={placeholder}
@@ -44,32 +47,24 @@ export function Textarea({ className, classNameFrame, withoutRichText, type = 't
         readOnly={readOnly}
         disabled={disabled}
       />
-      {node || !withoutRichText ? <div className="absolute top-1 right-2 flex gap-1 p-1 bg-muted rounded-md transition-opacity duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto z-10">
-        {node ? <Button toolTip="Value Selector" aria-label="Insert a value from an earlier node" size="icon" variant="ghost" className="h-6 w-6" onClick={() => setOpenValueSelector(true)}>
-          <Route size={16} />
+      {node || !withoutRichText ? <div className="absolute top-1 right-2 flex gap-1 p-1 bg-muted rounded-md transition-opacity duration-100 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto z-10">
+        {node ? <Button toolTip="Insert a value from an earlier step" aria-label="Insert a value from an earlier step" size="icon" variant="ghost" className="h-6 w-6" onClick={() => setOpenValueSelector(true)}>
+          <Braces size={16} />
         </Button> : null}
         {!withoutRichText ? <Dialog>
           <DialogTrigger asChild>
-            <Button toolTip={type == 'text' ? "Rich Editor" : "JSON Editor"} aria-label={type == 'text' ? "Open the rich text editor" : "Open the JSON editor"} variant="ghost" className="h-6 w-6" size="icon">
+            <Button toolTip={type == 'text' ? "Open a larger editor" : "Edit as JSON"} aria-label={type == 'text' ? "Open a larger editor" : "Edit as JSON"} variant="ghost" className="h-6 w-6" size="icon">
               <PenBox size={16} />
             </Button>
           </DialogTrigger>
 
           <DialogContent className={cn('overflow-y-auto', type =='json' ? "max-w-(--breakpoint-md)": "max-w-(--breakpoint-xl)")}>
             {type == 'text' ? <DialogHeader>
-              <DialogTitle>
-                <h2 className="text-lg font-medium">Rich Text Editor</h2>
-              </DialogTitle>
-              <DialogDescription>
-                <p className="text-sm text-muted-foreground">Edit the content of the textarea using the rich text editor. also you can copy the content from docx file.</p>
-              </DialogDescription>
+              <DialogTitle>Larger editor</DialogTitle>
+              <DialogDescription>Changes are saved as you type. You can format with headings, lists and bold text, and paste from a Word document.</DialogDescription>
             </DialogHeader> : <DialogHeader>
-              <DialogTitle>
-                <h2 className="text-lg font-medium">Json Editor</h2>
-              </DialogTitle>
-              <DialogDescription>
-                <p className="text-sm text-muted-foreground">Edit the JSON content directly in the editor. Ensure the JSON structure is valid to avoid errors.</p>
-              </DialogDescription>
+              <DialogTitle>Edit JSON</DialogTitle>
+              <DialogDescription>Changes are saved as you type. Problems in the JSON are listed under the editor.</DialogDescription>
             </DialogHeader>}
             {type == 'text' ?
               <RichTextEditor
@@ -79,8 +74,8 @@ export function Textarea({ className, classNameFrame, withoutRichText, type = 't
                 withoutHighlights={withoutHighlights}
                 nodeId={node?.id}
                 extraToolButtons={node && (
-                  <Button size="icon" variant="ghost" aria-label="Value selector" onClick={() => setOpenValueSelector(true)}>
-                    <Route size={16} />
+                  <Button size="icon" variant="ghost" toolTip="Insert a value from an earlier step" aria-label="Insert a value from an earlier step" onClick={() => setOpenValueSelector(true)}>
+                    <Braces size={16} />
                   </Button>
                 )}
               />
@@ -112,7 +107,10 @@ export function Textarea({ className, classNameFrame, withoutRichText, type = 't
           baseNode={node}
           onChange={(s) => {
             if (onChange) {
-              onChange({ target: { value: (value || '') + s } } as ChangeEvent<HTMLTextAreaElement>);
+              const text = value?.toString() || ''
+              const at = Math.min(cursor.current ?? text.length, text.length)
+              onChange({ target: { value: text.slice(0, at) + s + text.slice(at) } } as ChangeEvent<HTMLTextAreaElement>);
+              cursor.current = at + s.length
             }
             closeValueSelector();
           }}

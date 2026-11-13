@@ -5,6 +5,7 @@ import { PropsWithChildren, useCallback, useEffect } from "react";
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuShortcut, ContextMenuTrigger } from "../ui/context-menu";
 import { Clipboard, Copy, CopyPlus, Redo, Scissors, Trash, Undo } from "lucide-react";
 import { MOD_KEY, onCanvas } from "@/lib/utils";
+import { confirmDeleteSteps } from "./confirm_delete";
 
 type ClipboardData = {
     node: AppNode[],
@@ -55,26 +56,31 @@ export function insertCopies(copied: AppNode[], copiedEdges: Edge[], at: { x: nu
 export default function FlowContextMenu({ children }: PropsWithChildren) {
     const { toast } = useToast();
     const { screenToFlowPosition } = useReactFlow()
-    const hasSelection = useFlowStore((state) => state.nodes.some(x => x.selected && x.id != 'start'))
+    const hasSelection = useFlowStore((state) => state.nodes.some(x => x.selected && x.id != 'start') || state.edges.some(x => x.selected))
     const { undo, redo, futureStates, pastStates } = useTemporalFlowStore((state) => state);
 
-    const cut = useCallback(() => {
-        const { nodes, edges, setEdges, setNodes } = useFlowStore.getState()
-
-        const selectedNode = nodes.filter(x => x.selected && x.id != 'start')
-        const selectedEdge = edges.filter(x => x.selected && x.source != 'start' && x.target != 'start')
-        const selectedNodeIds = selectedNode.map(x => x.id)
-
-        if (selectedNode.length == 0 && selectedEdge.length == 0) return
-
-        setNodes(nodes.filter(x => !x.selected || x.id == 'start'))
-        setEdges(edges.filter(x => !selectedNodeIds.includes(x.source) && !selectedNodeIds.includes(x.target)))
-
-        navigator.clipboard.writeText(JSON.stringify({
-            node: selectedNode,
-            edge: selectedEdge
-        } as ClipboardData));
+    /** Deletes the selected steps and connections (asking first when other steps use them). */
+    const remove = useCallback(async () => {
+        const { nodes, edges } = useFlowStore.getState()
+        const nodeIds = nodes.filter(x => x.selected && x.id != 'start').map(x => x.id)
+        if (!(await confirmDeleteSteps(nodeIds))) return false
+        const { onNodesChange, onEdgesChange } = useFlowStore.getState()
+        const edgeIds = edges.filter(x => x.selected || nodeIds.includes(x.source) || nodeIds.includes(x.target)).map(x => x.id)
+        onEdgesChange(edgeIds.map(id => ({ type: 'remove', id })))
+        onNodesChange(nodeIds.map(id => ({ type: 'remove', id })))
+        return true
     }, [])
+
+    const cut = useCallback(async () => {
+        const { nodes, edges } = useFlowStore.getState()
+        const selectedNode = nodes.filter(x => x.selected && x.id != 'start')
+        const selectedNodeIds = selectedNode.map(x => x.id)
+        const selectedEdge = edges.filter(x => selectedNodeIds.includes(x.source) && selectedNodeIds.includes(x.target))
+        if (selectedNode.length == 0) return
+        const clipboard = JSON.stringify({ node: selectedNode, edge: selectedEdge } as ClipboardData)
+        // Removing goes through the normal delete, so branch settings (Decision, Router, Loop) are tidied up.
+        if (await remove()) navigator.clipboard.writeText(clipboard).catch(() => toast({ title: "Couldn't copy to the clipboard", description: 'The steps were removed; use Undo to bring them back.' }))
+    }, [remove, toast])
 
     const copy = useCallback(() => {
         const { nodes, edges } = useFlowStore.getState()
@@ -126,13 +132,6 @@ export default function FlowContextMenu({ children }: PropsWithChildren) {
         insertCopies(selected, edges.filter(e => ids.has(e.source) && ids.has(e.target)), { x: cx + 40, y: cy + 40 })
     }, [])
 
-    const remove = useCallback(() => {
-        const { nodes, edges, onNodesChange, onEdgesChange } = useFlowStore.getState()
-        const nodeIds = nodes.filter(x => x.selected && x.id != 'start').map(x => x.id)
-        const edgeIds = edges.filter(x => x.selected || nodeIds.includes(x.source) || nodeIds.includes(x.target)).map(x => x.id)
-        onEdgesChange(edgeIds.map(id => ({ type: 'remove', id })))
-        onNodesChange(nodeIds.map(id => ({ type: 'remove', id })))
-    }, [])
 
     useEffect(() => {
         // Listen on the document and act only when the canvas has focus: the canvas element is

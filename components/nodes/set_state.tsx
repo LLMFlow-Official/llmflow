@@ -33,8 +33,8 @@ export const Outputs = (node: AppNode<SetStateData>) => {
     return {
         ...(node.data.variable && node.data.value ? {
             [node.data.variable]: {
-                title: 'Final Value',
-                description: 'final computed assigned value',
+                title: 'Value',
+                description: 'The value that was saved',
                 value: node.data.value
             },
         } : {}),

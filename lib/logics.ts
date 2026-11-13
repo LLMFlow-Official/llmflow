@@ -20,9 +20,9 @@ export const replaceDynamicValueWithActual = (statement: string, context: AppCon
 }
 
 // A value reference looks like {nodeId.key}, {nodeId.key.nested} or {state.variable}.
-const referencePath = /^\s*([A-Za-z_$][\w$-]*)((?:\.[\w$-]+|\[\d+\])+)\s*$/
-// Node ids are "start" or "<type>_<hex>" (see new_node.tsx and flow_context_menu.tsx); "state" is the Set State namespace.
-const referenceRoot = /^(start|state|[a-z_]+_[0-9a-f]+)$/
+export const referencePath = /^\s*([A-Za-z_$][\w$-]*)((?:\.[\w$-]+|\[\d+\])+)\s*$/
+// Node ids are "start" or "<type>_<hex or number>" (see add_step.ts and flow_context_menu.tsx); "state" is the Set variable namespace.
+export const referenceRoot = /^(start|state|[a-z_]+_[0-9a-f]+)$/
 
 const stringifyValue = (value: unknown): string => {
     if (value === undefined || value === null) return ''

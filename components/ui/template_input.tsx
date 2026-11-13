@@ -1,6 +1,8 @@
-import { Fragment, useLayoutEffect, useRef, useState } from "react";
+import { Fragment, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useShallow } from "zustand/shallow";
 import { valueReg } from "@/lib/logics";
-import { typedReference, ReferenceOption } from "@/lib/references";
+import { checkReferences, ReferenceCheck, typedReference, ReferenceOption } from "@/lib/references";
+import { useFlowStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { ReferenceSuggestions, suggestionCount, filterReferences, useReferenceOptions } from "./reference_suggestions";
 
@@ -12,10 +14,12 @@ type TemplateInputProps = {
     className?: string
     /** Colour {node.value} references. */
     highlight?: boolean
-    /** Suggest references from earlier nodes when "{" is typed. */
+    /** Suggest references from earlier nodes when "{" is typed, and check the ones used. */
     nodeId?: string
     readOnly?: boolean
     disabled?: boolean
+    /** Called with the cursor position, so a value picked elsewhere can be inserted there. */
+    onCursor?: (position: number) => void
     'aria-label'?: string
 }
 
@@ -32,15 +36,41 @@ function highlighted(text: string) {
     return parts
 }
 
+/** The references a step's text uses, checked against the flow. */
+function useReferenceChecks(text: string, nodeId?: string): ReferenceCheck[] {
+    const { nodes, edges } = useFlowStore(useShallow(s => ({ nodes: s.nodes, edges: s.edges })))
+    return useMemo(() => nodeId ? checkReferences(text, nodeId, nodes, edges) : [], [text, nodeId, nodes, edges])
+}
+
+const PROBLEM_TEXT = {
+    unknown: 'no step with this id',
+    not_before: 'this step does not run before this one, so the value will be empty',
+}
+
+/** "Uses: Summarize → Answer · Start → topic", with references that will be empty flagged. */
+export function ReferenceList({ checks }: { checks: ReferenceCheck[] }) {
+    if (!checks.length) return null
+    return (
+        <p className="mt-1 text-xs text-muted-foreground flex flex-wrap gap-x-2 gap-y-0.5">
+            <span>Uses:</span>
+            {checks.map(c => c.problem
+                ? <span key={c.path} className="text-danger" title={`{${c.path}}: ${PROBLEM_TEXT[c.problem]}`}>{c.label} ({c.problem == 'unknown' ? 'not found' : 'runs later or not connected'})</span>
+                : <span key={c.path} title={`{${c.path}}`}>{c.label}</span>)}
+        </p>
+    )
+}
+
 /**
  * A plain-text box that colours {node.value} references and suggests them while typing "{".
  * A native textarea sits on top of a highlighted copy of its text, so typing, selection, undo and
  * accessibility all stay native.
  */
-export function TemplateInput({ id, value, onChange, placeholder, className, highlight = true, nodeId, readOnly, disabled, ...rest }: TemplateInputProps) {
+export function TemplateInput({ id, value, onChange, placeholder, className, highlight = true, nodeId, readOnly, disabled, onCursor, ...rest }: TemplateInputProps) {
     const textarea = useRef<HTMLTextAreaElement>(null)
     const backdrop = useRef<HTMLDivElement>(null)
     const options = useReferenceOptions(nodeId)
+    const checks = useReferenceChecks(value, nodeId)
+    const broken = new Set(checks.filter(c => c.problem).map(c => c.path))
     const [query, setQuery] = useState<string | null>(null)
     const [active, setActive] = useState(0)
     const pendingCaret = useRef<number | null>(null)
@@ -53,6 +83,7 @@ export function TemplateInput({ id, value, onChange, placeholder, className, hig
     })
 
     const updateQuery = (el: HTMLTextAreaElement) => {
+        onCursor?.(el.selectionStart)
         const q = nodeId ? typedReference(el.value.slice(0, el.selectionStart)) : null
         setQuery(q)
         setActive(0)
@@ -76,11 +107,11 @@ export function TemplateInput({ id, value, onChange, placeholder, className, hig
     return (
         // The outer box holds the suggestion list so it is not clipped by the scrolling text box.
         <div className="relative">
-        <div className={cn("relative rounded-md border border-input bg-background text-sm focus-within:ring-2 focus-within:ring-ring", disabled && "opacity-50", className)}>
+        <div className={cn("relative rounded-md border border-input bg-background text-sm focus-within:ring-2 focus-within:ring-ring resize-y overflow-auto", disabled && "opacity-50", className)}>
             {highlight ? (
                 <div ref={backdrop} aria-hidden className="absolute inset-0 px-3 py-2 whitespace-pre-wrap wrap-break-word overflow-hidden text-transparent pointer-events-none">
                     {highlighted(value).map((p, i) => p.ref
-                        ? <mark key={i} className="bg-info/15 text-transparent rounded-sm">{p.text}</mark>
+                        ? <mark key={i} className={cn("text-transparent rounded-sm", broken.has(p.text.slice(1, -1).trim()) ? "bg-danger/15 underline decoration-wavy decoration-danger" : "bg-info/15")}>{p.text}</mark>
                         : <Fragment key={i}>{p.text}</Fragment>)}
                     {'\n'}
                 </div>
@@ -111,6 +142,7 @@ export function TemplateInput({ id, value, onChange, placeholder, className, hig
             />
         </div>
             {open ? <ReferenceSuggestions options={options} query={query!} active={active} onPick={pick} /> : null}
+            {nodeId ? <ReferenceList checks={checks} /> : null}
         </div>
     )
 }

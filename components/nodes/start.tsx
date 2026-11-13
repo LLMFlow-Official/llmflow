@@ -44,11 +44,12 @@ export const Outputs = (node: AppNode) => {
     const props = node.data.properties as Property[] || []
     const propValue = node.data.propertyValues as { [key: string]: string } || {}
 
+    // Every input can be referenced, even before it has a value (it is filled in at run time).
     for (const prop of props) {
-        if (!propValue[prop.name]) continue
+        if (!prop.name) continue
         outputs[snakeCase(prop.name)] = {
             title: prop.name,
-            value: propValue[prop.name]
+            value: propValue[prop.name] ?? ''
         }
     }
 
@@ -62,7 +63,7 @@ export const Process = async (context: AppContext, node: AppNode, nextNodes: App
     controller.log({
         id: node.id,
         type: 'info',
-        title: "Initial values has been added to the context",
+        title: "Started with these inputs",
         nodeType: node.type,
         payload
     });

@@ -155,7 +155,7 @@ export const Properties = ({ node }: { node: AppNode }) => {
             <div>
                 <Label>Decisions</Label>
                 {outgoers.length === 0 ? (
-                    <div className="text-sm text-muted-foreground">No connections to Decisions block.</div>
+                    <div className="text-sm text-muted-foreground">Connect this step to the steps it can choose between.</div>
                 ) : (
                     outgoers.map(({ oNode, oNodeDetails }, index) => (
                         <Card key={index} className="flex flex-col mb-2 p-3 border-b border-border">

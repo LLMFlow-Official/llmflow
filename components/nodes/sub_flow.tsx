@@ -25,7 +25,7 @@ export const Metadata: NodeMetaData = {
 }
 
 export const Outputs = (node: AppNode<SubFlowData>, extra: OutputExtra) => ({
-    name: { title: 'Node name', value: node.data.name },
+    name: { title: 'Step name', value: node.data.name },
     result: { title: 'Result', description: 'The first Final Output value of the flow', value: extra.result as string },
     outputs: { title: 'All outputs', description: 'Every Final Output value, by its node name (e.g. {node.outputs.Result})', value: extra.outputs as string },
 } as NodeOutput)

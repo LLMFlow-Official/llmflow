@@ -32,7 +32,7 @@ export const Metadata: NodeMetaData = {
 }
 
 export const Outputs = (node: AppNode<WebSearchData>, extra: OutputExtra) => ({
-    name: { title: 'Node name', value: node.data.name },
+    name: { title: 'Step name', value: node.data.name },
     answer: { title: 'Answer', description: 'The answer, with inline links', value: extra.answer as string },
     citations: { title: 'Citations', description: 'Pages cited in the answer (list of {url, title})', value: extra.citations as string },
     sources: { title: 'Sources', description: 'Every URL the search looked at', value: extra.sources as string },

@@ -31,7 +31,7 @@ export const Metadata: NodeMetaData = {
 }
 
 export const Outputs = (node: AppNode<SemanticSearchData>, extra: OutputExtra) => ({
-    name: { title: 'Node name', value: node.data.name },
+    name: { title: 'Step name', value: node.data.name },
     top: { title: 'Best match', description: 'The most related text', value: extra.top as string },
     matches: { title: 'Matches', description: 'The best matches as one block of text, most related first', value: extra.matches as string },
     results: { title: 'Results', description: 'List of {text, score, index}, most related first', value: extra.results as string },

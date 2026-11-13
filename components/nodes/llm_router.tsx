@@ -51,7 +51,7 @@ export const Metadata: NodeMetaData = {
 }
 
 export const Outputs = (node: AppNode<RouterData>, extra: OutputExtra) => ({
-    name: { title: 'Node name', value: node.data.name },
+    name: { title: 'Step name', value: node.data.name },
     route: { title: 'Chosen route', description: 'Name of the route the model picked', value: extra.route as string },
     reason: { title: 'Reason', description: "The model's short explanation", value: extra.reason as string },
 } as NodeOutput)

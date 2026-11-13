@@ -13,6 +13,7 @@ import HumanInputPanel from "../node_utils/human_input_panel";
 import { RunButton } from "./controllers";
 import { ThemeController } from "./theme_toggle";
 import { Button } from "../ui/button";
+import { ConfirmHost } from "../ui/confirm_host";
 
 
 export default function BaseLayout({ children }: { children: React.ReactNode }) {
@@ -43,6 +44,7 @@ export default function BaseLayout({ children }: { children: React.ReactNode }) 
         <TooltipProvider>
             <ReactFlowProvider>
                 <ThemeController />
+                <ConfirmHost />
                 {narrow ? (
                     // Phones and narrow windows: the canvas fills the screen and the panel opens from the bottom.
                     // --drawer-h lifts the Run button above the open panel.

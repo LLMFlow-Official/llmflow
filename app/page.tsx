@@ -13,6 +13,7 @@ import { useIsDark } from '@/components/layout/theme_toggle';
 import { useDropPicker } from '@/components/node_utils/new_node';
 import { connectionProblem } from '@/lib/connections';
 import { toast } from '@/hooks/use-toast';
+import { confirmDeleteSteps } from '@/components/node_utils/confirm_delete';
 
 /**
  * A connection let go of without reaching a handle: on empty canvas it offers the step list (the
@@ -89,6 +90,7 @@ export default function Home() {
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
           onConnectEnd={onConnectEnd}
+          onBeforeDelete={({ nodes }) => confirmDeleteSteps(nodes.map(n => n.id))}
           nodeTypes={nodeMap}
           edgeTypes={{
             default: CustomEdge

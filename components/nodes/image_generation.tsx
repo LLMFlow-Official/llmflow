@@ -36,7 +36,7 @@ export const Metadata: NodeMetaData = {
 }
 
 export const Outputs = (node: AppNode<ImageGenerationData>, extra: OutputExtra) => ({
-    name: { title: 'Node name', value: node.data.name },
+    name: { title: 'Step name', value: node.data.name },
     image: { title: 'Image', description: 'The image as a data URL. Use it in a prompt node\'s Images field.', value: extra.image as string },
     revised_prompt: { title: 'Revised prompt', description: 'The prompt the model actually used, when it returns one', value: extra.revised_prompt as string },
 } as NodeOutput)
