@@ -1,4 +1,13 @@
-# Security headers for the static site. Build settings are unchanged (Netlify UI / plugin).
+# Build: Next.js 16 needs Node.js 20.9 or newer (Netlify's default image used 18). The site is a
+# static export, so the files in out/ are published.
+[build]
+  command = "bun run build"
+  publish = "out"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# Security headers for the static site.
 #
 # Content-Security-Policy notes:
 # - 'unsafe-eval' is needed by the Code node and conditions, which run user JavaScript inside a
