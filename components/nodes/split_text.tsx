@@ -18,6 +18,7 @@ type SplitTextData = NodeData & {
 
 export const Metadata: NodeMetaData = {
     type: 'split_text',
+    category: 'data',
     name: 'Split Text',
     description: 'Split text into a list, by a separator or into chunks of a fixed size',
     tags: ['split', 'chunk', 'list', 'array', 'text'],
@@ -93,5 +94,5 @@ export const Properties = ({ node }: { node: AppNode<SplitTextData> }) => {
 }
 
 export function Node(props: AppNodeProp) {
-    return <NodeShell {...props} icon={Scissors} defaultName={Metadata.name} />
+    return <NodeShell {...props} icon={Scissors} defaultName={Metadata.name} category={Metadata.category} />
 }

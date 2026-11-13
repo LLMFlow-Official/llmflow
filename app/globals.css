@@ -31,6 +31,28 @@ layer(base);
   --color-destructive: hsl(var(--destructive));
   --color-destructive-foreground: hsl(var(--destructive-foreground));
 
+  /* Status colours. Red (danger) only ever means an error, stop or delete. */
+  --color-danger: hsl(var(--destructive));
+  --color-danger-foreground: hsl(var(--destructive-foreground));
+  --color-success: hsl(var(--success));
+  --color-success-foreground: hsl(var(--success-foreground));
+  --color-warning: hsl(var(--warning));
+  --color-warning-foreground: hsl(var(--warning-foreground));
+  --color-info: hsl(var(--info));
+  --color-info-foreground: hsl(var(--info-foreground));
+  --color-running: hsl(var(--running));
+
+  /* The LLM Flow red: the logo only. */
+  --color-brand: hsl(var(--brand));
+  --color-brand-foreground: hsl(var(--brand-foreground));
+
+  /* Node categories on the canvas. */
+  --color-node-start: hsl(var(--node-start));
+  --color-node-ai: hsl(var(--node-ai));
+  --color-node-logic: hsl(var(--node-logic));
+  --color-node-data: hsl(var(--node-data));
+  --color-node-io: hsl(var(--node-io));
+
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
@@ -60,7 +82,7 @@ layer(base);
   ::before,
   ::backdrop,
   ::file-selector-button {
-    border-color: var(--color-gray-200, currentcolor);
+    border-color: hsl(var(--border));
   }
 }
 
@@ -72,7 +94,7 @@ layer(base);
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary: 0 84% 60%;
+    --primary: 222.2 47.4% 11.2%;
     --primary-foreground: 210 40% 98%;
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
@@ -80,8 +102,22 @@ layer(base);
     --muted-foreground: 215.4 16.3% 46.9%;
     --accent: 210 40% 96.1%;
     --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 72.2% 50.6%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 142.1 76.2% 26%;
+    --success-foreground: 0 0% 100%;
+    --warning: 26 90.5% 37.1%;
+    --warning-foreground: 0 0% 100%;
+    --info: 221.2 83.2% 53.3%;
+    --info-foreground: 0 0% 100%;
+    --running: 199 89% 48%;
+    --brand: 0 72.2% 50.6%;
+    --brand-foreground: 0 0% 100%;
+    --node-start: 142.1 76.2% 32%;
+    --node-ai: 262.1 83.3% 57.8%;
+    --node-logic: 221.2 83.2% 53.3%;
+    --node-data: 175 84% 32%;
+    --node-io: 24.6 95% 46%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
@@ -99,7 +135,7 @@ layer(base);
     --card-foreground: 210 40% 98%;
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
-    --primary: 0 84% 60%;
+    --primary: 210 40% 98%;
     --primary-foreground: 222.2 47.4% 11.2%;
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
@@ -107,8 +143,22 @@ layer(base);
     --muted-foreground: 215 20.2% 65.1%;
     --accent: 217.2 32.6% 17.5%;
     --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 142.1 70.6% 45.3%;
+    --success-foreground: 144.9 80.4% 10%;
+    --warning: 45.4 93.4% 47.5%;
+    --warning-foreground: 26 83.3% 14.1%;
+    --info: 213.1 93.9% 67.8%;
+    --info-foreground: 222.2 47.4% 11.2%;
+    --running: 198.6 88.7% 48.4%;
+    --brand: 0 72.2% 50.6%;
+    --brand-foreground: 0 0% 100%;
+    --node-start: 142.1 70.6% 45.3%;
+    --node-ai: 263.4 70% 70%;
+    --node-logic: 213.1 93.9% 67.8%;
+    --node-data: 172.5 66% 50.4%;
+    --node-io: 27 96% 61%;
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
@@ -139,15 +189,15 @@ layer(base);
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1; 
+  background: hsl(var(--muted));
 }
- 
+
 ::-webkit-scrollbar-thumb {
-  background: #888; 
+  background: hsl(var(--muted-foreground) / 0.5);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #555; 
+  background: hsl(var(--muted-foreground));
 }
 
 .RichEditor-root h1 {
@@ -208,7 +258,7 @@ layer(base);
 
 /* {node.value} references inside the rich editor */
 .reference-chip {
-  @apply bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300 rounded-sm font-semibold;
+  @apply bg-info/15 text-info rounded-sm font-semibold;
 }
 
 .RichEditor-controls {
@@ -220,15 +270,17 @@ layer(base);
 }
 
 .RichEditor-activeButton {
-  @apply text-blue-500;
+  @apply text-info;
 }
 
 .react-flow__edge-textbg {
-  @apply fill-white rounded-full stroke-black p-2 m-2
+  fill: hsl(var(--card));
+  stroke: hsl(var(--border));
 }
 
 .react-flow__edge-text {
-  @apply fill-black m-2 p-2 text-xs
+  fill: hsl(var(--foreground));
+  @apply text-xs;
 }
 /* Formatted model output in the log (MarkdownViewer). */
 .markdown-inline {
@@ -265,16 +317,24 @@ layer(base);
 }
 
 .RichEditor-root a {
-  @apply text-blue-600 underline dark:text-blue-400;
+  @apply text-info underline;
 }
 
-.dark .react-flow__edge-textbg {
-  fill: hsl(var(--card));
-  stroke: hsl(var(--border));
+/* A running step: a soft pulsing ring (still when the system asks for less motion). */
+@keyframes node-running {
+  0%, 100% { box-shadow: 0 0 0 2px hsl(var(--running) / 0.9); }
+  50% { box-shadow: 0 0 0 6px hsl(var(--running) / 0.25); }
 }
 
-.dark .react-flow__edge-text {
-  fill: hsl(var(--foreground));
+.node-running {
+  box-shadow: 0 0 0 2px hsl(var(--running));
+  animation: node-running 1.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .node-running {
+    animation: none;
+  }
 }
 
 /* Full-screen app: only the panels scroll, never the page itself. */

@@ -39,13 +39,13 @@ function Message({ flowId, message, last }: { flowId: string, message: ChatMessa
         return <div className="self-end max-w-[85%] rounded-lg bg-primary text-primary-foreground px-3 py-2 text-sm whitespace-pre-wrap wrap-break-word">{message.text}</div>
     }
     if (message.role == 'error') {
-        return <div role="alert" className="self-start max-w-[95%] rounded-lg border border-red-300 dark:border-red-900 bg-red-50 dark:bg-red-950/40 px-3 py-2 text-sm">{message.text}</div>
+        return <div role="alert" className="self-start max-w-[95%] rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-sm">{message.text}</div>
     }
     return (
         <div className="self-start max-w-[95%] rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm flex flex-col gap-2 min-w-0">
             <MarkdownViewer text={message.text} />
             {message.warnings ? (
-                <div className="text-xs text-amber-700 dark:text-amber-400">
+                <div className="text-xs text-warning">
                     <p className="font-semibold">Check these before running:</p>
                     <ul className="list-disc pl-4">{message.warnings.map((w, i) => <li key={i}>{w}</li>)}</ul>
                 </div>

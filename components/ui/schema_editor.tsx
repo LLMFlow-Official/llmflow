@@ -182,7 +182,7 @@ function FieldRows({ fields, onChange, depth = 0 }: { fields: SchemaField[], onC
                   <SelectContent>{(Object.keys(TYPE_LABELS) as FieldType[]).filter(t => t != 'array').map(t => <SelectItem key={t} value={t}>of {TYPE_LABELS[t]}</SelectItem>)}</SelectContent>
                 </Select>
               ) : null}
-              <Button variant="ghost" size="sm" aria-label="Remove field" className="text-red-500 p-0.5 h-8 w-8 shrink-0" onClick={() => onChange(fields.filter((_, i) => i != index))}><Trash className="w-4 h-4" /></Button>
+              <Button variant="ghost" size="sm" aria-label="Remove field" className="text-danger p-0.5 h-8 w-8 shrink-0" onClick={() => onChange(fields.filter((_, i) => i != index))}><Trash className="w-4 h-4" /></Button>
             </div>
             <Input aria-label="Field description" className="h-8 text-xs" value={field.description || ''} placeholder="Description: tells the model what to put here" onChange={(e) => update(index, { description: e.target.value || undefined })} />
             {field.type == 'string' ? (
@@ -285,7 +285,7 @@ export default function SchemaEditor({ defaultValue, onSave }: SchemaEditorProps
               <FieldRows fields={formFields} onChange={editFields} />
             ) : (
               <div className='flex flex-col gap-1'>
-                <Label>JSON Schema <span className={errors.length == 0 ? 'text-green-600' : 'text-red-600'}>{errors.length == 0 ? '(Valid)' : '(Invalid)'}</span></Label>
+                <Label>JSON Schema <span className={errors.length == 0 ? 'text-success' : 'text-danger'}>{errors.length == 0 ? '(Valid)' : '(Invalid)'}</span></Label>
                 <JsonEditor
                   key={jsonKey}
                   defaultValue={JSON.stringify(schema.schema, null, 4)}
@@ -300,7 +300,7 @@ export default function SchemaEditor({ defaultValue, onSave }: SchemaEditorProps
               </div>
             )}
             {schema.strict && issues.length ? (
-              <div className="rounded-md border border-amber-300 bg-amber-50 dark:bg-amber-950 dark:text-amber-200 p-2 text-xs text-amber-900 flex flex-col gap-1">
+              <div className="rounded-md border border-warning/40 bg-warning/10 p-2 text-xs text-foreground flex flex-col gap-1">
                 <span className="font-semibold">Providers will reject this in strict mode:</span>
                 <ul className="list-disc pl-4">{issues.slice(0, 6).map((x, i) => <li key={i}><b>{x.path}</b>: {x.message}</li>)}</ul>
                 {issues.some(x => x.fixable) ? <Button size="sm" variant="outline" className="w-fit h-7 text-xs" onClick={() => {

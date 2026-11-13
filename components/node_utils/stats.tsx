@@ -47,7 +47,7 @@ export function Stats({ startTime, endTime, inToken, outToken, cachedToken, reas
 
     return (
         <div className="mt-3">
-            {isTestAPI ? <span className="font-bold text-red-600 text-xs">Currently you are using Test API</span> : null}
+            {isTestAPI ? <span className="font-semibold text-warning text-xs">Currently you are using Test API</span> : null}
             <div className="grid sm:grid-cols-3 xl:grid-cols-5 gap-2 text-xs bg-accent p-2 rounded-md flex-wrap border border-border">
                 <Tooltip><TooltipTrigger><div className="flex items-center gap-1"><MoveUp size={16} /> {inToken}</div></TooltipTrigger><TooltipContent>Input Token Count{cachedToken ? ` (${cachedToken} cached)` : ''}</TooltipContent></Tooltip>
                 <Tooltip><TooltipTrigger><div className="flex items-center gap-1"><MoveDown size={16} /> {outToken}</ div></TooltipTrigger><TooltipContent>Output Token Count{reasoningToken ? ` (${reasoningToken} reasoning)` : ''}</TooltipContent></Tooltip>
@@ -87,7 +87,7 @@ export function CitationList({ citations }: { citations?: { url: string, title?:
         <div className='mt-2 flex flex-col gap-1 text-xs'>
             <span className='font-semibold'>Sources</span>
             {citations.map(x => (
-                <a key={x.url} href={x.url} target='_blank' rel='noopener noreferrer' className='text-blue-600 dark:text-blue-400 underline break-all'>
+                <a key={x.url} href={x.url} target='_blank' rel='noopener noreferrer' className='text-info underline break-all'>
                     {x.title || x.url}
                 </a>
             ))}

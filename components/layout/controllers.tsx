@@ -71,15 +71,15 @@ export function RunButton() {
   }, [run, stop])
 
   return (
-    <div className={cn("rounded-full p-2 absolute right-4 bottom-[calc(var(--drawer-h,0px)+1rem)] z-45 shadow-md h-16 w-16 flex items-center justify-center", isRunning ? "bg-red-500" : "bg-green-500")} >
+    <div className={cn("rounded-full p-2 absolute right-4 bottom-[calc(var(--drawer-h,0px)+1rem)] z-45 shadow-md h-16 w-16 flex items-center justify-center", isRunning ? "bg-danger text-danger-foreground" : "bg-success text-success-foreground")} >
       <Button
-        className="rounded-full h-14 w-14 bg-transparent hover:bg-transparent p-2"
+        className="rounded-full h-14 w-14 bg-transparent hover:bg-transparent text-inherit hover:text-inherit p-2"
         variant="ghost"
         toolTip={isRunning ? `Stop (${MOD_KEY}+Enter)` : `Run (${MOD_KEY}+Enter)`}
         aria-label={isRunning ? "Stop the flow" : "Run the flow"}
         onClick={isRunning ? stop : run}
       >
-        {isRunning ? <Square className="stroke-white" size={32} /> : <Play className="stroke-white" size={32} />}
+        {isRunning ? <Square className="stroke-current" size={32} /> : <Play className="stroke-current" size={32} />}
       </Button>
     </div>
   )

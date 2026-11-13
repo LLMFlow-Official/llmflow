@@ -16,6 +16,7 @@ type AssertData = NodeData & {
 
 export const Metadata: NodeMetaData = {
     type: 'assert',
+    category: 'logic',
     name: 'Assert',
     description: 'Check a condition and stop this branch with your message if it is false',
     tags: ['check', 'validate', 'guard', 'test', 'condition'],
@@ -71,7 +72,7 @@ export const Properties = ({ node }: { node: AppNode<AssertData> }) => {
                 {isValid ? (
                     <p className='text-xs text-muted-foreground'>A JavaScript expression, the same as a Decision condition. It runs in an isolated worker.</p>
                 ) : (
-                    <p className='text-xs text-red-600'>This condition is not a valid expression.</p>
+                    <p className='text-xs text-danger'>This condition is not a valid expression.</p>
                 )}
             </div>
             <div className='flex flex-col gap-1'>
@@ -88,5 +89,5 @@ export const Properties = ({ node }: { node: AppNode<AssertData> }) => {
 }
 
 export function Node(props: AppNodeProp) {
-    return <NodeShell {...props} icon={ShieldCheck} defaultName={Metadata.name} kind='control' />
+    return <NodeShell {...props} icon={ShieldCheck} defaultName={Metadata.name} category={Metadata.category} />
 }

@@ -18,6 +18,7 @@ type JsonExtractData = NodeData & {
 
 export const Metadata: NodeMetaData = {
     type: 'json_extract',
+    category: 'data',
     name: 'JSON Extract',
     description: 'Read JSON from text (even inside a code block) and pick out fields',
     tags: ['json', 'parse', 'extract', 'field', 'object'],
@@ -97,7 +98,7 @@ export const Properties = ({ node }: { node: AppNode<JsonExtractData> }) => {
                             placeholder='Path, e.g. items[0].title'
                             onChange={(e) => setFields(fields.map((x, i) => i == index ? { ...x, path: e.target.value } : x))}
                         />
-                        <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700 p-0.5 h-6 w-6 shrink-0" onClick={() => setFields(fields.filter((_, i) => i != index))}>
+                        <Button variant="ghost" size="sm" className="text-danger hover:text-danger/80 p-0.5 h-6 w-6 shrink-0" onClick={() => setFields(fields.filter((_, i) => i != index))}>
                             <Trash className='w-4 h-4' />
                         </Button>
                     </div>
@@ -108,5 +109,5 @@ export const Properties = ({ node }: { node: AppNode<JsonExtractData> }) => {
 }
 
 export function Node(props: AppNodeProp) {
-    return <NodeShell {...props} icon={Braces} defaultName={Metadata.name} />
+    return <NodeShell {...props} icon={Braces} defaultName={Metadata.name} category={Metadata.category} />
 }

@@ -1,9 +1,10 @@
 import { cva } from 'class-variance-authority';
 import { cloneDeep, get, set, unset } from 'lodash';
-import { useMemo } from 'react';
+import { Ban, Check, Clock, Loader2, X } from 'lucide-react';
 import { AppNode, AppNodeProp, useFlowStore, useRuntimeStore, useSettingStore } from '@/lib/store';
+import type { NodeCategory, NodeState } from '@/lib/nodes';
+import { findModel } from '@/lib/openai/models';
 import { cn } from '@/lib/utils';
-import NoteIcon from './node_icon';
 import DevMode from './dev_mode';
 import { ThreadSourceHandle, ThreadTargetHandle } from './thread_handle';
 import { Label } from '../ui/label';
@@ -11,52 +12,92 @@ import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
 
 const shellVariants = cva(
-    "bg-card border-2 p-2 flex flex-col gap-2 items-center transition-all duration-300", //tw
+    // A neutral card; the category colour is a stripe on the left and the icon.
+    "relative bg-card text-card-foreground border border-border shadow-sm px-4 py-2 min-w-36 max-w-64 flex flex-col items-center gap-0.5 transition-[opacity,border-color,background-color] duration-200", //tw
     {
         variants: {
-            kind: {
-                // Same look as the existing nodes: blue squares control the flow, red rounded boxes do work.
-                control: 'text-blue-600 border-blue-600 bg-opacity-80', //tw
-                action: 'text-red-600 border-red-600 rounded-md', //tw
+            shape: {
+                box: 'rounded-lg', //tw
+                pill: 'rounded-full px-5', //tw
             },
             state: {
                 idle: '',
-                faded: 'opacity-20', //tw
-                waiting: 'opacity-20',
-                running: 'opacity-40',
-                completed: 'opacity-100',
-                failed: 'opacity-80 outline-solid outline-offset-1 outline-red-500', //tw
-                skipped: 'opacity-30 border-dashed', //tw
-            }
+                faded: '',
+                waiting: 'opacity-70', //tw
+                running: 'node-running', //tw
+                completed: '',
+                failed: 'border-danger bg-danger/10', //tw
+                skipped: 'border-dashed opacity-60', //tw
+            },
+            selected: {
+                true: 'outline-2 outline-offset-2 outline-foreground', //tw
+                false: '',
+            },
         },
-        defaultVariants: {
-            kind: 'action',
-            state: 'idle'
-        }
+        defaultVariants: { shape: 'box', state: 'idle', selected: false }
     }
 )
+
+const CATEGORY_TEXT: Record<NodeCategory, string> = {
+    start: 'text-node-start', //tw
+    ai: 'text-node-ai', //tw
+    logic: 'text-node-logic', //tw
+    data: 'text-node-data', //tw
+    io: 'text-node-io', //tw
+}
+
+const CATEGORY_STRIPE: Record<NodeCategory, string> = {
+    start: 'bg-node-start', //tw
+    ai: 'bg-node-ai', //tw
+    logic: 'bg-node-logic', //tw
+    data: 'bg-node-data', //tw
+    io: 'bg-node-io', //tw
+}
+
+/** The small mark in the top-right corner that says how the step's last run went. */
+function StateBadge({ state }: { state?: NodeState | 'faded' }) {
+    const base = 'absolute -top-2 -right-2 flex items-center justify-center rounded-full w-5 h-5 border-2 border-background' //tw
+    switch (state) {
+        case 'running': return <span className={cn(base, 'bg-running text-white')} aria-label="Running"><Loader2 size={12} className="motion-safe:animate-spin" /></span>
+        case 'completed': return <span className={cn(base, 'bg-success text-success-foreground')} aria-label="Done"><Check size={12} strokeWidth={3} /></span>
+        case 'failed': return <span className={cn(base, 'bg-danger text-danger-foreground')} aria-label="Failed"><X size={12} strokeWidth={3} /></span>
+        case 'waiting': return <span className={cn(base, 'bg-muted text-muted-foreground')} aria-label="Waiting"><Clock size={11} /></span>
+        case 'skipped': return <span className={cn(base, 'bg-muted text-muted-foreground')} aria-label="Skipped"><Ban size={11} /></span>
+        default: return null
+    }
+}
 
 type NodeShellProps = AppNodeProp & {
     icon: React.ElementType
     defaultName: string
-    kind?: 'control' | 'action'
+    category: NodeCategory
+    /** One short line under the name, e.g. the model. */
+    summary?: string
     /** "multi" lets the node connect to several next nodes (like Decision). */
     sourceType?: 'normal' | 'multi'
+    /** "multi" lets several branches connect into the node (Wait for all). "none" for Start. */
+    targetType?: 'normal' | 'multi' | 'none'
 }
 
-/** Canvas rendering shared by the newer nodes: handles, state icon, name and dev-mode info. */
-export function NodeShell({ id, selectable, isConnectable, data, icon, defaultName, kind = 'action', sourceType = 'normal' }: NodeShellProps) {
-    const state = useRuntimeStore((state) => selectable != undefined && !selectable ? "faded" : state.nodeStates[id])
-    const name = useMemo(() => (data?.name || defaultName) as string, [data?.name, defaultName]);
+/** How every step looks on the canvas: category colour, name, summary, run status and handles. */
+export function NodeShell({ id, selectable, selected, isConnectable, data, icon: Icon, defaultName, category, summary, sourceType = 'normal', targetType = 'normal' }: NodeShellProps) {
+    const preview = selectable != undefined && !selectable
+    const state = useRuntimeStore((state) => preview ? "faded" : state.nodeStates[id])
+    const name = (data?.name || defaultName) as string
+    const modelSummary = typeof data?.model == 'string' && data.model ? (findModel(data.model)?.label || data.model) : undefined
+    const line = summary ?? modelSummary
 
     return (
-        <div className={cn(shellVariants({ kind, state }))}>
-            <ThreadTargetHandle active={isConnectable} />
-            <div className='flex gap-2'>
-                <NoteIcon state={state} idleIcon={icon} />
-                <span className='text-sm font-semibold'>{name}</span>
+        <div className={cn(shellVariants({ shape: category == 'start' ? 'pill' : 'box', state, selected: !!selected && !preview }))}>
+            {category != 'start' ? <span aria-hidden className={cn('absolute left-0 inset-y-0 w-1 rounded-l-lg', CATEGORY_STRIPE[category])} /> : null}
+            {targetType != 'none' ? <ThreadTargetHandle active={isConnectable} type={targetType == 'multi' ? 'multi' : 'normal'} /> : null}
+            <div className='flex items-center gap-2 max-w-full'>
+                <Icon size={18} className={cn('shrink-0', CATEGORY_TEXT[category])} aria-hidden />
+                <span className='text-sm font-semibold truncate'>{name}</span>
             </div>
+            {line ? <span className='text-xs text-muted-foreground truncate max-w-full'>{line}</span> : null}
             <DevMode data={data} />
+            {preview ? null : <StateBadge state={state} />}
             <ThreadSourceHandle active={isConnectable} type={sourceType} />
         </div>
     );

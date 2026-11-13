@@ -1,6 +1,7 @@
+import { NodeShell } from '../node_utils/node_shell';
 import { PlayCircle, Plus, Trash } from 'lucide-react';
 import { useState } from 'react';
-import { useFlowStore, AppNode, AppNodeProp, useRuntimeStore } from '@/lib/store';
+import { useFlowStore, AppNode, AppNodeProp } from '@/lib/store';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
@@ -8,10 +9,9 @@ import { Button } from '../ui/button';
 import { Textarea } from '../ui/textarea';
 import { set, cloneDeep, snakeCase } from 'lodash'
 import { AppContext, NodeMetaData, Controller, NodeOutput, NodeLogViewProps } from '@/lib/nodes';
-import { cva } from 'class-variance-authority';
-import { cn, trimStrings } from '@/lib/utils';
-import { ThreadSourceHandle } from '../node_utils/thread_handle';
-import DevMode from '../node_utils/dev_mode';
+
+import { trimStrings } from '@/lib/utils';
+
 import ConfirmAlert from '../ui/confirm_alert';
 
 type Property = { name: string; type: string };
@@ -21,6 +21,7 @@ type PropValues = {
 
 export const Metadata: NodeMetaData = {
     type: 'start',
+    category: 'start',
     name: 'Start',
     description: 'The first node in the flow. Please add a your initial values here.',
     tags: [],
@@ -179,7 +180,7 @@ export const Properties = ({ node }: { node: AppNode }) => {
                                             variant="ghost"
                                             size="sm"
                                             onClick={() => handleRemoveFromArray(prop.name, val)}
-                                            className="text-red-500 hover:text-red-700 p-0.5 h-6 w-6 ml-2"
+                                            className="text-danger hover:text-danger/80 p-0.5 h-6 w-6 ml-2"
                                         >
                                             <Trash className='w-3 h-3' />
                                         </Button>
@@ -205,7 +206,7 @@ export const Properties = ({ node }: { node: AppNode }) => {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleDelete(prop)}
-                            className="text-red-500 hover:text-red-700 p-0.5 h-6 w-6 ml-auto"
+                            className="text-danger hover:text-danger/80 p-0.5 h-6 w-6 ml-auto"
                         >
                             <Trash className='w-4 h-4' />
                         </Button>
@@ -258,37 +259,6 @@ export const Properties = ({ node }: { node: AppNode }) => {
     );
 };
 
-const noteStateVariants = cva(
-    "bg-card border-2 border-green-600 text-green-600 px-3 py-2 flex flex-col gap-2 items-center rounded-3xl", //tw
-    {
-        variants: {
-            state: {
-                idle: '',
-                faded: 'opacity-20', //tw
-                waiting: 'opacity-20',
-                running: 'opacity-40',
-                completed: 'opacity-100',
-                failed: 'opacity-20 outline-solid outline-red-500', //tw
-                skipped: 'opacity-30 border-dashed', //tw
-            }
-        },
-        defaultVariants: {
-            state: 'idle'
-        }
-    }
-)
-
-export function Node({ id, selectable, isConnectable, data }: AppNodeProp) {
-    const state = useRuntimeStore((state) => selectable != undefined && !selectable ? "faded" : state.nodeStates[id])
-
-    return (
-        <div className={cn(noteStateVariants({ state }))}>
-            <div className='flex gap-2 items-center'>
-                <PlayCircle />
-                <span className='text-sm font-semibold'>Start</span>
-            </div>
-            <DevMode data={data} />
-            <ThreadSourceHandle active={isConnectable} />
-        </div>
-    );
+export function Node(props: AppNodeProp) {
+    return <NodeShell {...props} icon={PlayCircle} defaultName={'Start'} category={Metadata.category} targetType='none' />
 }

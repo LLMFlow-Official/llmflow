@@ -39,6 +39,12 @@ export function nodeModel(data: ModelNodeData): string {
     return data.model ?? DEFAULT_MODELS[nodeProvider(data)]
 }
 
+/** The model's name for the line under the step's name on the canvas. */
+export function modelSummary(data: ModelNodeData): string {
+    const model = nodeModel(data)
+    return findModel(model)?.label || model
+}
+
 /** Writes changes to a node, removing keys whose value is undefined. */
 function useUpdate(node: AppNode) {
     const updateNode = useFlowStore(state => state.updateNode);
@@ -74,7 +80,7 @@ function ModelNotice({ model, onSwitch }: { model: string, onSwitch: (id: string
     const retired = status.kind == 'retired'
 
     return (
-        <div className={cn('flex gap-2 items-start text-xs rounded-md p-2 border', retired ? 'text-red-700 bg-red-50 border-red-300 dark:bg-red-950 dark:text-red-200' : 'text-amber-800 bg-amber-50 border-amber-300 dark:bg-amber-950 dark:text-amber-200')}>
+        <div className={cn('flex gap-2 items-start text-xs rounded-md p-2 border', retired ? 'text-danger bg-danger/10 border-danger/40' : 'text-foreground bg-warning/10 border-warning/40')}>
             <AlertTriangle className='w-4 h-4 shrink-0' />
             <div className='flex flex-col gap-1'>
                 <span>
@@ -362,7 +368,7 @@ export function ToolsSection({ node }: { node: AppNode }) {
                             <div key={index} className='flex flex-col gap-1 border border-border rounded-md p-2'>
                                 <div className='flex gap-1'>
                                     <Input aria-label='Server name' value={server.label} placeholder='Name, e.g. docs' onChange={(e) => setServers(servers.map((x, i) => i == index ? { ...x, label: e.target.value.replace(/[^\w-]/g, '_') } : x))} />
-                                    <Button variant="ghost" size="sm" aria-label='Remove server' className="text-red-500 hover:text-red-700 p-0.5 h-8 w-8 shrink-0" onClick={() => setServers(servers.filter((_, i) => i != index))}>
+                                    <Button variant="ghost" size="sm" aria-label='Remove server' className="text-danger hover:text-danger/80 p-0.5 h-8 w-8 shrink-0" onClick={() => setServers(servers.filter((_, i) => i != index))}>
                                         <Trash className='w-4 h-4' />
                                     </Button>
                                 </div>

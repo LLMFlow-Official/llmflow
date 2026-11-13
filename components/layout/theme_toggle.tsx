@@ -20,6 +20,10 @@ export function ThemeController() {
     useEffect(() => {
         document.documentElement.classList.toggle('dark', dark)
         document.documentElement.style.colorScheme = dark ? 'dark' : 'light'
+        // The browser bar follows the app's theme, not only the device's.
+        for (const meta of Array.from(document.querySelectorAll('meta[name="theme-color"]'))) {
+            meta.setAttribute('content', dark ? '#020817' : '#ffffff')
+        }
     }, [dark])
     return null
 }

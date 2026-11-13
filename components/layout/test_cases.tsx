@@ -196,7 +196,7 @@ export default function TestCasesDialog({ open, onOpenChange }: { open: boolean,
                         <Button variant="outline" onClick={download} disabled={!results.length} aria-label="Download results"><Download size={14} /></Button>
                     </div>
                 </div>
-                {!finalNames.length ? <p className="text-xs text-amber-700 dark:text-amber-300">Add a Final Output node to the flow: its value is what each test checks.</p> : null}
+                {!finalNames.length ? <p className="text-xs text-warning">Add a Final Output node to the flow: its value is what each test checks.</p> : null}
                 {progress ? <p className="text-sm">Running {progress.done + 1} of {progress.total}…</p> : null}
                 {results.length ? (
                     <div className="flex flex-col gap-2">
@@ -213,7 +213,7 @@ export default function TestCasesDialog({ open, onOpenChange }: { open: boolean,
                                             <td className="p-2 max-w-48">{used.map(c => <div key={c} className="truncate"><b>{c}:</b> {records[r.index - 1][c]}</div>)}</td>
                                             <td className="p-2 max-w-[24rem] whitespace-pre-wrap">{r.output.length > 400 ? `${r.output.slice(0, 400)}…` : r.output}</td>
                                             <td className="p-2">
-                                                {r.check.passed === null ? <span className="text-muted-foreground">{r.status}</span> : r.check.passed ? <span className="text-green-700 dark:text-green-400 font-semibold">Pass</span> : <span className="text-red-600 font-semibold">Fail</span>}
+                                                {r.check.passed === null ? <span className="text-muted-foreground">{r.status}</span> : r.check.passed ? <span className="text-success font-semibold">Pass</span> : <span className="text-danger font-semibold">Fail</span>}
                                                 {r.check.detail ? <div className="text-muted-foreground">{r.check.detail}</div> : null}
                                             </td>
                                             <td className="p-2">${r.cost.toFixed(6)}</td>

@@ -28,6 +28,7 @@ type ImageGenerationData = NodeData & {
 
 export const Metadata: NodeMetaData = {
     type: 'image_generation',
+    category: 'ai',
     name: 'Image Generation',
     description: 'Create an image from a text prompt with an OpenAI image model',
     tags: ['image', 'picture', 'draw', 'generate', 'art', 'OpenAI'],
@@ -53,7 +54,7 @@ export function LogView({ payload }: NodeLogViewProps<LogViewPayload>) {
     return <>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={payload.image} alt='Generated image' className='max-h-64 w-auto rounded-md border border-border mx-auto' />
-        <a href={payload.image} download={`image.${payload.format}`} className='mt-1 flex items-center gap-1 text-xs text-blue-600 underline w-fit'>
+        <a href={payload.image} download={`image.${payload.format}`} className='mt-1 flex items-center gap-1 text-xs text-info underline w-fit'>
             <Download className='w-3 h-3' /> Download
         </a>
         <Stats amount={payload.amount} inToken={payload.inToken} outToken={payload.outToken} startTime={payload.startTime} endTime={payload.endTime} />
@@ -183,7 +184,7 @@ export const Properties = ({ node }: { node: AppNode<ImageGenerationData> }) => 
                 ]} />
             </div>
             {node.data.background == 'transparent' && node.data.output_format == 'jpeg' ? (
-                <p className='text-xs text-red-600'>Transparent backgrounds need PNG or WebP.</p>
+                <p className='text-xs text-danger'>Transparent backgrounds need PNG or WebP.</p>
             ) : null}
             <TestOutputField node={node as AppNode} label='Test Image URL' help='In Test API mode, this URL is used as the image.' />
         </div>
@@ -191,5 +192,5 @@ export const Properties = ({ node }: { node: AppNode<ImageGenerationData> }) => 
 }
 
 export function Node(props: AppNodeProp) {
-    return <NodeShell {...props} icon={ImageIcon} defaultName={Metadata.name} />
+    return <NodeShell {...props} icon={ImageIcon} defaultName={Metadata.name} category={Metadata.category} />
 }

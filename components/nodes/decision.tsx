@@ -1,17 +1,14 @@
+import { NodeShell } from '../node_utils/node_shell';
 import { CircleHelp, PenBox } from 'lucide-react';
 import { Card } from '../ui/card';
 import { AppContext, getNodeDetails, NodeConnectDisconnectPayload, NodeMetaData } from '@/lib/nodes';
-import { useFlowStore, AppNode, AppNodeProp, useRuntimeStore, UpdatePayload, createStopSignal } from '@/lib/store';
+import { useFlowStore, AppNode, AppNodeProp, UpdatePayload, createStopSignal } from '@/lib/store';
 import { CodeStoppedError } from '@/lib/code_runner';
 import { cloneDeep, get, set } from 'lodash';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
 import { useMemo, useState } from 'react';
-import { cva } from 'class-variance-authority';
-import { cn } from '@/lib/utils';
-import NoteIcon from '../node_utils/node_icon';
-import { ThreadSourceHandle, ThreadTargetHandle } from '../node_utils/thread_handle';
-import DevMode from '../node_utils/dev_mode';
+
 import { useShallow } from 'zustand/shallow';
 import { getOutgoers } from '@xyflow/react';
 import { runStatement } from '@/lib/logics';
@@ -36,6 +33,7 @@ export const OnDisconnect = async (payload: NodeConnectDisconnectPayload, update
 
 export const Metadata: NodeMetaData = {
     type: 'decision',
+    category: 'logic',
     name: 'Decision',
     description: 'A node that signifies a decision point in the flow. Only one condition will be effective even if multiple conditions are true.',
     tags: ['if', 'question', 'condition'],
@@ -207,41 +205,6 @@ export const Properties = ({ node }: { node: AppNode }) => {
     )
 }
 
-const noteStateVariants = cva(
-    "bg-card border-2 text-blue-600 border-blue-600 bg-opacity-80 p-2 flex flex-col gap-2 items-center", //tw
-    {
-        variants: {
-            state: {
-                idle: '',
-                faded: 'opacity-20', //tw
-                waiting: 'opacity-20',
-                running: 'opacity-40',
-                completed: 'opacity-100',
-                failed: 'opacity-20 outline-solid outline-red-500', //tw
-                skipped: 'opacity-30 border-dashed', //tw
-            }
-        },
-        defaultVariants: {
-            state: 'idle'
-        }
-    }
-)
-
-export function Node({ id, selectable, isConnectable, data }: AppNodeProp) {
-    const state = useRuntimeStore((state) => selectable != undefined && !selectable ? "faded" : state.nodeStates[id])
-    const name = useMemo(() => {
-        return (data?.name || Metadata.name) as string;
-    }, [data?.name]);
-
-    return (
-        <div className={cn(noteStateVariants({ state }))}>
-            <ThreadTargetHandle active={isConnectable} />
-            <div className='flex gap-2'>
-                <NoteIcon state={state} idleIcon={CircleHelp} />
-                <span className='text-sm font-semibold'>{name}</span>
-            </div>
-            <DevMode data={data} />
-            <ThreadSourceHandle active={isConnectable} type='multi' />
-        </div>
-    );
+export function Node(props: AppNodeProp) {
+    return <NodeShell {...props} icon={CircleHelp} defaultName={Metadata.name} category={Metadata.category} sourceType='multi' />
 }

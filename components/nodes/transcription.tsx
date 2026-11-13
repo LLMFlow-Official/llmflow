@@ -26,6 +26,7 @@ type TranscriptionData = NodeData & {
 
 export const Metadata: NodeMetaData = {
     type: 'transcription',
+    category: 'ai',
     name: 'Transcription',
     description: 'Turn speech in an audio file into text with OpenAI',
     tags: ['audio', 'speech', 'transcribe', 'voice', 'whisper', 'OpenAI'],
@@ -130,5 +131,5 @@ export const Properties = ({ node }: { node: AppNode<TranscriptionData> }) => {
 }
 
 export function Node(props: AppNodeProp) {
-    return <NodeShell {...props} icon={AudioLines} defaultName={Metadata.name} />
+    return <NodeShell {...props} icon={AudioLines} defaultName={Metadata.name} category={Metadata.category} />
 }

@@ -192,7 +192,7 @@ export default function FlowContextMenu({ children }: PropsWithChildren) {
                     <Clipboard size={16} className="mr-2" /> Paste
                     <ContextMenuShortcut>{MOD_KEY}+V</ContextMenuShortcut>
                 </ContextMenuItem>
-                <ContextMenuItem disabled={!hasSelection} onClick={remove} className="text-red-600">
+                <ContextMenuItem disabled={!hasSelection} onClick={remove} className="text-danger">
                     <Trash size={16} className="mr-2" /> Delete
                     <ContextMenuShortcut>Del</ContextMenuShortcut>
                 </ContextMenuItem>

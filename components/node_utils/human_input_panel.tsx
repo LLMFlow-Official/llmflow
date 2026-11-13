@@ -24,8 +24,8 @@ export default function HumanInputPanel() {
     if (!request) return null
 
     return (
-        <Card className='absolute bottom-24 left-1/2 -translate-x-1/2 z-50 w-[min(520px,calc(100%-2rem))] p-4 flex flex-col gap-3 shadow-lg border-blue-600 border-2'>
-            <div className='flex items-center gap-2 text-blue-600'>
+        <Card className='absolute bottom-24 left-1/2 -translate-x-1/2 z-50 w-[min(520px,calc(100%-2rem))] p-4 flex flex-col gap-3 shadow-lg border-info border-2'>
+            <div className='flex items-center gap-2 text-info'>
                 <UserRound className='w-5 h-5' />
                 <span className='font-semibold text-sm'>{request.title}</span>
                 {pending.length > 1 ? <span className='ml-auto text-xs text-muted-foreground'>{pending.length} waiting</span> : null}

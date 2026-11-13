@@ -15,6 +15,7 @@ type HumanInputData = NodeData & {
 
 export const Metadata: NodeMetaData = {
     type: 'human_input',
+    category: 'io',
     name: 'Human Input',
     description: 'Pause the run and ask you to type a value or approve before continuing',
     tags: ['human', 'input', 'approve', 'review', 'pause', 'ask', 'manual'],
@@ -104,5 +105,5 @@ export const Properties = ({ node }: { node: AppNode<HumanInputData> }) => {
 }
 
 export function Node(props: AppNodeProp) {
-    return <NodeShell {...props} icon={UserRound} defaultName={Metadata.name} kind='control' />
+    return <NodeShell {...props} icon={UserRound} defaultName={Metadata.name} category={Metadata.category} />
 }

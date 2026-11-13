@@ -43,7 +43,7 @@ export default function JsonEditor({ defaultValue, schema, onErrorChange, onChan
         <div>
             <div className="flex flex-col">
                 {errors.map((x, index) => (
-                    <div key={index} className="bg-red-500 text-white text-xs p-1">
+                    <div key={index} className="bg-danger text-danger-foreground text-xs p-1">
                         {x.message} (Line: {x.startLineNumber})
                     </div>
                 ))}

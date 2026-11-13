@@ -11,6 +11,7 @@ type TextTemplateData = NodeData & {
 
 export const Metadata: NodeMetaData = {
     type: 'text_template',
+    category: 'data',
     name: 'Text Template',
     description: 'Build a block of text from values of earlier nodes, to reuse in later prompts',
     tags: ['text', 'template', 'format', 'combine', 'string'],
@@ -48,5 +49,5 @@ export const Properties = ({ node }: { node: AppNode<TextTemplateData> }) => (
 )
 
 export function Node(props: AppNodeProp) {
-    return <NodeShell {...props} icon={FileText} defaultName={Metadata.name} />
+    return <NodeShell {...props} icon={FileText} defaultName={Metadata.name} category={Metadata.category} />
 }

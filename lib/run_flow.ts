@@ -104,10 +104,8 @@ export async function runInEditor(options: {
     const stoppedByUser = !useRuntimeStore.getState().isRunning
     useRuntimeStore.getState().stop()
     track('ended')
-    setTimeout(() => {
-        if (useRuntimeStore.getState().isRunning) return
-        useRuntimeStore.getState().setNodeState(Object.fromEntries(useFlowStore.getState().nodes.map(x => [x.id, 'idle'])))
-    }, 3000)
+    // The run marks (done, failed, skipped) stay on the canvas until the flow is edited or run
+    // again; see clearRunMarksOnEdit in lib/store.ts.
 
     const state = useRuntimeStore.getState()
     const summary: RunSummary = {

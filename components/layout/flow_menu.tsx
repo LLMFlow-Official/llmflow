@@ -136,7 +136,7 @@ function ShareDialog({ open, onOpenChange }: { open: boolean, onOpenChange: (ope
                     <Button onClick={copy} disabled={!link} aria-label="Copy link"><Copy size={16} /></Button>
                 </div>
                 {removed.length ? <p className="text-xs text-muted-foreground">Removed from the link: {removed.join('; ')}.</p> : null}
-                {link.length > 8000 ? <p className="text-xs text-amber-700 dark:text-amber-300">This link is long ({Math.round(link.length / 1000)}k characters). Some chat apps cut long links; use Export file instead if it does not open.</p> : null}
+                {link.length > 8000 ? <p className="text-xs text-warning">This link is long ({Math.round(link.length / 1000)}k characters). Some chat apps cut long links; use Export file instead if it does not open.</p> : null}
                 <DialogFooter><Button variant="outline" onClick={() => onOpenChange(false)}>Done</Button></DialogFooter>
             </DialogContent>
         </Dialog>

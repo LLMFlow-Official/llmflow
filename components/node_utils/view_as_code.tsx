@@ -35,7 +35,7 @@ export default function ViewAsCode({ request }: { request: () => ChatRequest }) 
                     <DialogTitle>This prompt as code</DialogTitle>
                     <DialogDescription>The same request this node sends. Values like {'{start.topic}'} are filled in by the flow; replace them in your code. Keys are read from environment variables.</DialogDescription>
                 </DialogHeader>
-                {result.error ? <p className="text-sm text-red-600">{result.error}</p> : <>
+                {result.error ? <p className="text-sm text-danger">{result.error}</p> : <>
                     <div className="flex gap-1 border-b border-border" role="tablist">
                         {result.samples.map((s, i) => (
                             <button key={s.language} role="tab" aria-selected={tab == i} className={`px-3 py-1 text-sm -mb-px border-b-2 ${tab == i ? 'border-primary font-semibold' : 'border-transparent text-muted-foreground'}`} onClick={() => setTab(i)}>{s.label}</button>
@@ -44,7 +44,7 @@ export default function ViewAsCode({ request }: { request: () => ChatRequest }) 
                             <Copy size={14} /> Copy
                         </Button>
                     </div>
-                    <pre className="flex-1 min-h-0 overflow-auto bg-gray-900 text-gray-100 text-xs p-3 rounded-md"><code>{sample?.code}</code></pre>
+                    <pre className="flex-1 min-h-0 overflow-auto bg-muted text-foreground text-xs p-3 rounded-md"><code>{sample?.code}</code></pre>
                 </>}
             </DialogContent>
         </Dialog>

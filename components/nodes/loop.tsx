@@ -45,6 +45,7 @@ export const OnDisconnect = async (payload: NodeConnectDisconnectPayload, update
 
 export const Metadata: NodeMetaData = {
     type: 'loop',
+    category: 'logic',
     name: 'Loop',
     description: 'Run the connected "Each item" steps once per item of a list, or repeat them until a condition is true',
     tags: ['loop', 'for each', 'repeat', 'iterate', 'map', 'batch', 'until', 'while'],
@@ -237,7 +238,7 @@ export const Properties = ({ node }: { node: AppNode<LoopData> }) => {
                     />
                     {untilValid
                         ? <p className='text-xs text-muted-foreground'>Checked after each round. Leave empty to always run the maximum. Each round sees the previous round&apos;s outputs; {`{${node.id}.index}`} is the round number from 0.</p>
-                        : <p className='text-xs text-red-600'>This is not a valid expression.</p>}
+                        : <p className='text-xs text-danger'>This is not a valid expression.</p>}
                 </div>
                 <div className='flex flex-col gap-1'>
                     <Label className='text-sm font-semibold' htmlFor='max_iterations'>Maximum rounds</Label>
@@ -273,5 +274,5 @@ export const Properties = ({ node }: { node: AppNode<LoopData> }) => {
 }
 
 export function Node(props: AppNodeProp) {
-    return <NodeShell {...props} icon={Repeat} defaultName={Metadata.name} kind='control' sourceType='multi' />
+    return <NodeShell {...props} icon={Repeat} defaultName={Metadata.name} category={Metadata.category} sourceType='multi' />
 }

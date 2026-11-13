@@ -15,9 +15,9 @@ import { MOD_KEY } from "@/lib/utils";
 export function FinalOutputCards({ outputs }: { outputs: FinalOutput[] }) {
     return <>
         {outputs.map((x) => (
-            <Card key={x.nodeId} className="border-2 border-green-600">
+            <Card key={x.nodeId} className="border-2 border-success">
                 <CardHeader className="p-3 pb-2">
-                    <div className="flex items-center gap-2 text-sm font-bold text-green-700 dark:text-green-400"><Flag size={16} aria-hidden /> {x.name}</div>
+                    <div className="flex items-center gap-2 text-sm font-bold text-success"><Flag size={16} aria-hidden /> {x.name}</div>
                 </CardHeader>
                 <CardContent className="p-3 pt-0">
                     <MarkdownViewer text={x.value} />

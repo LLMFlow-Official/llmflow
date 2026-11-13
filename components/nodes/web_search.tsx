@@ -9,7 +9,7 @@ import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import MarkdownViewer from '../ui/markdown_viewer';
 import { CitationList, UsageStats } from '../node_utils/stats';
-import { ModelNodeData, ModelSelect, nodeModel, nodeProvider, ReasoningEffortSelect } from '../node_utils/model_select';
+import { ModelNodeData, ModelSelect, modelSummary, nodeModel, nodeProvider, ReasoningEffortSelect } from '../node_utils/model_select';
 import { NameField, NodeShell, TemplateField, TestOutputField, useNodeSetter } from '../node_utils/node_shell';
 
 type WebSearchData = NodeData & ModelNodeData & {
@@ -24,6 +24,7 @@ type Citation = { url: string, title?: string }
 
 export const Metadata: NodeMetaData = {
     type: 'web_search',
+    category: 'ai',
     name: 'Web Search',
     description: 'Ask a model (OpenAI, Claude or Gemini) to search the web and answer with links to its sources',
     tags: ['search', 'web', 'internet', 'browse', 'research', 'citations', 'OpenAI', 'Claude', 'Gemini'],
@@ -123,5 +124,5 @@ export const Properties = ({ node }: { node: AppNode<WebSearchData> }) => {
 }
 
 export function Node(props: AppNodeProp) {
-    return <NodeShell {...props} icon={Globe} defaultName={Metadata.name} />
+    return <NodeShell {...props} icon={Globe} defaultName={Metadata.name} category={Metadata.category} summary={modelSummary(props.data as ModelNodeData)} />
 }

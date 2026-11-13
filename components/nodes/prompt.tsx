@@ -1,18 +1,15 @@
+import { NodeShell } from '../node_utils/node_shell';
 import { ImageIcon, Plus, ScrollText, Trash } from 'lucide-react';
 import { AppContext, NodeMetaData, NodeOutput, OutputExtra, Controller, NodeLogViewProps } from '@/lib/nodes';
-import { useFlowStore, AppNode, AppNodeProp, NodeData, useRuntimeStore } from '@/lib/store';
+import { useFlowStore, AppNode, AppNodeProp, NodeData } from '@/lib/store';
 import { capitalize, cloneDeep, get, set } from 'lodash';
 import { schemaOutputs } from '@/lib/schema_tools';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Input } from '../ui/input';
-import { useMemo, useState } from 'react';
-import { cva } from 'class-variance-authority';
-import { cn } from '@/lib/utils';
-import NoteIcon from '../node_utils/node_icon';
-import { ThreadSourceHandle, ThreadTargetHandle } from '../node_utils/thread_handle';
-import DevMode from '../node_utils/dev_mode';
+import { useState } from 'react';
+
 import { Button } from '../ui/button';
 import ConfirmAlert from '../ui/confirm_alert';
 import { findModel, Message, parseJsonOutput, ResponseFormat, supportsSampling } from '@/lib/openai';
@@ -23,7 +20,7 @@ import { CitationList, UsageStats } from '../node_utils/stats';
 import MarkdownViewer from '../ui/markdown_viewer';
 import { Slider } from '../ui/slider';
 import SchemaEditor, { SchemaType } from '../ui/schema_editor';
-import { ModelNodeData, ModelSelect, nodeModel, nodeProvider, ReasoningEffortSelect, TierSelect, ToolsSection } from '../node_utils/model_select';
+import { ModelNodeData, ModelSelect, modelSummary, nodeModel, nodeProvider, ReasoningEffortSelect, TierSelect, ToolsSection } from '../node_utils/model_select';
 import { TestOutputField } from '../node_utils/node_shell';
 import ViewAsCode from '../node_utils/view_as_code';
 
@@ -41,6 +38,7 @@ type PromptData = NodeData & ModelNodeData & {
 
 export const Metadata: NodeMetaData = {
     type: 'prompt',
+    category: 'ai',
     name: 'AI Prompt',
     description: 'Ask an AI model (OpenAI, Claude, Gemini or your own server) and use its answer',
     tags: ['OpenAI', 'ChatGPT', 'GPT', 'Claude', 'Anthropic', 'Gemini', 'Google', 'LLM', 'prompt', 'chat']
@@ -120,7 +118,6 @@ export const Outputs = (node: AppNode<PromptData>, extra: OutputExtra) => {
 
     return outputs
 }
-
 
 /** The request this node sends. `fill` replaces {node.value} references (identity for "view as code"). */
 function buildRequest(node: AppNode<PromptData>, fill: (text: string) => string): ChatRequest {
@@ -210,7 +207,7 @@ function ImageInputs({ node }: { node: AppNode<PromptData> }) {
                         node={node}
                         withoutRichText
                     />
-                    <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700 p-0.5 h-6 w-6" onClick={() => setImages(images.filter((_, i) => i != index))}>
+                    <Button variant="ghost" size="sm" className="text-danger hover:text-danger/80 p-0.5 h-6 w-6" onClick={() => setImages(images.filter((_, i) => i != index))}>
                         <Trash className='w-4 h-4' />
                     </Button>
                 </div>
@@ -372,7 +369,7 @@ export const Properties = ({ node }: { node: AppNode<PromptData> }) => {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleDelete(index)}
-                            className="text-red-500 hover:text-red-700 p-0.5 h-6 w-6 ml-auto"
+                            className="text-danger hover:text-danger/80 p-0.5 h-6 w-6 ml-auto"
                         >
                             <Trash className='w-4 h-4' />
                         </Button>
@@ -429,41 +426,6 @@ export const Properties = ({ node }: { node: AppNode<PromptData> }) => {
     )
 }
 
-const noteStateVariants = cva(
-    "bg-card border-2 text-red-600 border-red-600 p-2 flex flex-col gap-2 rounded-md items-center  transition-all duration-300", //tw
-    {
-        variants: {
-            state: {
-                idle: '',
-                faded: 'opacity-20', //tw
-                waiting: 'opacity-20',
-                running: 'opacity-40',
-                completed: 'opacity-100',
-                failed: 'opacity-80 outline-solid outline-offset-1 outline-red-500', //tw
-                skipped: 'opacity-30 border-dashed', //tw
-            }
-        },
-        defaultVariants: {
-            state: 'idle'
-        }
-    }
-)
-
-export function Node({ id, selectable, isConnectable, data }: AppNodeProp) {
-    const state = useRuntimeStore((state) => selectable != undefined && !selectable ? "faded" : state.nodeStates[id])
-    const name = useMemo(() => {
-        return (data?.name || Metadata.name) as string;
-    }, [data?.name]);
-
-    return (
-        <div className={cn(noteStateVariants({ state }))}>
-            <ThreadTargetHandle active={isConnectable} />
-            <div className='flex gap-2'>
-                <NoteIcon state={state} idleIcon={ScrollText} />
-                <span className='text-sm font-semibold'>{name}</span>
-            </div>
-            <DevMode data={data} />
-            <ThreadSourceHandle active={isConnectable} />
-        </div>
-    );
+export function Node(props: AppNodeProp) {
+    return <NodeShell {...props} icon={ScrollText} defaultName={Metadata.name} category={Metadata.category} summary={modelSummary(props.data as ModelNodeData)} />
 }

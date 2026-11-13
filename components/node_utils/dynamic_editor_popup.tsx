@@ -46,8 +46,8 @@ export default function DynamicEditorPopup({ baseNode, open, type, value, onChan
                 <ValueSelector baseNode={baseNode} onSelect={(s) => type == 'value' ? onChange(s) : setCondition(x => `${x}${s}`)} />
                 {type == 'condition' ? <DialogFooter className="items-end">
                     <div className="w-full">
-                        <Label>Condition <span className={isValidCondition ? 'text-green-600' : 'text-red-600'}>{isValidCondition ? '(Valid)' : '(Invalid)'}</span></Label>
-                        <Textarea classNameFrame={cn('mt-2', isValidCondition ? 'outline-solid outline-green-600!' : 'outline-solid outline-red-600!')} value={condition} onChange={(e) => setCondition(e.target.value)} withoutRichText />
+                        <Label>Condition <span className={isValidCondition ? 'text-success' : 'text-danger'}>{isValidCondition ? '(Valid)' : '(Invalid)'}</span></Label>
+                        <Textarea classNameFrame={cn('mt-2', isValidCondition ? 'outline-solid outline-success!' : 'outline-solid outline-danger!')} value={condition} onChange={(e) => setCondition(e.target.value)} withoutRichText />
                     </div>
                     <DialogClose asChild>
                         <Button disabled={!isValidCondition} onClick={() => isValidCondition ? onChange(condition) : null}>Set Condition</Button>

@@ -80,7 +80,7 @@ export function TemplateInput({ id, value, onChange, placeholder, className, hig
             {highlight ? (
                 <div ref={backdrop} aria-hidden className="absolute inset-0 px-3 py-2 whitespace-pre-wrap wrap-break-word overflow-hidden text-transparent pointer-events-none">
                     {highlighted(value).map((p, i) => p.ref
-                        ? <mark key={i} className="bg-blue-100 dark:bg-blue-950 text-transparent rounded-sm">{p.text}</mark>
+                        ? <mark key={i} className="bg-info/15 text-transparent rounded-sm">{p.text}</mark>
                         : <Fragment key={i}>{p.text}</Fragment>)}
                     {'\n'}
                 </div>

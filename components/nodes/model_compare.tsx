@@ -29,6 +29,7 @@ const labelOf = (c: Contender) => findModel(c.model)?.label || c.model || '(no m
 
 export const Metadata: NodeMetaData = {
     type: 'model_compare',
+    category: 'ai',
     name: 'Model Compare',
     description: 'Send the same prompt to several models at once and compare answers, cost and speed',
     tags: ['compare', 'models', 'benchmark', 'evaluate', 'A/B', 'OpenAI', 'Claude', 'Gemini'],
@@ -47,7 +48,7 @@ export function LogView({ payload }: NodeLogViewProps<{ answers: Answer[] }>) {
             {payload.answers.map((a, i) => (
                 <div key={i} className='border border-border rounded-md p-2 flex flex-col gap-1 min-w-0'>
                     <span className='text-xs font-semibold'>{a.label}</span>
-                    {a.error ? <span className='text-xs text-red-600'>{a.error}</span> : <MarkdownViewer text={a.text || ''} />}
+                    {a.error ? <span className='text-xs text-danger'>{a.error}</span> : <MarkdownViewer text={a.text || ''} />}
                     {a.usage ? <UsageStats usage={a.usage} amount={a.cost} endTime={a.seconds * 1000} startTime={0.0001} /> : null}
                 </div>
             ))}
@@ -132,7 +133,7 @@ export const Properties = ({ node }: { node: AppNode<CompareData> }) => {
                                 <SelectContent>{modelsFor(c.provider).filter(m => !m.deprecated).map(m => <SelectItem key={m.id} value={m.id}>{m.label}</SelectItem>)}</SelectContent>
                             </Select>
                         )}
-                        <Button variant="ghost" size="sm" aria-label='Remove model' className="text-red-500 p-0.5 h-8 w-8 shrink-0" disabled={models.length <= 2} onClick={() => setModels(models.filter((_, i) => i != index))}>
+                        <Button variant="ghost" size="sm" aria-label='Remove model' className="text-danger p-0.5 h-8 w-8 shrink-0" disabled={models.length <= 2} onClick={() => setModels(models.filter((_, i) => i != index))}>
                             <Trash className='w-4 h-4' />
                         </Button>
                     </div>
@@ -147,5 +148,5 @@ export const Properties = ({ node }: { node: AppNode<CompareData> }) => {
 }
 
 export function Node(props: AppNodeProp) {
-    return <NodeShell {...props} icon={Columns3} defaultName={Metadata.name} />
+    return <NodeShell {...props} icon={Columns3} defaultName={Metadata.name} category={Metadata.category} />
 }

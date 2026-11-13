@@ -106,10 +106,14 @@ export type NodeConnectDisconnectPayload = {
 }
 export type NodeOnConnectDisconnect = (payload: NodeConnectDisconnectPayload, updates: UpdatePayload) => Promise<void>
 
+/** Groups steps in the Add step list and gives each its colour on the canvas. */
+export type NodeCategory = 'start' | 'ai' | 'logic' | 'data' | 'io'
+
 export type NodeMetaData<T = unknown> = {
     type: NodeType;
     name: string;
     description: string;
+    category: NodeCategory;
     tags: string[],
     notAddable?: boolean;
     defaultData?: T,

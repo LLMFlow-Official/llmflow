@@ -35,6 +35,9 @@ test('runs a template flow with the Test API and keeps it in history', async ({ 
 
     await page.getByRole('button', { name: 'Run the flow' }).click()
     await expect(page.getByText('(Test answer from Summarize)').first()).toBeVisible()
+    // The run marks stay on the canvas after the run ends.
+    await page.waitForTimeout(3500)
+    await expect(page.getByLabel('Done').first()).toBeVisible()
 
     await page.getByRole('tab', { name: 'History' }).click()
     await expect(page.getByText('completed').first()).toBeVisible()
@@ -104,7 +107,7 @@ test('answering a question with Cmd/Ctrl+Enter keeps the run going', async ({ pa
 
 test('has no serious accessibility problems', async ({ page }) => {
     await openApp(page)
-    const results = await new AxeBuilder({ page }).disableRules(['color-contrast']).analyze()
+    const results = await new AxeBuilder({ page }).analyze()
     const serious = results.violations.filter(v => v.impact == 'serious' || v.impact == 'critical')
     expect(serious.map(v => `${v.id}: ${v.nodes.map(n => n.target.join(' ')).slice(0, 3).join(', ')}`)).toEqual([])
 })

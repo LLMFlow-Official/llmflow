@@ -447,3 +447,19 @@ export function waitWhileRunning(ms: number): Promise<boolean> {
         tick()
     })
 }
+
+const edgeKey = (edges: Edge[]) => edges.map(e => `${e.source}>${e.target}`).join('|')
+
+/**
+ * Clears the run marks when the flow's content changes after a run: a step's settings, a step
+ * added or removed, or a connection changed. Selecting or moving steps keeps them.
+ */
+useFlowStore.subscribe((state, previous) => {
+    if (state.nodes === previous.nodes && state.edges === previous.edges) return
+    const runtime = useRuntimeStore.getState()
+    if (runtime.isRunning || !Object.keys(runtime.nodeStates).length) return
+    const changed = state.nodes.length != previous.nodes.length
+        || state.nodes.some((node, i) => node.id != previous.nodes[i]?.id || node.data !== previous.nodes[i]?.data)
+        || edgeKey(state.edges) != edgeKey(previous.edges)
+    if (changed) runtime.setNodeState({})
+})

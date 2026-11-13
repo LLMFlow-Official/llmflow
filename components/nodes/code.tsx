@@ -20,6 +20,7 @@ return { count: words.length, upper: start.topic.toUpperCase() }`
 
 export const Metadata: NodeMetaData = {
     type: 'code',
+    category: 'data',
     name: 'Code',
     description: 'Run a small JavaScript function on earlier values and return a result',
     tags: ['code', 'javascript', 'js', 'script', 'function', 'transform'],
@@ -36,7 +37,7 @@ export function LogView({ payload }: NodeLogViewProps<LogViewPayload>) {
     return (
         <div className='flex flex-col gap-2 text-xs'>
             {payload.logs.length ? (
-                <div className='bg-gray-900 text-gray-100 p-2 rounded-md whitespace-pre-wrap max-h-28 overflow-y-auto font-mono'>{payload.logs.join('\n')}</div>
+                <div className='bg-muted text-foreground p-2 rounded-md whitespace-pre-wrap max-h-28 overflow-y-auto font-mono'>{payload.logs.join('\n')}</div>
             ) : null}
             <div className='bg-accent p-2 rounded-md whitespace-pre-wrap max-h-28 overflow-y-auto border border-border font-mono'>
                 {typeof payload.result == 'string' ? payload.result : JSON.stringify(payload.result, null, 2)}
@@ -88,7 +89,7 @@ export const Properties = ({ node }: { node: AppNode<CodeData> }) => {
                         setValue('code', `${value.slice(0, selectionStart)}    ${value.slice(selectionEnd)}`)
                         requestAnimationFrame(() => el.setSelectionRange(selectionStart + 4, selectionStart + 4))
                     }}
-                    className='min-h-[220px] rounded-md border border-input bg-gray-900 text-gray-100 p-2 text-xs font-mono focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring'
+                    className='min-h-[220px] rounded-md border border-input bg-muted text-foreground p-2 text-xs font-mono focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring'
                 />
                 <p className='text-xs text-muted-foreground'>
                     The function body can use await and console.log. It runs in a separate worker that cannot see this page or your API key, and it can only return values that can be turned into JSON.
@@ -106,5 +107,5 @@ export const Properties = ({ node }: { node: AppNode<CodeData> }) => {
 }
 
 export function Node(props: AppNodeProp) {
-    return <NodeShell {...props} icon={Code2} defaultName={Metadata.name} />
+    return <NodeShell {...props} icon={Code2} defaultName={Metadata.name} category={Metadata.category} />
 }

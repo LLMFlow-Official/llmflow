@@ -13,7 +13,7 @@ import { Card } from '../ui/card';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
 import { UsageStats } from '../node_utils/stats';
-import { ModelNodeData, ModelSelect, nodeModel, nodeProvider, ReasoningEffortSelect } from '../node_utils/model_select';
+import { ModelNodeData, ModelSelect, modelSummary, nodeModel, nodeProvider, ReasoningEffortSelect } from '../node_utils/model_select';
 import { NameField, NodeShell, TemplateField, TestOutputField } from '../node_utils/node_shell';
 
 type Route = { name?: string, description?: string }
@@ -41,6 +41,7 @@ export const OnDisconnect = async (payload: NodeConnectDisconnectPayload, update
 
 export const Metadata: NodeMetaData = {
     type: 'llm_router',
+    category: 'ai',
     name: 'LLM Router',
     description: 'Let a model choose which branch to follow, based on what the input means',
     tags: ['route', 'router', 'classify', 'decision', 'branch', 'ai', 'if'],
@@ -204,5 +205,5 @@ export const Properties = ({ node }: { node: AppNode<RouterData> }) => {
 }
 
 export function Node(props: AppNodeProp) {
-    return <NodeShell {...props} icon={Split} defaultName={Metadata.name} kind='control' sourceType='multi' />
+    return <NodeShell {...props} icon={Split} defaultName={Metadata.name} category={Metadata.category} sourceType='multi' summary={modelSummary(props.data as ModelNodeData)} />
 }

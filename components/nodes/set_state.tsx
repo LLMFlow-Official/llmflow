@@ -1,17 +1,16 @@
+import { NodeShell } from '../node_utils/node_shell';
 import { Cog } from 'lucide-react';
 import { AppContext, Controller, NodeMetaData, NodeOutput } from '@/lib/nodes';
-import { useFlowStore, AppNode, AppNodeProp, NodeData, useRuntimeStore, createStopSignal } from '@/lib/store';
+import { useFlowStore, AppNode, AppNodeProp, NodeData, createStopSignal } from '@/lib/store';
 import { CodeStoppedError } from '@/lib/code_runner';
 import { cloneDeep, set } from 'lodash';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Input } from '../ui/input';
 import { useMemo } from 'react';
-import { cva } from 'class-variance-authority';
+
 import { cn } from '@/lib/utils';
-import NoteIcon from '../node_utils/node_icon';
-import { ThreadSourceHandle, ThreadTargetHandle } from '../node_utils/thread_handle';
-import DevMode from '../node_utils/dev_mode';
+
 import { runStatement, validateStatement } from '@/lib/logics';
 
 type SetStateData = NodeData & {
@@ -21,6 +20,7 @@ type SetStateData = NodeData & {
 
 export const Metadata: NodeMetaData = {
     type: 'set_state',
+    category: 'data',
     name: 'Set State',
     description: 'Sets the state of the node based on input values',
     tags: ['state', 'set', 'node'],
@@ -102,12 +102,12 @@ export const Properties = ({ node }: { node: AppNode<SetStateData> }) => {
                 />
             </div>
             <div className='flex flex-col gap-1'>
-                <Label className='text-sm font-semibold' htmlFor="value">Value <span className={isValidCondition ? 'text-green-600': 'text-red-600'}>{isValidCondition ? '(Valid)' : '(Invalid)'}</span></Label>
+                <Label className='text-sm font-semibold' htmlFor="value">Value <span className={isValidCondition ? 'text-success': 'text-danger'}>{isValidCondition ? '(Valid)' : '(Invalid)'}</span></Label>
                 <Textarea
                     id="value"
                     name="value"
                     value={node.data.value}
-                    classNameFrame={cn('h-20', isValidCondition ? 'outline-solid outline-green-600!': 'outline-solid outline-red-600!')}
+                    classNameFrame={cn('h-20', isValidCondition ? 'outline-solid outline-success!': 'outline-solid outline-danger!')}
                     placeholder='Enter your value statement here...'
                     onChange={(e) => setValue('value', e.target.value)}
                     node={node}
@@ -118,41 +118,6 @@ export const Properties = ({ node }: { node: AppNode<SetStateData> }) => {
     )
 }
 
-const noteStateVariants = cva(
-    "bg-card border-2 text-red-600 border-red-600 p-2 flex flex-col gap-2 rounded-md items-center  transition-all duration-300", //tw
-    {
-        variants: {
-            state: {
-                idle: '',
-                faded: 'opacity-20', //tw
-                waiting: 'opacity-20',
-                running: 'opacity-40',
-                completed: 'opacity-100',
-                failed: 'opacity-80 outline-solid outline-offset-1 outline-red-500', //tw
-                skipped: 'opacity-30 border-dashed', //tw
-            }
-        },
-        defaultVariants: {
-            state: 'idle'
-        }
-    }
-)
-
-export function Node({ id, selectable, isConnectable, data }: AppNodeProp) {
-    const state = useRuntimeStore((state) => selectable != undefined && !selectable ? "faded" : state.nodeStates[id])
-    const name = useMemo(() => {
-        return (data?.name || Metadata.name) as string;
-    }, [data?.name]);
-
-    return (
-        <div className={cn(noteStateVariants({ state }))}>
-            <ThreadTargetHandle active={isConnectable} />
-            <div className='flex gap-2'>
-                <NoteIcon state={state} idleIcon={Cog} />
-                <span className='text-sm font-semibold'>{name}</span>
-            </div>
-            <DevMode data={data} />
-            <ThreadSourceHandle active={isConnectable} />
-        </div>
-    );
+export function Node(props: AppNodeProp) {
+    return <NodeShell {...props} icon={Cog} defaultName={Metadata.name} category={Metadata.category} />
 }
