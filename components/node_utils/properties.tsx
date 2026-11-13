@@ -5,7 +5,7 @@ import { Card, CardTitle } from "../ui/card";
 import OnErrorSettingsSection from "./on_error_settings";
 
 /** Steps that call a model, a server or code, where retrying or carrying on after a failure makes sense. */
-const CAN_FAIL = ['prompt', 'llm_router', 'web_search', 'image_generation', 'transcription', 'semantic_search', 'model_compare', 'http_request', 'code', 'sub_flow', 'json_extract']
+const CAN_FAIL = ['prompt', 'llm_router', 'web_search', 'image_generation', 'transcription', 'semantic_search', 'ai_decisions', 'model_compare', 'http_request', 'code', 'sub_flow', 'json_extract']
 
 export default function Properties() {
     const selectedNode = useFlowStore((state) => state.selectedNode)

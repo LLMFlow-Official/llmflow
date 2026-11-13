@@ -87,6 +87,60 @@ export const templates: FlowTemplate[] = [
         ], [['start', 'split_text_d1'], ['split_text_d1', 'semantic_search_d2'], ['semantic_search_d2', 'prompt_d3'], ['prompt_d3', 'final_output_d4']]),
     },
     {
+        id: 'triage_ticket',
+        name: 'Triage a support ticket',
+        description: 'AI Decisions checks urgency, team and tone in one fast request, then urgent tickets get a reply.',
+        build: () => build([
+            start([['ticket', 'textarea', "Our checkout has been down for an hour and customers can't pay. Please fix this now!"]]),
+            {
+                id: 'ai_decisions_9a', type: 'ai_decisions',
+                data: {
+                    name: 'Triage', input: '{start.ticket}',
+                    instructions: 'You triage support tickets for an online shop.',
+                    questions: [
+                        { name: 'is_urgent', type: 'predicate', instructions: 'The customer is blocked right now and needs help today.' },
+                        {
+                            name: 'team', type: 'choice', instructions: 'Which team should handle this ticket?',
+                            choices: [
+                                { value: 'billing', description: 'Payments, refunds and invoices' },
+                                { value: 'technical', description: 'Errors, outages and bugs' },
+                                { value: 'account', description: 'Logins, settings and personal details' },
+                                { value: 'other', description: 'None of the above' },
+                            ],
+                        },
+                        {
+                            name: 'frustration', type: 'score', instructions: 'How frustrated is the customer?',
+                            levels: [
+                                { label: 'calm', description: 'Neutral or friendly' },
+                                { label: 'annoyed', description: 'Unhappy but polite' },
+                                { label: 'angry', description: 'Upset, demanding or using capitals and exclamation marks' },
+                            ],
+                        },
+                    ],
+                    test_output: '{"is_urgent": 0.93, "team": "technical", "frustration": 1.6}',
+                },
+            },
+            {
+                id: 'decision_9b', type: 'decision',
+                data: {
+                    name: 'Urgent?',
+                    decisions: {
+                        prompt_9c: { name: 'Urgent', condition: '{ai_decisions_9a.is_urgent} >= 0.7', type: 'normal' },
+                        final_output_9e: { name: 'Else', condition: 'else', type: 'else' },
+                    },
+                },
+            },
+            prompt('prompt_9c', 'Urgent reply', 'Write a short, calm reply that says the team is on it. Match the tone to how frustrated the customer is.',
+                'Ticket: {start.ticket}\nTeam: {ai_decisions_9a.team}\nFrustration (0 calm to 2 angry): {ai_decisions_9a.frustration}'),
+            final('final_output_9d', '{prompt_9c.assistant_raw_output}', 'Reply'),
+            final('final_output_9e', 'Queued for {ai_decisions_9a.team}', 'Queued'),
+        ], [
+            ['start', 'ai_decisions_9a'], ['ai_decisions_9a', 'decision_9b'],
+            ['decision_9b', 'prompt_9c', 'Urgent'], ['decision_9b', 'final_output_9e', 'Else'],
+            ['prompt_9c', 'final_output_9d'],
+        ]),
+    },
+    {
         id: 'each_item',
         name: 'Process a list item by item',
         description: 'A Loop rewrites every line of a list, then collects the results.',

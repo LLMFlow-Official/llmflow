@@ -22,6 +22,7 @@ function stepTypeName(type?: string) {
         case 'multi_thread': return 'Run in parallel'
         case 'thread_merge': return 'Wait for all'
         case 'llm_router': return 'AI Router'
+        case 'ai_decisions': return 'AI Decisions'
         default: return type ? type.replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase()) : 'step'
     }
 }

@@ -22,6 +22,7 @@ export function templateNeeds(template: FlowTemplate): string | undefined {
     const types = new Set(template.build().nodes.map(n => n.type))
     if (types.has('model_compare')) return 'Needs OpenAI and Claude keys (it compares models)'
     if (types.has('semantic_search')) return 'Needs an OpenAI key (for embeddings)'
+    if (types.has('ai_decisions')) return 'Needs an OpenAI key (for the Decisions API)'
     if (types.has('image_generation')) return 'Needs an OpenAI key (for images)'
     if (types.has('transcription')) return 'Needs an OpenAI key (for transcription)'
     if (types.has('web_search')) return 'Needs OpenAI, Claude or Gemini (not your own server)'

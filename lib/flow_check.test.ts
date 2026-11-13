@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { checkFlow } from './flow_check'
 import type { AppNode } from './store'
+import { templates } from './templates'
 
 const step = (id: string, type: string, data: Record<string, unknown> = {}) => ({ id, type, position: { x: 0, y: 0 }, data: { thread: 'main', ...data } }) as AppNode
 const edge = (source: string, target: string) => ({ id: `${source}-${target}`, source, target })
@@ -47,5 +48,25 @@ describe('checkFlow', () => {
             expect.stringMatching(/not a valid expression/),
             expect.stringMatching(/Every branch needs a name and a condition/),
         ]))
+    })
+
+    it('passes every starter template', () => {
+        for (const template of templates) {
+            const { nodes, edges } = template.build()
+            expect(checkFlow(nodes, edges, everyKey), template.id).toEqual([])
+        }
+    })
+
+    it('checks AI Decisions questions and needs an OpenAI key', () => {
+        const nodes = [
+            step('start', 'start'),
+            step('ai_decisions_1', 'ai_decisions', { questions: [{ name: 'team', type: 'choice', instructions: 'Which team?', choices: [{ value: 'a' }] }] }),
+        ]
+        const problems = checkFlow(nodes, [edge('start', 'ai_decisions_1')], { canUse: (p) => p != 'openai' }).map(p => p.message)
+        expect(problems).toEqual([
+            'Add the input to decide about (text, JSON data or an image).',
+            '"team" needs at least two choices.',
+            'Add your OpenAI API key in Settings (or turn on Sample answers there to try the flow).',
+        ])
     })
 })

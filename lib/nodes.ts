@@ -23,6 +23,7 @@ import * as TranscriptionNode from "@/components/nodes/transcription";
 import * as SemanticSearchNode from "@/components/nodes/semantic_search";
 import * as ModelCompareNode from "@/components/nodes/model_compare";
 import * as SubFlowNode from "@/components/nodes/sub_flow";
+import * as AiDecisionsNode from "@/components/nodes/ai_decisions";
 
 import { AppNode, FinalOutput, NodeLogs, UpdatePayload } from "./store";
 import Decimal from "decimal.js-light";
@@ -30,7 +31,7 @@ import { Edge } from "@xyflow/react";
 
 export type NodeType = "start" | "prompt" | "multi_thread" | "thread_merge" | "decision" | "console_log" | "set_state"
     | "llm_router" | "web_search" | "image_generation" | "text_template" | "json_extract" | "split_text"
-    | "code" | "http_request" | "human_input" | "assert" | "delay" | "final_output" | "loop" | "transcription" | "semantic_search" | "model_compare" | "sub_flow"
+    | "code" | "http_request" | "human_input" | "assert" | "delay" | "final_output" | "loop" | "transcription" | "semantic_search" | "model_compare" | "sub_flow" | "ai_decisions"
 
 const nodes = [
     StartNode,
@@ -41,6 +42,7 @@ const nodes = [
     ConsoleLogNode,
     SetStateNode,
     LlmRouterNode,
+    AiDecisionsNode,
     WebSearchNode,
     ImageGenerationNode,
     TextTemplateNode,

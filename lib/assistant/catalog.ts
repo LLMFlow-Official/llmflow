@@ -36,6 +36,16 @@ llm_router: an AI model picks ONE of the outgoing branches.
   test_output: the name of the route to pick in Test API mode.
   -> {id.route}, {id.reason}
 
+ai_decisions: answers typed questions about one input in a single fast request (OpenAI Decisions API, model gpt-6-luna; no provider/model fields). Prefer it over prompt + json_extract for classifying, checking or rating; follow it with a decision node to branch on the answers.
+  input (template: the text the questions are about), instructions (optional shared guidance), json_input (optional template: an object/list reference or JSON text), images (optional list of image URLs or references), cache_key (optional).
+  questions: [{ "name": "snake_case", "type": "predicate" | "choice" | "score", "instructions": (template) }]. Names are unique and not "name", "answers", "refused" or "error".
+    predicate: instructions is a statement to check, e.g. "The customer asks for a refund." -> a probability 0..1.
+    choice: "choices": [{ "value": "billing", "description": "Payments and invoices" }, ...] (2+, include a fallback like "other") -> the chosen value.
+    score: "levels": [{ "label": "low", "description": "..." }, ...] (2-10, lowest first) -> a number from 0 (first level) up; can fall between levels.
+  test_output (optional): JSON by question name, e.g. "{\"is_urgent\": 0.9, \"department\": \"billing\"}".
+  -> {id.<question name>} (main value), {id.answers.<question name>} (full answer with probabilities and confidence), {id.refused}
+  Branch on answers with a decision node, e.g. {ai_decisions_a1.is_urgent} >= 0.7 or {ai_decisions_a1.department} == "billing".
+
 decision: picks a branch with JavaScript conditions.
   decisions: keyed by TARGET node id: { "<targetId>": { "name": "short", "condition": "{start.age} >= 18", "type": "normal" } }. At most one else branch: { "name": "Else", "condition": "else", "type": "else" }.
   Conditions are JavaScript expressions; write references as {node.output}; strings need quotes, e.g. {llm_router_a.route} == "refund".

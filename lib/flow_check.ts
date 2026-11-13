@@ -7,6 +7,7 @@ import { getNodeDetails } from './nodes'
 import { isValidExpression } from './code_runner'
 import { replaceDynamicValueWithValueRef } from './logics'
 import { findModel, PROVIDERS, ProviderId } from './openai/models'
+import { DecisionQuestion, questionProblems } from './openai/decisions'
 import type { AppNode } from './store'
 
 /**
@@ -45,6 +46,7 @@ function providersOf(node: AppNode): ProviderId[] {
         case 'image_generation':
         case 'transcription':
         case 'semantic_search':
+        case 'ai_decisions':
             return ['openai']
         case 'model_compare': {
             const models = (data.models as { provider: ProviderId }[] | undefined)?.length
@@ -129,6 +131,12 @@ function stepProblems(node: AppNode, edges: Edge[], ctx: CheckContext): string[]
             if (!text(data.query)) problems.push('Write the question to search for.')
             if (!text(data.documents)) problems.push('Choose the texts to search, e.g. the chunks from Split Text.')
             break
+        case 'ai_decisions': {
+            const questions = (data.questions as DecisionQuestion[] | undefined) || []
+            if (!text(data.input) && !text(data.json_input) && !(data.images as string[] | undefined)?.some(x => text(x))) problems.push('Add the input to decide about (text, JSON data or an image).')
+            problems.push(...questionProblems(questions))
+            break
+        }
         case 'model_compare':
             if (!text(data.prompt)) problems.push('Write the prompt to send to every model.')
             break

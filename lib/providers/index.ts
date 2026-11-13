@@ -1,5 +1,5 @@
 import Decimal from "decimal.js-light";
-import type { Controller } from "../nodes";
+import type { Controller, NodeType } from "../nodes";
 import { createStopSignal, sampleAnswersOn, useRuntimeStore, useSettingStore } from "../store";
 import { StoppedError } from "../errors";
 import { costOf, getModelStatus, PROVIDERS, ProviderId, totalInput } from "../openai/models";
@@ -181,6 +181,43 @@ export async function runChat(request: ChatRequest, controller: Controller, opti
         }
     } finally {
         writer.reset()
+        release()
+        stop.dispose()
+    }
+}
+
+/**
+ * Runs one non-chat AI request for a node (e.g. Decisions) with the same rules as runChat: the
+ * parallel request limit, Stop, the time limit from Settings and retries for rate limits and server
+ * errors. `send` gets a signal that aborts on Stop or time-out.
+ */
+export async function runRequest<T>(send: (signal: AbortSignal) => Promise<T>, controller: Controller, options: { nodeId: string, nodeType: NodeType }): Promise<T> {
+    const settings = useSettingStore.getState()
+    const stop = createStopSignal()
+    const release = await acquireSlot(stop.signal).catch((error) => { stop.dispose(); throw error })
+    try {
+        for (let attempt = 0; ; attempt++) {
+            const timeoutMs = Math.max(settings.requestTimeoutSeconds || 600, 10) * 1000
+            const attemptController = new AbortController()
+            const timer = setTimeout(() => attemptController.abort(), timeoutMs)
+            const onStop = () => attemptController.abort()
+            stop.signal.addEventListener('abort', onStop, { once: true })
+            try {
+                return await send(attemptController.signal)
+            } catch (error) {
+                if (stop.signal.aborted) throw new StoppedError()
+                if (attemptController.signal.aborted) throw new Error(`The request took longer than ${timeoutMs / 1000} seconds. You can raise the limit in Settings.`)
+                const retryable = error instanceof ProviderHttpError && error.retryable && attempt < MAX_RETRIES
+                if (!retryable) throw error
+                const delay = (error as ProviderHttpError).retryAfterMs ?? 1000 * 2 ** attempt
+                controller.log({ id: options.nodeId, type: 'warning', title: `${(error as Error).message}. Retrying in ${Math.round(delay / 1000)}s`, nodeType: options.nodeType })
+                await wait(Math.min(delay, 30_000), stop.signal)
+            } finally {
+                clearTimeout(timer)
+                stop.signal.removeEventListener('abort', onStop)
+            }
+        }
+    } finally {
         release()
         stop.dispose()
     }

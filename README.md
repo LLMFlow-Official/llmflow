@@ -12,7 +12,8 @@ straight from the browser to the AI provider you chose.
 - **Providers:** OpenAI (Responses API), Anthropic (Messages API, official SDK), Google Gemini, and
   OpenAI-compatible servers such as Ollama, OpenRouter, Groq or Azure.
 - **Nodes:**
-  - AI and tools: AI Prompt (with images, tools, structured JSON output), LLM Router, Web Search,
+  - AI and tools: AI Prompt (with images, tools, structured JSON output), LLM Router, AI Decisions
+    (OpenAI Decisions API: yes/no, pick-one and rating questions in one request), Web Search,
     Image Generation, Transcription, Semantic Search, Model Compare
   - Flow control: Decision, Loop, Multi Thread, Thread Merge, Human Input, Assert, Delay, Sub-flow
   - Data: Text Template, JSON Extract, Split Text, Code (sandboxed JavaScript), HTTP Request,
