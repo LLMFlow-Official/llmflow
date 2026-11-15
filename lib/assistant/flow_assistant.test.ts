@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { assignThreads, buildSystemPrompt, describeFlow, fakeAssistantReply, normalizeFlow, parseReply, priorTurns } from './flow_assistant'
+import { assignThreads, buildSystemPrompt, describeFlow, fakeAssistantReply, normalizeFlow, parseReply, previewFlow, priorTurns, readPartialFlow } from './flow_assistant'
 import { EXAMPLE_FLOW } from './catalog'
 
 const types = ['start', 'prompt', 'llm_router', 'decision', 'loop', 'final_output', 'multi_thread', 'thread_merge', 'sub_flow', 'text_template']
@@ -164,5 +164,62 @@ describe('priorTurns', () => {
             { role: 'assistant', content: '(No reply.)' },
         ])
         expect(priorTurns([])).toEqual([])
+    })
+})
+
+describe('readPartialFlow', () => {
+    const full = fakeAssistantReply('Summarize a text', 'openai', 'gpt-6.1-sol')
+
+    it('returns only the nodes and edges that have fully arrived', () => {
+        expect(readPartialFlow(full.slice(0, full.indexOf('"flow"')))).toBeUndefined()
+        const firstNodeEnd = full.indexOf('"prompt_7e57"')
+        const early = readPartialFlow(full.slice(0, firstNodeEnd))!
+        expect(early.nodes.map(n => n.id)).toEqual(['start'])
+        expect(early.nodesDone).toBe(false)
+
+        const midEdges = readPartialFlow(full.slice(0, full.lastIndexOf('{"source"')))!
+        expect(midEdges.nodes.map(n => n.id)).toEqual(['start', 'prompt_7e57', 'final_output_7e58'])
+        expect(midEdges.nodesDone).toBe(true)
+        expect(midEdges.edges).toEqual([{ source: 'start', target: 'prompt_7e57' }])
+
+        expect(readPartialFlow(full)).toEqual({ ...parseReply(full).flow, name: undefined, nodesDone: true, nodes: parseReply(full).flow!.nodes })
+    })
+
+    it('copes with braces and quotes inside strings, code fences and nested data', () => {
+        const text = '```json\n{"reply": "a } \\" ] {", "flow": {"name": "x", "nodes": [{"id": "start", "type": "start", "data": {"properties": [{"name": "a"}]}}, {"id": "text_template_aaaa", "type": "text_template", "data": {"template": "{start.a} }]"}}, {"id": "fin'
+        const partial = readPartialFlow(text)!
+        expect(partial.nodes.map(n => n.id)).toEqual(['start', 'text_template_aaaa'])
+        expect(partial.nodes[1].data).toEqual({ template: '{start.a} }]' })
+        expect(partial.edges).toEqual([])
+    })
+})
+
+describe('previewFlow', () => {
+    const existing = {
+        nodes: [
+            { id: 'start', type: 'start', position: { x: 0, y: 0 }, data: { thread: 'main' } },
+            { id: 'prompt_aaaa', type: 'prompt', position: { x: 0, y: 160 }, data: { thread: 'main', name: 'Old' } },
+        ],
+        edges: [{ source: 'start', target: 'prompt_aaaa' }],
+    }
+
+    it('keeps steps the reply has not repeated yet, and lays out new ones under what they use', () => {
+        const flow = previewFlow({ nodes: [{ id: 'start', type: 'start', data: {} }, { id: 'final_output_bbbb', type: 'final_output', data: { value: '{prompt_aaaa.assistant_raw_output}' } }], edges: [], nodesDone: false }, existing, opts)
+        expect(flow.nodes.map(n => n.id).sort()).toEqual(['final_output_bbbb', 'prompt_aaaa', 'start'])
+        expect(flow.edges.map(e => [e.source, e.target])).toEqual([['start', 'prompt_aaaa']])
+        const y = (id: string) => flow.nodes.find(n => n.id == id)!.position.y
+        expect(y('final_output_bbbb')).toBeGreaterThan(y('prompt_aaaa'))
+    })
+
+    it('drops steps the reply left out once its node list is complete', () => {
+        const flow = previewFlow({ nodes: [{ id: 'start', type: 'start', data: {} }], edges: [], nodesDone: true }, existing, opts)
+        expect(flow.nodes.map(n => n.id)).toEqual(['start'])
+        expect(flow.edges).toEqual([])
+    })
+
+    it('keeps positions when no step is new', () => {
+        const flow = previewFlow({ nodes: [{ id: 'start', type: 'start', data: {} }, { id: 'prompt_aaaa', type: 'prompt', data: { name: 'New' } }], edges: [], nodesDone: false }, existing, opts)
+        expect(flow.nodes.find(n => n.id == 'prompt_aaaa')!.position).toEqual({ x: 0, y: 160 })
+        expect(flow.nodes.find(n => n.id == 'prompt_aaaa')!.data.name).toBe('New')
     })
 })

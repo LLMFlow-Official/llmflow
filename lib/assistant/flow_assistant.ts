@@ -82,10 +82,97 @@ export function parseReply(text: string): AssistantReply {
         reply,
         flow: {
             name: typeof flow.name == 'string' ? flow.name : undefined,
-            nodes: flow.nodes.filter(isObject).map(n => ({ id: String(n.id ?? ''), type: String(n.type ?? ''), data: isObject(n.data) ? n.data : {} })),
-            edges: flow.edges.filter(isObject).map(e => ({ source: String(e.source ?? ''), target: String(e.target ?? '') })),
+            nodes: flow.nodes.filter(isObject).map(toSpecNode),
+            edges: flow.edges.filter(isObject).map(toSpecEdge),
         },
     }
+}
+
+const toSpecNode = (n: Record<string, unknown>): SpecNode => ({ id: String(n.id ?? ''), type: String(n.type ?? ''), data: isObject(n.data) ? n.data : {} })
+const toSpecEdge = (e: Record<string, unknown>): SpecEdge => ({ source: String(e.source ?? ''), target: String(e.target ?? '') })
+
+/** The part of a flow that has fully arrived while the reply is still streaming. */
+export type PartialFlow = { nodes: SpecNode[], edges: SpecEdge[], /** The nodes list is complete. */ nodesDone: boolean }
+
+/**
+ * Reads the nodes and edges that have arrived so far in a reply that is still streaming. Only
+ * complete nodes and edges are returned. Undefined until the reply's "flow" has started.
+ */
+export function readPartialFlow(text: string): PartialFlow | undefined {
+    type Frame = { kind: '{' | '[', key: string | null, start: number, expectKey: boolean, pendingKey: string | null, currentKey: string | null }
+    const begin = text.indexOf('{')
+    if (begin < 0) return undefined
+    const stack: Frame[] = []
+    const out: PartialFlow = { nodes: [], edges: [], nodesDone: false }
+    let sawFlow = false
+    // Depth 0 is the reply, 1 the flow, 2 its nodes/edges lists, 3 one node or edge.
+    const inFlow = () => stack.length >= 2 && stack[1].key == 'flow' && stack[1].kind == '{'
+    for (let i = begin; i < text.length; i++) {
+        const c = text[i]
+        const top = stack[stack.length - 1]
+        if (c == '"') {
+            let j = i + 1
+            while (j < text.length && text[j] != '"') j += text[j] == '\\' ? 2 : 1
+            if (j >= text.length) break
+            if (top?.kind == '{' && top.expectKey) {
+                try { top.pendingKey = JSON.parse(text.slice(i, j + 1)) } catch { top.pendingKey = null }
+            }
+            i = j
+        } else if (c == '{' || c == '[') {
+            const key = top?.kind == '{' ? top.currentKey : null
+            stack.push({ kind: c, key, start: i, expectKey: c == '{', pendingKey: null, currentKey: null })
+            if (stack.length == 2 && key == 'flow' && c == '{') sawFlow = true
+        } else if (c == '}' || c == ']') {
+            const frame = stack.pop()
+            if (!frame || !stack.length) break
+            const parent = stack[stack.length - 1]
+            if (stack.length == 3 && inFlow() && parent.kind == '[' && frame.kind == '{' && (parent.key == 'nodes' || parent.key == 'edges')) {
+                try {
+                    const value = JSON.parse(text.slice(frame.start, i + 1))
+                    if (parent.key == 'nodes') out.nodes.push(toSpecNode(value))
+                    else out.edges.push(toSpecEdge(value))
+                } catch { /* not a usable item; the final reply decides */ }
+            }
+            if (stack.length == 2 && inFlow() && frame.kind == '[' && frame.key == 'nodes') out.nodesDone = true
+        } else if (c == ':' && top?.kind == '{') {
+            top.currentKey = top.pendingKey
+            top.expectKey = false
+        } else if (c == ',' && top?.kind == '{') {
+            top.expectKey = true
+        }
+    }
+    return sawFlow ? out : undefined
+}
+
+/**
+ * The canvas while a reply streams in: the steps that have arrived so far, the earlier steps the
+ * reply has not repeated yet (the reply always lists the whole flow), and the connections known so
+ * far. New steps are laid out as they come; a step with no connection yet is placed under the
+ * step it references (or the one before it), so the layout grows instead of jumping.
+ */
+export function previewFlow(partial: PartialFlow, base: { nodes: CanvasNode[], edges: { source: string, target: string }[] }, options: { knownTypes: string[], savedFlowIds: string[] }): { nodes: CanvasNode[], edges: CanvasEdge[] } {
+    const streamed = new Set(partial.nodes.map(n => n.id))
+    const hasStart = partial.nodes.some(n => n.type == 'start')
+    const kept = partial.nodesDone ? [] : base.nodes.filter(n => !streamed.has(n.id) && !(hasStart && n.type == 'start'))
+    const nodes: SpecNode[] = [...partial.nodes, ...kept.map(n => ({ id: n.id, type: n.type, data: publicData(n.data) }))]
+    const ids = new Set(nodes.map(n => n.id))
+    const edges = [...partial.edges, ...base.edges.filter(e => ids.has(e.source) && ids.has(e.target))]
+    const result = normalizeFlow({ nodes, edges }, base, options)
+    const shown = result.edges.map(e => ({ ...e, id: `edge_${e.source}_${e.target}` }))
+    if (!result.changes.added.length) return { nodes: result.nodes, edges: shown }
+
+    const order = result.nodes.map(n => n.id)
+    const hasParent = new Set(shown.map(e => e.target))
+    const layoutEdges: { source: string, target: string }[] = [...shown]
+    result.nodes.forEach((node, i) => {
+        if (node.type == 'start' || hasParent.has(node.id)) return
+        // Prefer the latest earlier step it references; steps kept from before come last in the list, so any is fine.
+        const refs = Array.from(JSON.stringify(node.data).matchAll(/\{([a-z_][a-z0-9_]*)\./g), m => order.indexOf(m[1])).filter(r => r >= 0 && r != i)
+        const earlier = refs.filter(r => r < i)
+        const parent = earlier.length ? order[Math.max(...earlier)] : refs.length ? order[refs[0]] : order[i - 1]
+        if (parent) layoutEdges.push({ source: parent, target: node.id })
+    })
+    return { nodes: autoLayout(result.nodes, layoutEdges), edges: shown }
 }
 
 const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')

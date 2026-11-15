@@ -229,6 +229,16 @@ export async function deleteFlow(id: string) {
     }
 }
 
+/** Writes a flow that is not open (or no longer open) back as given, e.g. to drop a half-finished change. */
+export function restoreSavedFlow(id: string, nodes: AppNode[], edges: Edge[]) {
+    saving = saving.then(async () => {
+        const db = await backend()
+        const existing = await db.getFlow(id)
+        if (existing) await db.putFlow({ ...existing, nodes, edges, updatedAt: Date.now() })
+    }).catch(error => console.error(error))
+    return saving
+}
+
 export async function flushSave() {
     autosave.flush()
     await saving
