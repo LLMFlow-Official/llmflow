@@ -294,6 +294,11 @@ export function modelsFor(provider: ProviderId): ModelInfo[] {
     return models.filter(x => x.provider == provider)
 }
 
+/** Whether a built-in model ID is on the account's model list: exactly, or as a dated snapshot (`id-2025-04-14`, `id-20250414`). */
+export function isModelOnAccount(id: string, accountIds: string[]): boolean {
+    return accountIds.some(x => x == id || (x.startsWith(`${id}-`) && /^(\d{4}-\d{2}-\d{2}|\d{8})$/.test(x.slice(id.length + 1))))
+}
+
 /**
  * Follows the replacement chain (e.g. gpt-3.5-turbo-0613 -> gpt-3.5-turbo -> gpt-5.6-terra,
  * gpt-4-32k -> gpt-4o -> gpt-6-luna) until it reaches a model that is in the registry and not deprecated.

@@ -1,9 +1,10 @@
 import { Columns3, Plus, Trash } from 'lucide-react';
 import { AppContext, Controller, NodeLogViewProps, NodeMetaData, NodeOutput, OutputExtra } from '@/lib/nodes';
-import { AppNode, AppNodeProp, NodeData } from '@/lib/store';
+import { useShallow } from 'zustand/react/shallow';
+import { AppNode, AppNodeProp, NodeData, useSettingStore } from '@/lib/store';
 import { renderTextTemplate } from '@/lib/logics';
-import { DEFAULT_MODELS, findModel, modelsFor, NormalizedUsage, PROVIDERS, ProviderId } from '@/lib/openai/models';
-import { runChat } from '@/lib/providers';
+import { DEFAULT_MODELS, findModel, NormalizedUsage, PROVIDERS, ProviderId } from '@/lib/openai/models';
+import { availableModels, availableProviders, runChat } from '@/lib/providers';
 import { isStopped, StoppedError } from '@/lib/errors';
 import MarkdownViewer from '../ui/markdown_viewer';
 import { Label } from '../ui/label';
@@ -11,6 +12,7 @@ import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { UsageStats } from '../node_utils/stats';
+import { useAutoLoadAccountModels } from '../node_utils/model_select';
 import { NameField, NodeShell, TemplateField, TestOutputField, useNodeSetter } from '../node_utils/node_shell';
 
 type Contender = { provider: ProviderId, model: string }
@@ -114,6 +116,17 @@ export const Properties = ({ node }: { node: AppNode<CompareData> }) => {
     const models = contendersOf(node.data)
     const setModels = (next: Contender[]) => setValue('models', next)
     const update = (index: number, patch: Partial<Contender>) => setModels(models.map((x, i) => i == index ? { ...x, ...patch } : x))
+    // Mock mode offers every provider and model; otherwise only those the user's keys can use.
+    const access = useSettingStore(useShallow((s) => ({
+        sampleAnswers: s.sampleAnswers, devMode: s.devMode, apiKeys: s.apiKeys, compatibleBaseUrl: s.compatibleBaseUrl, accountModels: s.accountModels,
+    })))
+    const usable = availableProviders(access)
+    useAutoLoadAccountModels(models.map(c => c.provider))
+    const modelOptions = (c: Contender) => {
+        const list = availableModels(c.provider, access).filter(m => !m.deprecated)
+        const current = findModel(c.model)
+        return current && current.provider == c.provider && !list.includes(current) ? [...list, current] : list
+    }
 
     return (
         <div className='flex flex-col gap-3 px-3'>
@@ -129,14 +142,14 @@ export const Properties = ({ node }: { node: AppNode<CompareData> }) => {
                     <div key={index} className='flex gap-1 items-center'>
                         <Select value={c.provider} onValueChange={(p) => update(index, { provider: p as ProviderId, model: DEFAULT_MODELS[p as ProviderId] })}>
                             <SelectTrigger aria-label='Provider' className='w-28 shrink-0'><SelectValue /></SelectTrigger>
-                            <SelectContent>{PROVIDERS.map(p => <SelectItem key={p.id} value={p.id}>{p.label.split(' ')[0]}</SelectItem>)}</SelectContent>
+                            <SelectContent>{PROVIDERS.filter(p => usable.includes(p.id) || p.id == c.provider).map(p => <SelectItem key={p.id} value={p.id}>{p.label.split(' ')[0]}</SelectItem>)}</SelectContent>
                         </Select>
                         {c.provider == 'compatible' ? (
                             <Input aria-label='Model ID' value={c.model} placeholder='Model ID' onChange={(e) => update(index, { model: e.target.value.trim() })} />
                         ) : (
                             <Select value={c.model} onValueChange={(m) => update(index, { model: m })}>
                                 <SelectTrigger aria-label='Model'><SelectValue placeholder='Model' /></SelectTrigger>
-                                <SelectContent>{modelsFor(c.provider).filter(m => !m.deprecated).map(m => <SelectItem key={m.id} value={m.id}>{m.label}</SelectItem>)}</SelectContent>
+                                <SelectContent>{modelOptions(c).map(m => <SelectItem key={m.id} value={m.id}>{m.label}</SelectItem>)}</SelectContent>
                             </Select>
                         )}
                         <Button variant="ghost" size="sm" aria-label='Remove model' className="text-danger p-0.5 h-8 w-8 shrink-0" disabled={models.length <= 2} onClick={() => setModels(models.filter((_, i) => i != index))}>

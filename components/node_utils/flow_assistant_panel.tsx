@@ -4,8 +4,8 @@ import { useShallow } from "zustand/shallow";
 import { FilePlus2, Loader2, RotateCcw, SendHorizontal, Sparkles, Square, Trash, Undo2 } from "lucide-react";
 import { useLibraryStore, createFlow } from "@/lib/library";
 import { useSettingStore } from "@/lib/store";
-import { availableProviders, providerLabel } from "@/lib/providers";
-import { findModel, modelsFor, ProviderId } from "@/lib/openai/models";
+import { availableModels, availableProviders, providerLabel } from "@/lib/providers";
+import { findModel, ProviderId } from "@/lib/openai/models";
 import { ChatMessage, useAssistantStore } from "@/lib/assistant/assistant_store";
 import { askAssistant, assistantModel, editedSince, stopAssistant, undoAssistantChange } from "@/lib/assistant/run_assistant";
 import { chatOf } from "@/lib/assistant/assistant_store";
@@ -15,6 +15,7 @@ import { MOD_KEY } from "@/lib/utils";
 import { askToConfirm } from "../ui/confirm_host";
 import { openSettings } from "../layout/settings";
 import { selectStepKeepingTab } from "./panel_tab";
+import { useAutoLoadAccountModels } from "./model_select";
 import { Button } from "../ui/button";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "../ui/select";
 import MarkdownViewer from "../ui/markdown_viewer";
@@ -118,8 +119,9 @@ function Message({ flowId, message, last, onRetry }: { flowId: string, message: 
 
 function ModelPicker() {
     // Re-render when the choice, the keys or sample answers change (assistantModel() reads them).
-    useSettingStore(useShallow(s => [s.assistantProvider, s.assistantModel, s.apiKeys, s.compatibleBaseUrl, s.sampleAnswers, s.devMode]))
+    useSettingStore(useShallow(s => [s.assistantProvider, s.assistantModel, s.apiKeys, s.compatibleBaseUrl, s.sampleAnswers, s.devMode, s.accountModels]))
     const usable = availableProviders().filter(p => p != 'compatible')
+    useAutoLoadAccountModels(usable)
     const current = assistantModel()
     if (!current) return null
     return (
@@ -137,7 +139,7 @@ function ModelPicker() {
                 {usable.map(p => (
                     <SelectGroup key={p}>
                         <SelectLabel>{providerLabel(p)}</SelectLabel>
-                        {modelsFor(p).filter(m => m.group != 'Deprecated' && !m.deprecated).map(m => (
+                        {availableModels(p).filter(m => m.group != 'Deprecated' && !m.deprecated).map(m => (
                             <SelectItem key={m.id} value={`${p}:${m.id}`}>{m.label}</SelectItem>
                         ))}
                     </SelectGroup>

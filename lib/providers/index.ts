@@ -2,7 +2,8 @@ import Decimal from "decimal.js-light";
 import type { Controller, NodeType } from "../nodes";
 import { createStopSignal, sampleAnswersOn, useRuntimeStore, useSettingStore } from "../store";
 import { StoppedError } from "../errors";
-import { costOf, getModelStatus, PROVIDERS, ProviderId, totalInput } from "../openai/models";
+import { costOf, getModelStatus, isModelOnAccount, ModelInfo, modelsFor, PROVIDERS, ProviderId, totalInput } from "../openai/models";
+import type { SettingsState } from "../store";
 import { ProviderHttpError } from "./http";
 import { openAiProvider } from "./openai";
 import { anthropicProvider } from "./anthropic";
@@ -261,9 +262,21 @@ export async function chatDirect(request: ChatRequest, options: { signal: AbortS
     }
 }
 
+type AccessSettings = Pick<SettingsState, 'sampleAnswers' | 'devMode' | 'apiKeys' | 'compatibleBaseUrl' | 'accountModels'>
+
 /** Providers the user can use right now: those with a key (or a server address), or all in Test API mode. */
-export function availableProviders(): ProviderId[] {
-    const settings = useSettingStore.getState()
+export function availableProviders(settings: AccessSettings = useSettingStore.getState()): ProviderId[] {
     if (sampleAnswersOn(settings)) return PROVIDERS.map(p => p.id)
     return PROVIDERS.map(p => p.id).filter(id => id == 'compatible' ? !!settings.compatibleBaseUrl : !!settings.apiKeys[id])
+}
+
+/**
+ * Built-in models to offer for a provider. Test API (mock) mode offers every model; otherwise only the
+ * models on the account's model list. Until that list has been loaded, all built-in models are offered.
+ */
+export function availableModels(provider: ProviderId, settings: AccessSettings = useSettingStore.getState()): ModelInfo[] {
+    const all = modelsFor(provider)
+    const accountList = settings.accountModels[provider]
+    if (sampleAnswersOn(settings) || !accountList) return all
+    return all.filter(x => isModelOnAccount(x.id, accountList))
 }

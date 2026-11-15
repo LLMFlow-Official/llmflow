@@ -164,7 +164,13 @@ export const useSettingStore = create<SettingsState>()(persist(set => ({
     requestTimeoutSeconds: 600,
     devMode: undefined,
     accountModels: {},
-    setApiKey: (provider, key) => set(state => ({ apiKeys: { ...state.apiKeys, [provider]: key } })),
+    // A new key may reach different models, so forget the list loaded with the old one.
+    setApiKey: (provider, key) => set(state => {
+        if (state.apiKeys[provider] == key) return {}
+        const accountModels = { ...state.accountModels }
+        delete accountModels[provider]
+        return { apiKeys: { ...state.apiKeys, [provider]: key }, accountModels }
+    }),
     setSettings: patch => set(patch),
     setRememberKeys: rememberKeys => set({ rememberKeys }),
     setAnalyticsEnabled: analyticsEnabled => set({ analyticsEnabled }),
