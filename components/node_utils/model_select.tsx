@@ -1,13 +1,15 @@
 import { AlertTriangle, Info, Plus, RefreshCw, Trash } from 'lucide-react';
 import { capitalize, cloneDeep, set, unset } from 'lodash';
-import { useState } from 'react';
-import { AppNode, useFlowStore, useSettingStore } from '@/lib/store';
+import { useEffect, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
+import { AppNode, sampleAnswersOn, useFlowStore, useSettingStore } from '@/lib/store';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import {
-    DEFAULT_MODELS, findModel, getModelStatus, modelsFor, ProcessingTier, PROVIDERS, ProviderId, ReasoningEffort, retiredModels
+    DEFAULT_MODELS, findModel, getModelStatus, ProcessingTier, PROVIDERS, ProviderId, ReasoningEffort, retiredModels
 } from '@/lib/openai/models';
 import { listProviderModels } from '@/lib/providers/list_models';
+import { availableModels, availableProviders } from '@/lib/providers';
 import { McpServer, PROVIDER_TOOLS, ToolOptions } from '@/lib/providers/types';
 import { parseList } from '@/lib/text_utils';
 import { Label } from '../ui/label';
@@ -18,6 +20,31 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrig
 
 const ALL_EFFORTS: ReasoningEffort[] = ['none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max']
 const DEFAULT_OPTION = '__default__'
+/** Providers whose model list was already requested for the current key, so it is loaded once. */
+const autoLoaded = new Set<string>()
+
+/**
+ * Outside mock mode, loads each provider's account model list once per key (quietly), so model pickers
+ * can offer only the models the key can use.
+ */
+export function useAutoLoadAccountModels(providers: ProviderId[]) {
+    const showAll = useSettingStore((s) => sampleAnswersOn(s))
+    const pending = useSettingStore(useShallow((s) => Array.from(new Set(providers))
+        .filter(p => p != 'compatible' && s.apiKeys[p] && !s.accountModels[p])
+        .map(p => `${p}:${s.apiKeys[p]}`)))
+    useEffect(() => {
+        if (showAll) return
+        for (const marker of pending) {
+            if (autoLoaded.has(marker)) continue
+            autoLoaded.add(marker)
+            const provider = marker.slice(0, marker.indexOf(':')) as ProviderId
+            const key = marker.slice(provider.length + 1)
+            listProviderModels(provider, key)
+                .then(ids => { if (useSettingStore.getState().apiKeys[provider] == key) useSettingStore.getState().setAccountModels(provider, ids) })
+                .catch(() => { /* Keep offering the built-in list when the account's list cannot be loaded. */ })
+        }
+    }, [showAll, pending])
+}
 const CUSTOM_OPTION = '__custom__'
 
 export type ModelNodeData = {
@@ -105,8 +132,11 @@ function ModelNotice({ model, onSwitch }: { model: string, onSwitch: (id: string
  */
 export function ModelSelect({ node }: { node: AppNode }) {
     const { toast } = useToast()
-    const accountModels = useSettingStore((s) => s.accountModels)
+    const access = useSettingStore(useShallow((s) => ({
+        sampleAnswers: s.sampleAnswers, devMode: s.devMode, apiKeys: s.apiKeys, compatibleBaseUrl: s.compatibleBaseUrl, accountModels: s.accountModels,
+    })))
     const setAccountModels = useSettingStore((s) => s.setAccountModels)
+    // Sample answers (mock mode) offer every model; otherwise only what the user's keys can reach.
     const update = useUpdate(node)
     const [loadingModels, setLoadingModels] = useState(false)
 
@@ -114,8 +144,13 @@ export function ModelSelect({ node }: { node: AppNode }) {
     const provider = nodeProvider(data)
     const model = nodeModel(data)
     const modelInfo = findModel(model)
-    const builtIn = modelsFor(provider)
-    const extraAccountModels = (accountModels[provider] || []).filter(x => !findModel(x) && !retiredModels[x])
+    const accountList = access.accountModels[provider]
+    // Keep the node's current model listed even when the account cannot use it, so the choice stays visible.
+    const offered = availableModels(provider, access)
+    const builtIn = modelInfo?.provider == provider && !offered.includes(modelInfo) ? [...offered, modelInfo] : offered
+    const extraAccountModels = (accountList || []).filter(x => !findModel(x) && !retiredModels[x])
+    const usable = availableProviders(access)
+    const providers = PROVIDERS.filter(x => usable.includes(x.id) || x.id == provider)
     const isListedModel = !!modelInfo || !!retiredModels[model] || extraAccountModels.includes(model)
     const [customMode, setCustomMode] = useState(!isListedModel || provider == 'compatible')
     const groups = Array.from(new Set(builtIn.filter(x => x.group != 'Deprecated').map(x => x.group)))
@@ -138,6 +173,8 @@ export function ModelSelect({ node }: { node: AppNode }) {
         setCustomMode(false)
         setModel(value)
     }
+
+    useAutoLoadAccountModels([provider])
 
     const loadAccountModels = async () => {
         const settings = useSettingStore.getState()
@@ -165,7 +202,7 @@ export function ModelSelect({ node }: { node: AppNode }) {
                 <Select name="provider" value={provider} onValueChange={onProviderChange}>
                     <SelectTrigger id="provider"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                        {PROVIDERS.map(x => <SelectItem key={x.id} value={x.id}>{x.label}</SelectItem>)}
+                        {providers.map(x => <SelectItem key={x.id} value={x.id}>{x.label}</SelectItem>)}
                     </SelectContent>
                 </Select>
             </div>
@@ -179,7 +216,7 @@ export function ModelSelect({ node }: { node: AppNode }) {
                         toolTip='Load models from your account'
                         aria-label='Load models from your account'
                         disabled={loadingModels}
-                        onClick={loadAccountModels}
+                        onClick={() => loadAccountModels()}
                     >
                         <RefreshCw className={cn('w-4 h-4', loadingModels && 'animate-spin')} />
                     </Button>
